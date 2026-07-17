@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/*
+  BLOCK27 theme.
+  The palette is exactly three colors. Nothing else exists.
+  --color-*: initial wipes every default Tailwind color so a stray
+  `bg-blue-500` fails to compile instead of shipping.
+  --radius-*: initial deletes the whole radius scale. border-radius is 0.
+*/
+@theme {
+  --color-*: initial;
+  --radius-*: initial;
+
+  --color-void: #000000;
+  --color-paper: #f2f0ec;
+  --color-blood: #7a1f14;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+/* border-radius: 0. Globally. No corner is ever soft. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  background: var(--color-void);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
