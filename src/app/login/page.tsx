@@ -4,9 +4,9 @@ import { login } from "./actions";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; notice?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, notice } = await searchParams;
 
   return (
     <AuthForm
@@ -16,6 +16,7 @@ export default async function LoginPage({
       altHref="/signup"
       altLabel="Create one"
       error={error}
+      notice={notice}
     />
   );
 }

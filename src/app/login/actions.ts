@@ -34,14 +34,25 @@ export async function signup(formData: FormData) {
   const supabase = await createClient();
   // The users and style_profile rows are created by a Postgres trigger on
   // auth.users insert, so they land in the same transaction as the account.
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     redirect("/signup?error=" + encodeURIComponent(error.message));
   }
 
-  // If email confirmation is off (the intended setting for this build), a
-  // session already exists and the wardrobe loads. If it is on, middleware
-  // sends them to /login until they confirm.
+  // Email confirmation OFF (this build's intended setting): signUp returns a
+  // session and the wardrobe loads immediately. If confirmation is ON there is
+  // no session yet — say so plainly instead of bouncing to /login with no word,
+  // which reads as a silent failure. Same branch also catches the enumeration-
+  // protection case where an existing email returns success with no session.
+  if (!data.session) {
+    redirect(
+      "/login?notice=" +
+        encodeURIComponent(
+          "Account created. Confirm it from the email we sent, then log in.",
+        ),
+    );
+  }
+
   redirect("/wardrobe");
 }
