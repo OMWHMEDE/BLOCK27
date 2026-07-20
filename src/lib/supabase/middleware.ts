@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Routes that require a session. An unauthenticated hit is redirected to /login.
-const PROTECTED_PREFIXES = ["/wardrobe"];
+const PROTECTED_PREFIXES = ["/wardrobe", "/capture"];
 
 // Routes an authenticated user should not see. They are bounced to the app.
 const AUTH_PREFIXES = ["/login", "/signup"];

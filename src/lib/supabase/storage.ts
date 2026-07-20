@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
 
-// The private bucket that holds every user photo. There is no public bucket.
-export const USER_PHOTOS_BUCKET = "user-photos";
+export { USER_PHOTOS_BUCKET };
 
 /**
  * The ONLY way anything is allowed to read from the user-photos bucket.
@@ -13,6 +13,7 @@ export const USER_PHOTOS_BUCKET = "user-photos";
  *
  * Runs as the logged-in user (anon key + their cookies), so RLS on the
  * bucket still applies — a user can only sign URLs for their own objects.
+ * Returns null when the object does not exist or the user cannot read it.
  */
 export async function signedUrl(
   path: string,
@@ -25,4 +26,16 @@ export async function signedUrl(
 
   if (error || !data) return null;
   return data.signedUrl;
+}
+
+/**
+ * Signed URL for a user's base photo, or null if they don't have one yet.
+ * Doubles as the existence check — createSignedUrl errors on a missing object,
+ * so a null return means "no base captured".
+ */
+export async function getBasePhotoUrl(
+  userId: string,
+  seconds = 300,
+): Promise<string | null> {
+  return signedUrl(basePhotoPath(userId), seconds);
 }
