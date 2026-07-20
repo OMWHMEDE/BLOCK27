@@ -162,7 +162,14 @@ export function BaseCapture({ userId }: { userId: string }) {
             >
               Open camera
             </button>
-            <UploadFallback onPick={onFilePicked} />
+
+            <div className="flex flex-col gap-2 pt-2">
+              <GalleryUpload onPick={onFilePicked} />
+              <p className="text-ash text-xs">
+                A friend can shoot it and send it over. Use a recent full-body
+                photo — outfits render on your body as it is now, not an old one.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -265,18 +272,20 @@ function ErrorLine({ children }: { children: React.ReactNode }) {
   );
 }
 
-function UploadFallback({
+// Gallery picker. No `capture` attribute, so it opens the photo library rather
+// than forcing the camera — this is the path for a photo a friend took and sent
+// over. Same review + upload flow as a live capture.
+function GalleryUpload({
   onPick,
 }: {
   onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <label className="border border-iron text-bone py-3 uppercase tracking-wide text-sm text-center cursor-pointer hover:border-paper hover:text-paper">
-      Upload instead
+      Upload from gallery
       <input
         type="file"
         accept="image/*"
-        capture="user"
         onChange={onPick}
         className="hidden"
       />
@@ -284,21 +293,41 @@ function UploadFallback({
   );
 }
 
-// Framing guide: a stylised standing figure the user fits inside. It forces
-// full body, correct distance, and centered framing.
+// Framing guide: a clean, weighted standing figure the user fits inside,
+// head to feet. Proper proportions (~8 heads tall), arms slightly away from the
+// body, feet apart — it forces full body, correct distance, and centered
+// framing. Round-capped limbs so it reads as a body, not a broken stick figure.
 function SilhouetteGuide() {
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
       <svg
-        viewBox="0 0 100 150"
-        className="h-[86%] w-auto opacity-30"
-        fill="none"
-        stroke="var(--color-paper)"
-        strokeWidth="1"
+        viewBox="0 0 100 240"
+        className="h-[92%] w-auto"
         aria-hidden
       >
-        <circle cx="50" cy="18" r="10" />
-        <path d="M50 28 v66 M50 40 l-22 26 M50 40 l22 26 M50 94 l-14 52 M50 94 l14 52" />
+        <g
+          opacity="0.34"
+          fill="var(--color-paper)"
+          stroke="var(--color-paper)"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {/* head */}
+          <circle cx="50" cy="26" r="15" stroke="none" />
+          {/* neck + torso */}
+          <line x1="50" y1="41" x2="50" y2="50" strokeWidth="10" />
+          <line x1="30" y1="55" x2="70" y2="55" strokeWidth="12" />
+          <line x1="50" y1="53" x2="50" y2="120" strokeWidth="16" />
+          {/* arms, slightly away from the body */}
+          <line x1="32" y1="58" x2="24" y2="118" strokeWidth="10" />
+          <line x1="68" y1="58" x2="76" y2="118" strokeWidth="10" />
+          {/* legs, feet apart */}
+          <line x1="43" y1="122" x2="40" y2="232" strokeWidth="13" />
+          <line x1="57" y1="122" x2="60" y2="232" strokeWidth="13" />
+          {/* feet */}
+          <line x1="40" y1="232" x2="31" y2="235" strokeWidth="9" />
+          <line x1="60" y1="232" x2="69" y2="235" strokeWidth="9" />
+        </g>
       </svg>
     </div>
   );
