@@ -39,3 +39,44 @@ export async function getBasePhotoUrl(
 ): Promise<string | null> {
   return signedUrl(basePhotoPath(userId), seconds);
 }
+
+export type GarmentThumb = {
+  id: string;
+  status: string;
+  url: string | null;
+};
+
+/**
+ * The user's garments, newest first, each with a 300s signed thumbnail URL.
+ * RLS scopes the rows to the user; the whole batch is signed in one call.
+ */
+export async function listGarmentThumbs(
+  userId: string,
+  seconds = 300,
+): Promise<GarmentThumb[]> {
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("garments")
+    .select("id, photo_path, status")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error || !rows || rows.length === 0) return [];
+
+  const { data: signed } = await supabase.storage
+    .from(USER_PHOTOS_BUCKET)
+    .createSignedUrls(
+      rows.map((r) => r.photo_path),
+      seconds,
+    );
+
+  const urlByPath = new Map(
+    (signed ?? []).map((s) => [s.path, s.signedUrl] as const),
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    url: urlByPath.get(r.photo_path) ?? null,
+  }));
+}

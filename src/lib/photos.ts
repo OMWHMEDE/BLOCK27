@@ -11,3 +11,9 @@ export const BASE_PHOTO_FILENAME = "base_photo.jpg";
 export function basePhotoPath(userId: string) {
   return `${userId}/${BASE_PHOTO_FILENAME}`;
 }
+
+// Each garment is its own object under the user's folder, keyed by garment id.
+// First path segment is still the user id, so the BUILD-01 storage RLS holds.
+export function garmentPhotoPath(userId: string, garmentId: string) {
+  return `${userId}/garments/${garmentId}.jpg`;
+}
