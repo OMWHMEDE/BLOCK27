@@ -15,15 +15,25 @@ export async function joinWaitlist(formData: FormData) {
   }
 
   const supabase = await createClient();
-  // Anonymous insert (anon role) under the waitlist_insert_public policy.
-  // ignoreDuplicates makes it INSERT ... ON CONFLICT DO NOTHING, so a repeat
-  // email is a silent no-op, not an error — the same confirmation shows either
-  // way. No `.select()`, so no read permission is needed.
-  const { error } = await supabase
-    .from("waitlist")
-    .upsert({ email }, { onConflict: "email", ignoreDuplicates: true });
+  // Plain insert (anon role) under the waitlist_insert_public policy. A plain
+  // INSERT with no `.select()` needs only the INSERT privilege + the INSERT
+  // policy's WITH CHECK — no read is involved, so the closed-to-the-public read
+  // model can't interfere.
+  const { error } = await supabase.from("waitlist").insert({ email });
 
-  if (error) {
+  // 23505 = unique_violation: the email is already on the list. That is a
+  // success, not an error — duplicates are prevented gracefully and the same
+  // confirmation shows.
+  if (error && error.code !== "23505") {
+    // Surface the real cause in the server logs instead of hiding it. A 42501
+    // here means the anon role lacks INSERT on the table (grant, not policy).
+    console.error(
+      "[waitlist] insert failed:",
+      error.code,
+      error.message,
+      error.details,
+      error.hint,
+    );
     redirect(
       "/waitlist?error=" + encodeURIComponent("Something broke. Try again."),
     );
