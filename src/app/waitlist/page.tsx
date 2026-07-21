@@ -16,46 +16,50 @@ export default async function WaitlistPage({
 
   return (
     <div className={styles.stage}>
+      <div className={styles.glow} aria-hidden />
       <div className={styles.haze} aria-hidden />
       <div className={styles.haze2} aria-hidden />
+      <div className={styles.vignette} aria-hidden />
       <div className={styles.grain} aria-hidden />
 
-      <main className="relative z-[1] flex flex-1 flex-col justify-center px-8 py-24 max-w-xl w-full mx-auto">
-        <p
-          className={`text-xs uppercase tracking-[0.35em] text-ash mb-5 ${styles.reveal} ${styles.d1}`}
+      <main className="relative z-[1] flex flex-1 flex-col items-center justify-center text-center px-6 py-24 w-full">
+        {/* The hero: the name, dead center, unmissable. */}
+        <h1
+          className={`${styles.reveal} ${styles.d1} text-[clamp(2.75rem,16vw,8rem)] font-black uppercase tracking-[-0.04em] leading-[0.82] text-paper`}
         >
           BLOCK27
-        </p>
-        <hr className={`${styles.rule} ${styles.reveal} ${styles.d1} mb-12`} />
+        </h1>
+
+        <hr className={`${styles.rule} mt-9 mb-20`} />
 
         {joined ? (
           <>
-            <h1
-              className={`text-5xl sm:text-7xl font-bold uppercase tracking-[-0.03em] leading-[0.85] mb-6 ${styles.reveal} ${styles.d2}`}
+            <h2
+              className={`${styles.reveal} ${styles.d3} text-2xl sm:text-3xl font-bold uppercase tracking-tight leading-[0.95] mb-4 text-paper`}
             >
               You&rsquo;re on the list.
-            </h1>
-            <p className={`text-ash ${styles.reveal} ${styles.d3}`}>
+            </h2>
+            <p className={`${styles.reveal} ${styles.d3} text-ash max-w-sm`}>
               We email invites as we open. Watch for it.
             </p>
           </>
         ) : (
           <>
-            <h1
-              className={`text-5xl sm:text-7xl font-bold uppercase tracking-[-0.03em] leading-[0.85] mb-8 ${styles.reveal} ${styles.d2}`}
+            <h2
+              className={`${styles.reveal} ${styles.d3} text-2xl sm:text-3xl font-bold uppercase tracking-tight leading-[0.98] mb-5 max-w-md text-paper`}
             >
-              You own good clothes.
-            </h1>
+              You own good clothes. You wear them wrong.
+            </h2>
             <p
-              className={`text-bone text-lg max-w-md mb-14 ${styles.reveal} ${styles.d3}`}
+              className={`${styles.reveal} ${styles.d3} text-bone max-w-sm mb-12`}
             >
-              You wear them wrong. An AI stylist for the clothes already in your
-              closet, rendered on your own body. We open in waves.
+              An AI stylist for the clothes already in your closet, rendered on
+              your own body. We open in waves.
             </p>
 
             <form
               action={joinWaitlist}
-              className={`flex flex-col gap-4 max-w-sm ${styles.reveal} ${styles.d4}`}
+              className={`${styles.reveal} ${styles.d4} flex flex-col gap-4 w-full max-w-sm`}
             >
               {error ? (
                 <p className="text-blood text-sm border border-blood px-3 py-2">
@@ -69,7 +73,7 @@ export default async function WaitlistPage({
                 required
                 autoComplete="email"
                 placeholder="you@email.com"
-                className="bg-transparent border-b border-iron py-3 text-paper tracking-wide placeholder:text-ash outline-none focus:border-paper"
+                className="bg-transparent border-b border-iron py-3 text-center text-paper tracking-wide placeholder:text-ash outline-none focus:border-paper"
               />
               <button
                 type="submit"
