@@ -19,3 +19,8 @@ alter table public.waitlist enable row level security;
 create policy "waitlist_insert_public" on public.waitlist
   for insert to anon, authenticated
   with check (true);
+
+-- A policy permits a row; the role still needs the table privilege. Supabase
+-- usually grants this via default privileges, but grant it explicitly so the
+-- public form can insert regardless. No SELECT grant — reads stay closed.
+grant insert on public.waitlist to anon, authenticated;
