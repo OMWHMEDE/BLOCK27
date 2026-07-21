@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { joinWaitlist } from "./actions";
+import styles from "./waitlist.module.css";
 
 export const metadata: Metadata = {
   title: "BLOCK27 — Waitlist",
@@ -14,52 +15,72 @@ export default async function WaitlistPage({
   const { joined, error } = await searchParams;
 
   return (
-    <main className="flex flex-1 flex-col justify-center px-8 py-24 max-w-xl w-full mx-auto">
-      <p className="text-xs uppercase tracking-[0.2em] text-ash mb-10">
-        BLOCK27
-      </p>
+    <div className={styles.stage}>
+      <div className={styles.haze} aria-hidden />
+      <div className={styles.haze2} aria-hidden />
+      <div className={styles.grain} aria-hidden />
 
-      {joined ? (
-        <>
-          <h1 className="text-4xl sm:text-5xl font-semibold uppercase tracking-tight leading-[0.9] mb-5">
-            You&rsquo;re on the list.
-          </h1>
-          <p className="text-ash">We email invites as we open. Watch for it.</p>
-        </>
-      ) : (
-        <>
-          <h1 className="text-4xl sm:text-5xl font-semibold uppercase tracking-tight leading-[0.9] mb-6">
-            You own good clothes.
-          </h1>
-          <p className="text-bone text-lg max-w-md mb-12">
-            You wear them wrong. An AI stylist for the clothes already in your
-            closet, rendered on your own body. We open in waves.
-          </p>
+      <main className="relative z-[1] flex flex-1 flex-col justify-center px-8 py-24 max-w-xl w-full mx-auto">
+        <p
+          className={`text-xs uppercase tracking-[0.35em] text-ash mb-5 ${styles.reveal} ${styles.d1}`}
+        >
+          BLOCK27
+        </p>
+        <hr className={`${styles.rule} ${styles.reveal} ${styles.d1} mb-12`} />
 
-          <form action={joinWaitlist} className="flex flex-col gap-4 max-w-sm">
-            {error ? (
-              <p className="text-blood text-sm border border-blood px-3 py-2">
-                {error}
-              </p>
-            ) : null}
-
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              placeholder="you@email.com"
-              className="bg-transparent border-b border-iron py-3 text-paper placeholder:text-ash outline-none focus:border-paper"
-            />
-            <button
-              type="submit"
-              className="bg-paper text-void py-3 uppercase tracking-wide text-sm hover:bg-bone"
+        {joined ? (
+          <>
+            <h1
+              className={`text-5xl sm:text-7xl font-bold uppercase tracking-[-0.03em] leading-[0.85] mb-6 ${styles.reveal} ${styles.d2}`}
             >
-              Request invite
-            </button>
-          </form>
-        </>
-      )}
-    </main>
+              You&rsquo;re on the list.
+            </h1>
+            <p className={`text-ash ${styles.reveal} ${styles.d3}`}>
+              We email invites as we open. Watch for it.
+            </p>
+          </>
+        ) : (
+          <>
+            <h1
+              className={`text-5xl sm:text-7xl font-bold uppercase tracking-[-0.03em] leading-[0.85] mb-8 ${styles.reveal} ${styles.d2}`}
+            >
+              You own good clothes.
+            </h1>
+            <p
+              className={`text-bone text-lg max-w-md mb-14 ${styles.reveal} ${styles.d3}`}
+            >
+              You wear them wrong. An AI stylist for the clothes already in your
+              closet, rendered on your own body. We open in waves.
+            </p>
+
+            <form
+              action={joinWaitlist}
+              className={`flex flex-col gap-4 max-w-sm ${styles.reveal} ${styles.d4}`}
+            >
+              {error ? (
+                <p className="text-blood text-sm border border-blood px-3 py-2">
+                  {error}
+                </p>
+              ) : null}
+
+              <input
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                placeholder="you@email.com"
+                className="bg-transparent border-b border-iron py-3 text-paper tracking-wide placeholder:text-ash outline-none focus:border-paper"
+              />
+              <button
+                type="submit"
+                className="bg-paper text-void py-4 uppercase tracking-[0.15em] text-sm hover:bg-bone"
+              >
+                Request invite
+              </button>
+            </form>
+          </>
+        )}
+      </main>
+    </div>
   );
 }
