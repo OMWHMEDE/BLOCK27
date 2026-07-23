@@ -90,7 +90,9 @@ export async function analyzeGarmentImage(
   base64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp" = "image/jpeg",
 ): Promise<GarmentAnalysis> {
-  const client = new Anthropic(); // reads ANTHROPIC_API_KEY from env, server-side
+  // reads ANTHROPIC_API_KEY from env, server-side. timeout (ms) keeps a hung
+  // call under the function's 60s budget so it throws instead of being killed.
+  const client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
 
   const response = await client.messages.create({
     model: MODEL,
