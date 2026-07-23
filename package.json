@@ -12,6 +12,7 @@
     "test:rls": "vitest run tests/rls.test.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.113.0",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
     "next": "16.2.10",

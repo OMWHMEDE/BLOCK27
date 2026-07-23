@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getBasePhotoUrl, listGarmentThumbs } from "@/lib/supabase/storage";
+import {
+  getBasePhotoUrl,
+  listGarmentThumbs,
+  type GarmentThumb,
+} from "@/lib/supabase/storage";
+import { formalityLabel } from "@/lib/brain/types";
 import { logout } from "@/app/logout/actions";
+import { GarmentAnalyzer } from "@/components/GarmentAnalyzer";
 
 export default async function WardrobePage() {
   const supabase = await createClient();
@@ -13,8 +19,17 @@ export default async function WardrobePage() {
     ? await Promise.all([getBasePhotoUrl(user.id), listGarmentThumbs(user.id)])
     : [null, []];
 
+  const pendingIds = garments
+    .filter((g) => g.status === "pending")
+    .map((g) => g.id);
+  const anyActive = garments.some(
+    (g) => g.status === "pending" || g.status === "analyzing",
+  );
+
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
+      <GarmentAnalyzer pendingIds={pendingIds} active={anyActive} />
+
       <div className="flex items-baseline justify-between mb-24">
         <span className="text-sm tracking-tight">BLOCK27</span>
         <form action={logout}>
@@ -61,9 +76,9 @@ export default async function WardrobePage() {
         )}
       </section>
 
-      {/* Wardrobe — the garment grid. */}
+      {/* Wardrobe — each garment with the brain's read-back. */}
       <section>
-        <div className="flex items-baseline justify-between mb-4">
+        <div className="flex items-baseline justify-between mb-6">
           <p className="text-xs uppercase tracking-[0.08em] text-ash">
             Wardrobe{" "}
             <span className="text-iron">
@@ -78,35 +93,58 @@ export default async function WardrobePage() {
           </Link>
         </div>
 
-        {garments.length === 0 && (
-          <p className="text-ash mb-4">Empty. Shoot five pieces.</p>
+        {garments.length === 0 ? (
+          <p className="text-ash">Empty. Shoot five pieces.</p>
+        ) : (
+          <ul className="flex flex-col">
+            {garments.map((g) => (
+              <GarmentRow key={g.id} garment={g} />
+            ))}
+          </ul>
         )}
-
-        <div className="grid grid-cols-3 gap-1">
-          <Link
-            href="/garments/new"
-            className="aspect-[3/4] flex items-center justify-center border border-iron text-ash uppercase tracking-[0.08em] text-xs hover:border-paper hover:text-paper"
-          >
-            Add
-          </Link>
-
-          {garments.map((g) => (
-            <div
-              key={g.id}
-              className="aspect-[3/4] bg-void overflow-hidden border border-iron"
-            >
-              {g.url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={g.url}
-                  alt="Garment"
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
-            </div>
-          ))}
-        </div>
       </section>
     </main>
+  );
+}
+
+function GarmentRow({ garment }: { garment: GarmentThumb }) {
+  const { status, url, analysis, reject_reason } = garment;
+
+  return (
+    <li className="flex gap-4 py-4 border-t border-iron first:border-t-0">
+      <div className="w-16 shrink-0 aspect-[3/4] bg-void overflow-hidden border border-iron">
+        {url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt="Garment" className="h-full w-full object-cover" />
+        ) : null}
+      </div>
+
+      <div className="flex flex-col justify-center min-w-0">
+        {status === "analyzed" && analysis ? (
+          <>
+            <p className="text-bone leading-tight">{analysis.descriptor}</p>
+            <p className="text-ash text-sm mt-1">
+              {[formalityLabel(analysis.formality), analysis.pairs_with]
+                .filter(Boolean)
+                .join(" · pairs with ")}
+            </p>
+          </>
+        ) : status === "rejected" ? (
+          <>
+            <p className="text-blood text-sm">
+              {reject_reason || "That photo won't work."}
+            </p>
+            <Link
+              href="/garments/new"
+              className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper mt-1"
+            >
+              Reshoot
+            </Link>
+          </>
+        ) : (
+          <p className="text-ash text-sm">Analyzing…</p>
+        )}
+      </div>
+    </li>
   );
 }

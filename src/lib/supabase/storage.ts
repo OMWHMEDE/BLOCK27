@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
+import type { GarmentAnalysis } from "@/lib/brain/types";
 
 export { USER_PHOTOS_BUCKET };
 
@@ -44,11 +45,14 @@ export type GarmentThumb = {
   id: string;
   status: string;
   url: string | null;
+  analysis: GarmentAnalysis | null;
+  reject_reason: string | null;
 };
 
 /**
- * The user's garments, newest first, each with a 300s signed thumbnail URL.
- * RLS scopes the rows to the user; the whole batch is signed in one call.
+ * The user's garments, newest first, each with a 300s signed thumbnail URL and
+ * its analysis (once the brain has written it). RLS scopes the rows to the user;
+ * the whole batch is signed in one call.
  */
 export async function listGarmentThumbs(
   userId: string,
@@ -57,7 +61,7 @@ export async function listGarmentThumbs(
   const supabase = await createClient();
   const { data: rows, error } = await supabase
     .from("garments")
-    .select("id, photo_path, status")
+    .select("id, photo_path, status, analysis, reject_reason")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -78,5 +82,7 @@ export async function listGarmentThumbs(
     id: r.id,
     status: r.status,
     url: urlByPath.get(r.photo_path) ?? null,
+    analysis: (r.analysis as GarmentAnalysis | null) ?? null,
+    reject_reason: (r.reject_reason as string | null) ?? null,
   }));
 }
