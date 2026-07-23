@@ -32,14 +32,22 @@ export default async function WardrobePage() {
 
       <div className="flex items-baseline justify-between mb-24">
         <span className="text-sm tracking-tight">BLOCK27</span>
-        <form action={logout}>
-          <button
-            type="submit"
+        <div className="flex items-baseline gap-6">
+          <Link
+            href="/outfits"
             className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
           >
-            Log out
-          </button>
-        </form>
+            Outfits
+          </Link>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
+            >
+              Log out
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Base photo — the foundation, stays at the top. */}
