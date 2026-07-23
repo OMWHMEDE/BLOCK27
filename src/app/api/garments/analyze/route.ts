@@ -3,6 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET } from "@/lib/photos";
 import { analyzeGarmentImage } from "@/lib/brain/analyzeGarment";
 
+// Node runtime (the Anthropic SDK + Buffer need it), and a duration long enough
+// for a vision call. Without this the platform default (~10s) can kill the
+// function mid-call, wedging the garment at 'analyzing' with no catchable error.
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 // Analyze a garment exactly once. The claim (pending -> analyzing) is atomic and
 // scoped to the user by RLS, so a duplicate trigger is a no-op. On success the
 // dense text record is stored and status becomes analyzed (or rejected). On a
@@ -68,12 +74,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     // Release the claim so it can be retried; never leave it stuck analyzing.
-    console.error("[analyze] failed for garment", garmentId, err);
+    const message = err instanceof Error ? err.message : "Analysis failed";
+    console.error("[analyze] failed for garment", garmentId, message);
     await supabase
       .from("garments")
       .update({ status: "pending" })
       .eq("id", garmentId)
       .eq("user_id", user.id);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    // Return the real reason so the client can show it — the owner can't read
+    // the server logs, and a silent failure is why this looked stuck.
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
