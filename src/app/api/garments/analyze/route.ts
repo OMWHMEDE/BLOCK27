@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   // Claim: only one caller wins the pending -> analyzing transition.
-  const { data: claimed } = await supabase
+  const { data: claimed, error: claimErr } = await supabase
     .from("garments")
     .update({ status: "analyzing" })
     .eq("id", garmentId)
@@ -39,8 +39,20 @@ export async function POST(request: Request) {
     .select("id, photo_path")
     .maybeSingle();
 
+  if (claimErr) {
+    // The claim WRITE failed (not a no-op). The usual cause is the DB rejecting
+    // status='analyzing' because migration 0003 hasn't been applied. Surface it
+    // instead of masquerading as "skipped" — this is what looked like a stuck
+    // spinner with no error.
+    console.error("[analyze] claim failed", claimErr.message);
+    return NextResponse.json(
+      { ok: false, error: `Could not start analysis: ${claimErr.message}` },
+      { status: 500 },
+    );
+  }
+
   if (!claimed) {
-    // Already analyzing, already done, or not this user's garment.
+    // No error, no row: already analyzing/analyzed, or not this user's garment.
     return NextResponse.json({ ok: true, skipped: true });
   }
 
@@ -54,7 +66,7 @@ export async function POST(request: Request) {
     const analysis = await analyzeGarmentImage(base64, "image/jpeg");
 
     if (!analysis.usable) {
-      await supabase
+      const { error: rejErr } = await supabase
         .from("garments")
         .update({
           status: "rejected",
@@ -63,14 +75,16 @@ export async function POST(request: Request) {
         })
         .eq("id", garmentId)
         .eq("user_id", user.id);
+      if (rejErr) throw new Error(`store failed: ${rejErr.message}`);
       return NextResponse.json({ ok: true, rejected: true });
     }
 
-    await supabase
+    const { error: upErr } = await supabase
       .from("garments")
       .update({ status: "analyzed", analysis, reject_reason: null })
       .eq("id", garmentId)
       .eq("user_id", user.id);
+    if (upErr) throw new Error(`store failed: ${upErr.message}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
     // Release the claim so it can be retried; never leave it stuck analyzing.
