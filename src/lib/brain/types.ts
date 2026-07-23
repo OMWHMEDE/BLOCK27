@@ -24,6 +24,14 @@ export type GarmentAnalysis = {
   summary: string; // one-line read-back for the wardrobe
 };
 
+// What the brain returns when it composes outfits from the wardrobe text.
+// item_ids reference garment ids it was given; gap is a plain statement of what
+// the wardrobe can't do ("" when it served the request).
+export type OutfitPlan = {
+  outfits: { item_ids: string[]; reasoning: string }[];
+  gap: string;
+};
+
 // 1–5 formality → a word, for display.
 export const FORMALITY_LABELS = [
   "",
