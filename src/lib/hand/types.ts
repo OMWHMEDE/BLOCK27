@@ -22,11 +22,14 @@ export type RenderResult =
 // deliberately editing this line. Every render is maximum quality. Every one.
 export type Quality = "max";
 
+export type RenderCategory = "tops" | "bottoms" | "one-piece";
+
 export interface Hand {
   render(input: {
-    person: ImageRef;
-    garment: ImageRef;
-    category: "tops" | "bottoms" | "one-piece";
+    person: ImageRef; // who to dress (base photo, or the previous layer)
+    garment: ImageRef; // the single garment to put on
+    out: ImageRef; // where the provider stores the result — the caller owns paths
+    category: RenderCategory;
     quality: Quality;
   }): Promise<RenderResult>;
 }
