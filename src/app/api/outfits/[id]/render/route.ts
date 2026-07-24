@@ -12,9 +12,15 @@ import type { RenderCategory } from "@/lib/hand";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// Fair-use quota. Only successful renders count (failures never do).
-const DAILY_LIMIT = 3;
-const MONTHLY_LIMIT = 30;
+// Fair-use quota. Only successful renders count (failures never do). Defaults
+// are the product limits (3/day, 30/month); RENDER_DAILY_LIMIT /
+// RENDER_MONTHLY_LIMIT override them (server-only) for founder testing.
+function limitFromEnv(name: string, fallback: number): number {
+  const n = Number(process.env[name]);
+  return Number.isInteger(n) && n > 0 ? n : fallback;
+}
+const DAILY_LIMIT = limitFromEnv("RENDER_DAILY_LIMIT", 3);
+const MONTHLY_LIMIT = limitFromEnv("RENDER_MONTHLY_LIMIT", 30);
 
 // The brain decides which garments; the hand only executes. This maps a
 // garment's category to a layer order (bottoms first, then tops, then
