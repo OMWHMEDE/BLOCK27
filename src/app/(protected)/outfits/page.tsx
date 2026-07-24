@@ -37,7 +37,10 @@ export default async function OutfitsPage() {
       </div>
 
       {outfits.length === 0 ? (
-        <p className="text-ash">No outfits yet.</p>
+        <p className="text-ash max-w-md">
+          Nothing built yet. Give me a wardrobe — a few tops and bottoms — and
+          I&rsquo;ll put outfits together, then render them on you.
+        </p>
       ) : (
         <ul className="flex flex-col gap-12">
           {outfits.map((o) => (
