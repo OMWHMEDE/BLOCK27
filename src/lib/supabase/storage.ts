@@ -186,6 +186,44 @@ export async function deleteGarment(
   return { ok: true };
 }
 
+export type RecommendationView = {
+  id: string;
+  category: string;
+  title: string;
+  look_for: string;
+  why: string;
+  price_low: number | null;
+  price_high: number | null;
+  search_query: string;
+};
+
+/**
+ * The user's current shopping recommendations, most-unlocking first. No images,
+ * so no signing — just an RLS-scoped read of the stored consultation.
+ */
+export async function listRecommendations(
+  userId: string,
+): Promise<RecommendationView[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("recommendations")
+    .select("id, category, title, look_for, why, price_low, price_high, search_query")
+    .eq("user_id", userId)
+    .order("priority", { ascending: true });
+
+  if (error || !data) return [];
+  return data.map((r) => ({
+    id: r.id as string,
+    category: r.category as string,
+    title: r.title as string,
+    look_for: r.look_for as string,
+    why: r.why as string,
+    price_low: (r.price_low as number | null) ?? null,
+    price_high: (r.price_high as number | null) ?? null,
+    search_query: (r.search_query as string) ?? "",
+  }));
+}
+
 export type OutfitView = {
   id: string;
   reasoning: string;
