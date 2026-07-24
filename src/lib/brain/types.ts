@@ -32,6 +32,28 @@ export type OutfitPlan = {
   gap: string;
 };
 
+// A single shopping recommendation — a real gap the wardrobe has, and the piece
+// that would close it. search_query is the terse, shoppable string; it is the
+// seam an affiliate/brand link will later wrap. Nothing is wired to a brand yet.
+export type Recommendation = {
+  category: string; // tops | bottoms | outerwear | footwear | ...
+  title: string; // terse label, e.g. "Mid-grey wool trousers"
+  look_for: string; // what specifically to look for
+  why: string; // why this unlocks the most, in the brain's voice
+  price_low: number; // rough USD floor
+  price_high: number; // rough USD ceiling
+  search_query: string; // shoppable string; the affiliate seam's input
+};
+
+// What the brain returns from a shopping consultation. When the wardrobe is
+// already strong, solid is true, recommendations is short or empty, and verdict
+// says so plainly. The brain never pads the list to sell.
+export type ShoppingPlan = {
+  verdict: string; // the honest overall read, first person
+  solid: boolean; // true → wardrobe is strong; don't buy for the sake of it
+  recommendations: Recommendation[]; // most-unlocking first
+};
+
 // 1–5 formality → a word, for display.
 export const FORMALITY_LABELS = [
   "",

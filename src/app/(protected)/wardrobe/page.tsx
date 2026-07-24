@@ -38,6 +38,12 @@ export default async function WardrobePage() {
           >
             Outfits
           </Link>
+          <Link
+            href="/shopping"
+            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
+          >
+            Shop
+          </Link>
           <form action={logout}>
             <button
               type="submit"

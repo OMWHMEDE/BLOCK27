@@ -16,12 +16,20 @@ export default async function OutfitsPage() {
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
       <div className="flex items-baseline justify-between mb-16">
         <span className="text-sm tracking-tight">BLOCK27</span>
-        <Link
-          href="/wardrobe"
-          className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-        >
-          Wardrobe
-        </Link>
+        <div className="flex items-baseline gap-6">
+          <Link
+            href="/wardrobe"
+            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
+          >
+            Wardrobe
+          </Link>
+          <Link
+            href="/shopping"
+            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
+          >
+            Shop
+          </Link>
+        </div>
       </div>
 
       <h1 className="text-3xl font-semibold tracking-tight leading-[0.9] mb-3">
