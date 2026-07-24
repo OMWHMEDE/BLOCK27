@@ -111,6 +111,81 @@ export async function listGarmentThumbs(
   }));
 }
 
+export type GarmentDetail = {
+  id: string;
+  status: string;
+  url: string | null;
+  analysis: GarmentAnalysis | null;
+  reject_reason: string | null;
+  created_at: string;
+};
+
+/**
+ * One garment with its 300s signed photo URL and full analysis, scoped to the
+ * owner by RLS. Null when the id isn't the user's or doesn't exist.
+ */
+export async function getGarmentDetail(
+  userId: string,
+  id: string,
+  seconds = 300,
+): Promise<GarmentDetail | null> {
+  const supabase = await createClient();
+  const { data: row, error } = await supabase
+    .from("garments")
+    .select("id, photo_path, status, analysis, reject_reason, created_at")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !row) return null;
+
+  return {
+    id: row.id as string,
+    status: row.status as string,
+    url: await signedUrl(row.photo_path as string, seconds),
+    analysis: (row.analysis as GarmentAnalysis | null) ?? null,
+    reject_reason: (row.reject_reason as string | null) ?? null,
+    created_at: row.created_at as string,
+  };
+}
+
+/**
+ * Real deletion: the stored photo AND the row, nothing left behind. Both are
+ * user-scoped (RLS + storage policy). This is body-adjacent data — a soft flag
+ * would be a lie. Returns the error rather than throwing so the UI can speak it.
+ */
+export async function deleteGarment(
+  userId: string,
+  id: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const { data: row, error: selErr } = await supabase
+    .from("garments")
+    .select("photo_path")
+    .eq("user_id", userId)
+    .eq("id", id)
+    .maybeSingle();
+  if (selErr) return { ok: false, error: selErr.message };
+  if (!row) return { ok: false, error: "That piece is already gone." };
+
+  // File first: if the row went first and this failed, we'd orphan the photo —
+  // the one outcome this promise can't allow.
+  const { error: rmErr } = await supabase.storage
+    .from(USER_PHOTOS_BUCKET)
+    .remove([row.photo_path as string]);
+  if (rmErr) return { ok: false, error: rmErr.message };
+
+  const { error: delErr } = await supabase
+    .from("garments")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", id);
+  if (delErr) return { ok: false, error: delErr.message };
+
+  return { ok: true };
+}
+
 export type OutfitView = {
   id: string;
   reasoning: string;

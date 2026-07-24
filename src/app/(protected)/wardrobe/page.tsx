@@ -5,7 +5,6 @@ import {
   listGarmentThumbs,
   type GarmentThumb,
 } from "@/lib/supabase/storage";
-import { formalityLabel } from "@/lib/brain/types";
 import { logout } from "@/app/logout/actions";
 import { GarmentAnalyzer } from "@/components/GarmentAnalyzer";
 
@@ -102,11 +101,14 @@ export default async function WardrobePage() {
         </div>
 
         {garments.length === 0 ? (
-          <p className="text-ash">Empty. Shoot five pieces.</p>
+          <p className="text-ash max-w-md">
+            Empty. Shoot five pieces and I&rsquo;ll start putting outfits
+            together.
+          </p>
         ) : (
-          <ul className="flex flex-col">
+          <ul className="grid grid-cols-3 gap-1">
             {garments.map((g) => (
-              <GarmentRow key={g.id} garment={g} />
+              <GarmentTile key={g.id} garment={g} />
             ))}
           </ul>
         )}
@@ -115,44 +117,37 @@ export default async function WardrobePage() {
   );
 }
 
-function GarmentRow({ garment }: { garment: GarmentThumb }) {
-  const { status, url, analysis, reject_reason } = garment;
+function GarmentTile({ garment }: { garment: GarmentThumb }) {
+  const { id, status, url, analysis } = garment;
+  const rejected = status === "rejected";
+  const analyzed = status === "analyzed" && analysis;
 
   return (
-    <li className="flex gap-4 py-4 border-t border-iron first:border-t-0">
-      <div className="w-16 shrink-0 aspect-[3/4] bg-void overflow-hidden border border-iron">
-        {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="Garment" className="h-full w-full object-cover" />
-        ) : null}
-      </div>
-
-      <div className="flex flex-col justify-center min-w-0">
-        {status === "analyzed" && analysis ? (
-          <>
-            <p className="text-bone leading-tight">{analysis.descriptor}</p>
-            <p className="text-ash text-sm mt-1">
-              {[formalityLabel(analysis.formality), analysis.pairs_with]
-                .filter(Boolean)
-                .join(" · pairs with ")}
-            </p>
-          </>
-        ) : status === "rejected" ? (
-          <>
-            <p className="text-blood text-sm">
-              {reject_reason || "That photo won't work."}
-            </p>
-            <Link
-              href="/garments/new"
-              className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper mt-1"
-            >
-              Reshoot
-            </Link>
-          </>
-        ) : (
-          <p className="text-ash text-sm">Analyzing…</p>
-        )}
-      </div>
+    <li>
+      <Link href={`/garments/${id}`} className="group block">
+        <div
+          className={
+            "aspect-[3/4] bg-void overflow-hidden border border-iron group-hover:border-paper " +
+            (rejected ? "opacity-40" : "")
+          }
+        >
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={url}
+              alt={analyzed ? analysis.descriptor : "Garment"}
+              className="h-full w-full object-cover"
+            />
+          ) : null}
+        </div>
+        <p className="text-ash text-xs mt-1 truncate">
+          {analyzed
+            ? analysis.descriptor
+            : rejected
+              ? "Won't read"
+              : "Reading…"}
+        </p>
+      </Link>
     </li>
   );
 }
