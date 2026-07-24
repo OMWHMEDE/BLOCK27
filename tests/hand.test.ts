@@ -4,6 +4,7 @@ import type { ImageRef } from "@/lib/hand";
 
 const person: ImageRef = { bucket: "user-photos", path: "u/person.jpg" };
 const garment: ImageRef = { bucket: "user-photos", path: "u/garment.jpg" };
+const out: ImageRef = { bucket: "user-photos", path: "u/out.jpg" };
 
 describe("the hand", () => {
   const original = process.env.HAND_PROVIDER;
@@ -16,6 +17,7 @@ describe("the hand", () => {
     const result = await getHand().render({
       person,
       garment,
+      out,
       category: "tops",
       quality: "max",
     });
@@ -31,6 +33,7 @@ describe("the hand", () => {
     const result = await getHand().render({
       person,
       garment,
+      out,
       category: "bottoms",
       quality: "max",
     });

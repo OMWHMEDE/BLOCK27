@@ -41,6 +41,30 @@ export async function getBasePhotoUrl(
   return signedUrl(basePhotoPath(userId), seconds);
 }
 
+/**
+ * Write bytes into the private bucket (user-scoped, RLS). Used by the render
+ * pipeline to store outputs. Returns false on failure. upsert so a re-render
+ * overwrites the previous image.
+ */
+export async function uploadToUserPhotos(
+  path: string,
+  bytes: Buffer,
+  contentType = "image/jpeg",
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { error } = await supabase.storage
+    .from(USER_PHOTOS_BUCKET)
+    .upload(path, bytes, { upsert: true, contentType });
+  return !error;
+}
+
+/** Best-effort delete of temporary render layers. */
+export async function removeFromUserPhotos(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const supabase = await createClient();
+  await supabase.storage.from(USER_PHOTOS_BUCKET).remove(paths);
+}
+
 export type GarmentThumb = {
   id: string;
   status: string;
@@ -90,6 +114,7 @@ export async function listGarmentThumbs(
 export type OutfitView = {
   id: string;
   reasoning: string;
+  renderUrl: string | null;
   items: { id: string; url: string | null; descriptor: string }[];
 };
 
@@ -104,7 +129,7 @@ export async function listOutfits(
   const supabase = await createClient();
   const { data: outfits, error } = await supabase
     .from("outfits")
-    .select("id, item_ids, reasoning")
+    .select("id, item_ids, reasoning, render_path")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -116,7 +141,14 @@ export async function listOutfits(
     .select("id, photo_path, analysis")
     .in("id", ids);
 
-  const paths = (garments ?? []).map((g) => g.photo_path);
+  // Sign garment thumbnails and render images in one batch.
+  const renderPaths = outfits
+    .map((o) => o.render_path as string | null)
+    .filter((p): p is string => !!p);
+  const paths = [
+    ...(garments ?? []).map((g) => g.photo_path as string),
+    ...renderPaths,
+  ];
   const urlByPath = new Map<string, string>();
   if (paths.length > 0) {
     const { data: signed } = await supabase.storage
@@ -131,6 +163,9 @@ export async function listOutfits(
   return outfits.map((o) => ({
     id: o.id as string,
     reasoning: (o.reasoning as string) ?? "",
+    renderUrl: o.render_path
+      ? (urlByPath.get(o.render_path as string) ?? null)
+      : null,
     items: (o.item_ids as string[])
       .map((id) => {
         const g = byId.get(id);

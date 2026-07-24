@@ -17,3 +17,13 @@ export function basePhotoPath(userId: string) {
 export function garmentPhotoPath(userId: string, garmentId: string) {
   return `${userId}/garments/${garmentId}.jpg`;
 }
+
+// The final render for an outfit. First segment is the user id — RLS holds.
+export function renderPath(userId: string, outfitId: string) {
+  return `${userId}/renders/${outfitId}.jpg`;
+}
+
+// Intermediate layers during a multi-garment render; cleaned up after.
+export function renderTmpPath(userId: string, outfitId: string, layer: number) {
+  return `${userId}/renders/tmp/${outfitId}/${layer}.jpg`;
+}

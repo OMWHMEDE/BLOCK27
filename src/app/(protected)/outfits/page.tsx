@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listOutfits, type OutfitView } from "@/lib/supabase/storage";
 import { GenerateOutfits } from "@/components/GenerateOutfits";
+import { RenderOutfit } from "@/components/RenderOutfit";
 
 export default async function OutfitsPage() {
   const supabase = await createClient();
@@ -50,12 +51,24 @@ export default async function OutfitsPage() {
 
 function OutfitCard({ outfit }: { outfit: OutfitView }) {
   return (
-    <li className="flex flex-col gap-4 border-t border-iron pt-8 first:border-t-0 first:pt-0">
+    <li className="flex flex-col gap-5 border-t border-iron pt-8 first:border-t-0 first:pt-0">
+      {/* The payoff: the user wearing it. */}
+      {outfit.renderUrl ? (
+        <div className="w-full max-w-xs aspect-[3/4] bg-void overflow-hidden border border-iron">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={outfit.renderUrl}
+            alt="You in this outfit"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ) : null}
+
       <div className="flex gap-1">
         {outfit.items.map((it) => (
           <div
             key={it.id}
-            className="w-20 aspect-[3/4] bg-void overflow-hidden border border-iron"
+            className="w-16 aspect-[3/4] bg-void overflow-hidden border border-iron"
           >
             {it.url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -68,7 +81,10 @@ function OutfitCard({ outfit }: { outfit: OutfitView }) {
           </div>
         ))}
       </div>
+
       <p className="text-bone leading-snug max-w-md">{outfit.reasoning}</p>
+
+      <RenderOutfit outfitId={outfit.id} hasRender={!!outfit.renderUrl} />
     </li>
   );
 }
