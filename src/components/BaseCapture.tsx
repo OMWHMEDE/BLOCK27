@@ -6,13 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
 import { PhotoCapture } from "@/components/PhotoCapture";
 
-const DOS = [
-  "Full body, head to shoes",
-  "Plain wall behind you",
-  "Even light, no shadows",
-  "Fitted clothes",
+const REQUIRED = [
+  "Full body, head to shoes — both feet in frame",
+  "Stand straight, facing the camera",
+  "Fitted clothes — no baggy, puffy, or oversized items",
+  "Plain background, even lighting",
+  "Fully clothed and modest",
 ];
-const DONTS = ["Cropped or cut off", "Cluttered behind you", "Dark or backlit", "Baggy layers"];
+const WARNING =
+  "Nude, revealing, or inappropriate photos are rejected and not stored. Repeated attempts get the account removed.";
 
 export function BaseCapture({ userId }: { userId: string }) {
   const router = useRouter();
@@ -38,8 +40,10 @@ export function BaseCapture({ userId }: { userId: string }) {
     <PhotoCapture
       eyebrow="Base photo"
       title="Shoot your base."
-      dos={DOS}
-      donts={DONTS}
+      requirements={REQUIRED}
+      warning={WARNING}
+      exampleSrc="/examples/base-good.jpg"
+      exampleLabel="A good base"
       intro="Every outfit is built on this one photo. Get it right once."
       guide={<SilhouetteGuide />}
       previewAlt="Your base photo"

@@ -8,14 +8,24 @@ type Facing = "user" | "environment";
 export type PhotoCaptureProps = {
   eyebrow: string;
   title: string;
-  // The ✓ right / ✗ wrong guidance shown before the camera opens.
-  dos: string[];
-  donts: string[];
+  // The ✓ right / ✗ wrong guidance shown before the camera opens (garment).
+  dos?: string[];
+  donts?: string[];
+  // Stricter mode for the base photo: hard REQUIRED rules and a safety warning,
+  // shown before capture in place of the ✓/✗ comparison. This is the one screen
+  // a user cannot get wrong.
+  requirements?: string[];
+  warning?: string;
   intro?: string;
   guide: React.ReactNode;
   previewAlt: string;
   defaultFacing?: Facing;
   galleryReminder?: string;
+  // Optional worked example shown beside the guidance (base photo uses it). A
+  // public static asset — until the file exists at exampleSrc, a styled
+  // placeholder holds the space; drop the image in and it appears on next build.
+  exampleSrc?: string;
+  exampleLabel?: string;
   // Persist the captured image. Return an error string to show and stay on the
   // review step, or null on success — in which case the caller is responsible
   // for navigating away.
@@ -30,11 +40,15 @@ export function PhotoCapture({
   title,
   dos,
   donts,
+  requirements,
+  warning,
   intro,
   guide,
   previewAlt,
   defaultFacing = "user",
   galleryReminder,
+  exampleSrc,
+  exampleLabel,
   onUse,
 }: PhotoCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -142,6 +156,13 @@ export function PhotoCapture({
     // On success onUse navigates away; leave the button disabled until it does.
   }, [blob, onUse]);
 
+  // Base photo gets the strict REQUIRED rules; everything else the ✓/✗ guide.
+  const guidance = requirements ? (
+    <Requirements items={requirements} />
+  ) : (
+    <Comparison dos={dos ?? []} donts={donts ?? []} />
+  );
+
   return (
     <main className="flex flex-1 flex-col px-6 py-10 max-w-md w-full mx-auto">
       <p className="text-xs uppercase tracking-[0.08em] text-ash mb-2">
@@ -157,7 +178,20 @@ export function PhotoCapture({
             <p className="text-ash leading-snug max-w-sm">{intro}</p>
           )}
 
-          <Comparison dos={dos} donts={donts} />
+          {exampleSrc ? (
+            <div className="flex gap-4">
+              <ExampleImage src={exampleSrc} label={exampleLabel} />
+              <div className="min-w-0 flex-1">{guidance}</div>
+            </div>
+          ) : (
+            guidance
+          )}
+
+          {warning && (
+            <p className="text-bone text-sm leading-snug border border-iron px-4 py-3">
+              {warning}
+            </p>
+          )}
 
           {error && <ErrorLine>{error}</ErrorLine>}
 
@@ -267,6 +301,59 @@ export function PhotoCapture({
         </div>
       )}
     </main>
+  );
+}
+
+// A worked example beside the guide. Same 3:4 frame as the capture itself, void
+// ground, square. Until the real asset exists at `src` it 404s and we show a
+// styled placeholder of the exact size, so the layout never shifts when the
+// image lands. Drop the file in and it appears — no code change.
+function ExampleImage({ src, label = "A good base" }: { src: string; label?: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <figure className="w-28 shrink-0 sm:w-32">
+      <div className="aspect-[3/4] bg-void border border-iron overflow-hidden flex items-center justify-center">
+        {failed ? (
+          <span className="text-ash text-[0.6rem] uppercase tracking-[0.12em]">
+            Example
+          </span>
+        ) : (
+          // Static public asset; next/image adds nothing here.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt="Example of a good base photo"
+            className="h-full w-full object-cover"
+            onError={() => setFailed(true)}
+          />
+        )}
+      </div>
+      <figcaption className="text-ash text-xs mt-2 uppercase tracking-[0.08em]">
+        {label}
+      </figcaption>
+    </figure>
+  );
+}
+
+// The hard rules for the base photo. Every line is mandatory — not advice, not
+// a comparison. Stated flat and cold under a REQUIRED header, each with a ✓.
+function Requirements({ items }: { items: string[] }) {
+  return (
+    <div className="border border-iron p-4">
+      <p className="text-xs uppercase tracking-[0.16em] text-paper mb-3 pb-3 border-b border-iron">
+        Required
+      </p>
+      <ul className="flex flex-col gap-2.5">
+        {items.map((r) => (
+          <li key={r} className="flex gap-2.5 text-bone text-sm leading-snug">
+            <span aria-hidden className="text-paper shrink-0">
+              ✓
+            </span>
+            <span>{r}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
