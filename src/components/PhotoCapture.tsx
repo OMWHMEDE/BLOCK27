@@ -16,6 +16,11 @@ export type PhotoCaptureProps = {
   previewAlt: string;
   defaultFacing?: Facing;
   galleryReminder?: string;
+  // Optional worked example shown beside the guidance (base photo uses it). A
+  // public static asset — until the file exists at exampleSrc, a styled
+  // placeholder holds the space; drop the image in and it appears on next build.
+  exampleSrc?: string;
+  exampleLabel?: string;
   // Persist the captured image. Return an error string to show and stay on the
   // review step, or null on success — in which case the caller is responsible
   // for navigating away.
@@ -35,6 +40,8 @@ export function PhotoCapture({
   previewAlt,
   defaultFacing = "user",
   galleryReminder,
+  exampleSrc,
+  exampleLabel,
   onUse,
 }: PhotoCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -157,7 +164,16 @@ export function PhotoCapture({
             <p className="text-ash leading-snug max-w-sm">{intro}</p>
           )}
 
-          <Comparison dos={dos} donts={donts} />
+          {exampleSrc ? (
+            <div className="flex gap-4">
+              <ExampleImage src={exampleSrc} label={exampleLabel} />
+              <div className="min-w-0 flex-1">
+                <Comparison dos={dos} donts={donts} />
+              </div>
+            </div>
+          ) : (
+            <Comparison dos={dos} donts={donts} />
+          )}
 
           {error && <ErrorLine>{error}</ErrorLine>}
 
@@ -267,6 +283,37 @@ export function PhotoCapture({
         </div>
       )}
     </main>
+  );
+}
+
+// A worked example beside the guide. Same 3:4 frame as the capture itself, void
+// ground, square. Until the real asset exists at `src` it 404s and we show a
+// styled placeholder of the exact size, so the layout never shifts when the
+// image lands. Drop the file in and it appears — no code change.
+function ExampleImage({ src, label = "A good base" }: { src: string; label?: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <figure className="w-28 shrink-0 sm:w-32">
+      <div className="aspect-[3/4] bg-void border border-iron overflow-hidden flex items-center justify-center">
+        {failed ? (
+          <span className="text-ash text-[0.6rem] uppercase tracking-[0.12em]">
+            Example
+          </span>
+        ) : (
+          // Static public asset; next/image adds nothing here.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt="Example of a good base photo"
+            className="h-full w-full object-cover"
+            onError={() => setFailed(true)}
+          />
+        )}
+      </div>
+      <figcaption className="text-ash text-xs mt-2 uppercase tracking-[0.08em]">
+        {label}
+      </figcaption>
+    </figure>
   );
 }
 

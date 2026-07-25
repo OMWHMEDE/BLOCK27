@@ -40,6 +40,8 @@ export function BaseCapture({ userId }: { userId: string }) {
       title="Shoot your base."
       dos={DOS}
       donts={DONTS}
+      exampleSrc="/examples/base-good.jpg"
+      exampleLabel="A good base"
       intro="Every outfit is built on this one photo. Get it right once."
       guide={<SilhouetteGuide />}
       previewAlt="Your base photo"
