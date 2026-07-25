@@ -8,7 +8,9 @@ type Facing = "user" | "environment";
 export type PhotoCaptureProps = {
   eyebrow: string;
   title: string;
-  coaching: string[];
+  // The ✓ right / ✗ wrong guidance shown before the camera opens.
+  dos: string[];
+  donts: string[];
   intro?: string;
   guide: React.ReactNode;
   previewAlt: string;
@@ -26,7 +28,8 @@ export type PhotoCaptureProps = {
 export function PhotoCapture({
   eyebrow,
   title,
-  coaching,
+  dos,
+  donts,
   intro,
   guide,
   previewAlt,
@@ -144,23 +147,17 @@ export function PhotoCapture({
       <p className="text-xs uppercase tracking-[0.08em] text-ash mb-2">
         {eyebrow}
       </p>
-      <h1 className="text-3xl font-semibold tracking-tight leading-[0.9] mb-8">
+      <h1 className="text-4xl font-bold tracking-tight leading-[0.85] mb-8">
         {title}
       </h1>
 
       {stage === "prep" && (
-        <div className="flex flex-col gap-8">
-          <ul className="flex flex-col gap-3">
-            {coaching.map((line) => (
-              <li key={line} className="flex gap-3 text-bone">
-                <span aria-hidden className="text-ash">
-                  —
-                </span>
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
-          {intro && <p className="text-ash text-sm">{intro}</p>}
+        <div className="flex flex-col gap-10">
+          {intro && (
+            <p className="text-ash leading-snug max-w-sm">{intro}</p>
+          )}
+
+          <Comparison dos={dos} donts={donts} />
 
           {error && <ErrorLine>{error}</ErrorLine>}
 
@@ -270,6 +267,36 @@ export function PhotoCapture({
         </div>
       )}
     </main>
+  );
+}
+
+// The ✓ right / ✗ wrong guide. Contrast is brightness, not hue — right reads in
+// paper/bone, wrong recedes into ash. The marks are typographic, not emoji.
+// Square cells, one iron hairline between them.
+function Comparison({ dos, donts }: { dos: string[]; donts: string[] }) {
+  return (
+    <div className="grid grid-cols-2 border border-iron">
+      <div className="flex flex-col gap-2 p-4 border-r border-iron">
+        <p className="text-xs uppercase tracking-[0.12em] text-paper mb-1">
+          <span aria-hidden>✓</span> Right
+        </p>
+        {dos.map((d) => (
+          <p key={d} className="text-bone text-sm leading-snug">
+            {d}
+          </p>
+        ))}
+      </div>
+      <div className="flex flex-col gap-2 p-4">
+        <p className="text-xs uppercase tracking-[0.12em] text-ash mb-1">
+          <span aria-hidden>✗</span> Wrong
+        </p>
+        {donts.map((d) => (
+          <p key={d} className="text-ash text-sm leading-snug">
+            {d}
+          </p>
+        ))}
+      </div>
+    </div>
   );
 }
 
