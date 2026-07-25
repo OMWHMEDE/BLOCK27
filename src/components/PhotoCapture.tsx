@@ -8,9 +8,14 @@ type Facing = "user" | "environment";
 export type PhotoCaptureProps = {
   eyebrow: string;
   title: string;
-  // The ✓ right / ✗ wrong guidance shown before the camera opens.
-  dos: string[];
-  donts: string[];
+  // The ✓ right / ✗ wrong guidance shown before the camera opens (garment).
+  dos?: string[];
+  donts?: string[];
+  // Stricter mode for the base photo: hard REQUIRED rules and a safety warning,
+  // shown before capture in place of the ✓/✗ comparison. This is the one screen
+  // a user cannot get wrong.
+  requirements?: string[];
+  warning?: string;
   intro?: string;
   guide: React.ReactNode;
   previewAlt: string;
@@ -35,6 +40,8 @@ export function PhotoCapture({
   title,
   dos,
   donts,
+  requirements,
+  warning,
   intro,
   guide,
   previewAlt,
@@ -149,6 +156,13 @@ export function PhotoCapture({
     // On success onUse navigates away; leave the button disabled until it does.
   }, [blob, onUse]);
 
+  // Base photo gets the strict REQUIRED rules; everything else the ✓/✗ guide.
+  const guidance = requirements ? (
+    <Requirements items={requirements} />
+  ) : (
+    <Comparison dos={dos ?? []} donts={donts ?? []} />
+  );
+
   return (
     <main className="flex flex-1 flex-col px-6 py-10 max-w-md w-full mx-auto">
       <p className="text-xs uppercase tracking-[0.08em] text-ash mb-2">
@@ -167,12 +181,16 @@ export function PhotoCapture({
           {exampleSrc ? (
             <div className="flex gap-4">
               <ExampleImage src={exampleSrc} label={exampleLabel} />
-              <div className="min-w-0 flex-1">
-                <Comparison dos={dos} donts={donts} />
-              </div>
+              <div className="min-w-0 flex-1">{guidance}</div>
             </div>
           ) : (
-            <Comparison dos={dos} donts={donts} />
+            guidance
+          )}
+
+          {warning && (
+            <p className="text-bone text-sm leading-snug border border-iron px-4 py-3">
+              {warning}
+            </p>
           )}
 
           {error && <ErrorLine>{error}</ErrorLine>}
@@ -314,6 +332,28 @@ function ExampleImage({ src, label = "A good base" }: { src: string; label?: str
         {label}
       </figcaption>
     </figure>
+  );
+}
+
+// The hard rules for the base photo. Every line is mandatory — not advice, not
+// a comparison. Stated flat and cold under a REQUIRED header, each with a ✓.
+function Requirements({ items }: { items: string[] }) {
+  return (
+    <div className="border border-iron p-4">
+      <p className="text-xs uppercase tracking-[0.16em] text-paper mb-3 pb-3 border-b border-iron">
+        Required
+      </p>
+      <ul className="flex flex-col gap-2.5">
+        {items.map((r) => (
+          <li key={r} className="flex gap-2.5 text-bone text-sm leading-snug">
+            <span aria-hidden className="text-paper shrink-0">
+              ✓
+            </span>
+            <span>{r}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
