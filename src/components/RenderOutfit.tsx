@@ -59,7 +59,7 @@ export function RenderOutfit({
         }
       >
         {busy
-          ? "Rendering — this takes a minute"
+          ? "Dressing you."
           : hasRender
             ? "Re-render"
             : "See it on you"}

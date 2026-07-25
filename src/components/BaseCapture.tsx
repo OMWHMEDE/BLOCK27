@@ -25,7 +25,7 @@ export function BaseCapture({ userId }: { userId: string }) {
           upsert: true,
           contentType: "image/jpeg",
         });
-      if (error) return "Save failed. Check your connection and try again.";
+      if (error) return "Didn't save. Check your connection.";
       router.replace("/wardrobe");
       router.refresh();
       return null;
