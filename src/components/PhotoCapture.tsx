@@ -108,7 +108,7 @@ export function PhotoCapture({
     canvas.toBlob(
       (b) => {
         if (!b) {
-          setError("Capture failed. Try again.");
+          setError("Didn't capture. Try that again.");
           return;
         }
         showPreview(b);
@@ -253,7 +253,7 @@ export function PhotoCapture({
               disabled={stage === "saving"}
               className="bg-paper text-void py-3 uppercase tracking-wide text-sm hover:bg-bone disabled:opacity-50"
             >
-              {stage === "saving" ? "Saving" : "Use this"}
+              {stage === "saving" ? "Saving." : "Use this"}
             </button>
             <button
               type="button"

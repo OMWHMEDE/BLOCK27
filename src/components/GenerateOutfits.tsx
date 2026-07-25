@@ -42,7 +42,7 @@ export function GenerateOutfits() {
         disabled={busy}
         className="bg-paper text-void py-3 uppercase tracking-wide text-sm hover:bg-bone disabled:opacity-50 self-start px-6"
       >
-        {busy ? "Cooking" : "Generate outfits"}
+        {busy ? "Cooking." : "Generate outfits"}
       </button>
 
       {note ? <p className="text-ash text-sm max-w-md">{note}</p> : null}

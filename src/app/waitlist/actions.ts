@@ -35,7 +35,7 @@ export async function joinWaitlist(formData: FormData) {
       error.hint,
     );
     redirect(
-      "/waitlist?error=" + encodeURIComponent("Something broke. Try again."),
+      "/waitlist?error=" + encodeURIComponent("That didn't send."),
     );
   }
 

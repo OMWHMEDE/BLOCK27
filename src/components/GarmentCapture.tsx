@@ -27,7 +27,7 @@ export function GarmentCapture({ userId }: { userId: string }) {
       const { error: upErr } = await supabase.storage
         .from(USER_PHOTOS_BUCKET)
         .upload(path, blob, { upsert: false, contentType: "image/jpeg" });
-      if (upErr) return "Save failed. Check your connection and try again.";
+      if (upErr) return "Didn't save. Check your connection.";
 
       const { error: insErr } = await supabase.from("garments").insert({
         id: garmentId,
@@ -37,7 +37,7 @@ export function GarmentCapture({ userId }: { userId: string }) {
       });
       if (insErr) {
         await supabase.storage.from(USER_PHOTOS_BUCKET).remove([path]);
-        return "Save failed. Check your connection and try again.";
+        return "Didn't save. Check your connection.";
       }
 
       router.replace("/wardrobe");

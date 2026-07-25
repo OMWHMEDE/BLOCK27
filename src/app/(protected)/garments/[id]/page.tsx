@@ -82,9 +82,7 @@ function GarmentBody({ garment }: { garment: GarmentDetail }) {
 
   // pending / analyzing
   return (
-    <p className="text-ash leading-snug max-w-md">
-      I&rsquo;m still reading this piece. Give it a moment, then refresh.
-    </p>
+    <p className="text-ash leading-snug max-w-md">Still reading this one.</p>
   );
 }
 
