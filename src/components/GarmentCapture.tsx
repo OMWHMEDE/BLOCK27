@@ -6,12 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { USER_PHOTOS_BUCKET, garmentPhotoPath } from "@/lib/photos";
 import { PhotoCapture } from "@/components/PhotoCapture";
 
-const COACHING = [
-  "Lay it flat. Bed, floor, or a clean surface.",
-  "Plain surface. Nothing else in the shot.",
-  "Even light. No shadow across the fabric.",
-  "Whole item in frame. One item at a time.",
-];
+const DOS = ["Laid flat", "Plain surface", "Whole item in frame"];
+const DONTS = ["On a hanger", "Wrinkled", "Half in frame"];
 
 export function GarmentCapture({ userId }: { userId: string }) {
   const router = useRouter();
@@ -51,7 +47,8 @@ export function GarmentCapture({ userId }: { userId: string }) {
     <PhotoCapture
       eyebrow="Add a garment"
       title="Shoot the item."
-      coaching={COACHING}
+      dos={DOS}
+      donts={DONTS}
       intro="One item, laid flat. This is what the brain reads later."
       guide={<GarmentGuide />}
       previewAlt="Garment photo"

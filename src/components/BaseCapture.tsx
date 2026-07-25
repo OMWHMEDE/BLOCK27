@@ -6,12 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
 import { PhotoCapture } from "@/components/PhotoCapture";
 
-const COACHING = [
-  "Plain wall behind you.",
-  "Face a window. No harsh shadows.",
-  "Fitted clothes. Baggy hides the body.",
-  "Whole body in frame. Head to shoes.",
+const DOS = [
+  "Full body, head to shoes",
+  "Plain wall behind you",
+  "Even light, no shadows",
+  "Fitted clothes",
 ];
+const DONTS = ["Cropped or cut off", "Cluttered behind you", "Dark or backlit", "Baggy layers"];
 
 export function BaseCapture({ userId }: { userId: string }) {
   const router = useRouter();
@@ -37,7 +38,8 @@ export function BaseCapture({ userId }: { userId: string }) {
     <PhotoCapture
       eyebrow="Base photo"
       title="Shoot your base."
-      coaching={COACHING}
+      dos={DOS}
+      donts={DONTS}
       intro="Every outfit is built on this one photo. Get it right once."
       guide={<SilhouetteGuide />}
       previewAlt="Your base photo"
