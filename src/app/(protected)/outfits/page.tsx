@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listOutfits, type OutfitView } from "@/lib/supabase/storage";
 import { GenerateOutfits } from "@/components/GenerateOutfits";
 import { RenderOutfit } from "@/components/RenderOutfit";
+import { RenderHero } from "@/components/RenderHero";
 import { Wordmark } from "@/components/Wordmark";
 import { btnNav } from "@/lib/ui";
 
@@ -57,51 +58,55 @@ export default async function OutfitsPage() {
 }
 
 function OutfitCard({ outfit }: { outfit: OutfitView }) {
-  return (
-    <li className="flex flex-col gap-6 border-t border-iron pt-12 first:border-t-0 first:pt-0">
-      {/* The hero: you, wearing it. The payoff of the whole product, so it
-          rises into place — a reveal, not a thumbnail. */}
-      {outfit.renderUrl ? (
-        <figure className="reveal">
-          <div className="w-full max-w-md aspect-[3/4] bg-void overflow-hidden border border-iron">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+  const pieces = (
+    <div className="flex gap-1">
+      {outfit.items.map((it) => (
+        <div
+          key={it.id}
+          className="w-12 aspect-[3/4] bg-void overflow-hidden border border-iron"
+        >
+          {it.url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={outfit.renderUrl}
-              alt="You in this outfit"
+              src={it.url}
+              alt={it.descriptor || "Garment"}
               className="h-full w-full object-cover"
             />
-          </div>
-          <figcaption className="text-bone leading-snug max-w-md mt-5">
-            {outfit.reasoning}
-          </figcaption>
-        </figure>
-      ) : (
-        <p className="text-bone leading-snug max-w-md">{outfit.reasoning}</p>
-      )}
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
 
-      {/* The pieces — the parts, secondary to the whole. */}
+  // Rendered: the image is the star. Large, centered, framed by generous black
+  // space; the read and the pieces are pushed down, small and secondary.
+  if (outfit.renderUrl) {
+    return (
+      <li className="border-t border-iron py-16 first:border-t-0 first:pt-0">
+        <RenderHero src={outfit.renderUrl} alt="You in this outfit" />
+
+        <p className="text-ash text-sm leading-relaxed max-w-sm mx-auto text-center mt-10">
+          {outfit.reasoning}
+        </p>
+
+        <div className="mt-8 flex justify-center">{pieces}</div>
+
+        <div className="mt-10">
+          <RenderOutfit outfitId={outfit.id} hasRender center />
+        </div>
+      </li>
+    );
+  }
+
+  // Not rendered yet: compact — the read, the pieces, and the call to reveal.
+  return (
+    <li className="flex flex-col gap-5 border-t border-iron pt-10 first:border-t-0 first:pt-0">
+      <p className="text-bone leading-snug max-w-md">{outfit.reasoning}</p>
       <div className="flex flex-col gap-2">
         <p className="text-xs uppercase tracking-[0.08em] text-ash">The pieces</p>
-        <div className="flex gap-1">
-          {outfit.items.map((it) => (
-            <div
-              key={it.id}
-              className="w-14 aspect-[3/4] bg-void overflow-hidden border border-iron"
-            >
-              {it.url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={it.url}
-                  alt={it.descriptor || "Garment"}
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
-            </div>
-          ))}
-        </div>
+        {pieces}
       </div>
-
-      <RenderOutfit outfitId={outfit.id} hasRender={!!outfit.renderUrl} />
+      <RenderOutfit outfitId={outfit.id} hasRender={false} />
     </li>
   );
 }
