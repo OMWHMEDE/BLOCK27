@@ -32,7 +32,7 @@ export default async function OutfitsPage() {
         </div>
       </div>
 
-      <h1 className="text-3xl font-semibold tracking-tight leading-[0.9] mb-3">
+      <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
         Outfits.
       </h1>
       <p className="text-ash max-w-md mb-10">
