@@ -59,8 +59,27 @@ body {
 .reveal {
   animation: reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/*
+  The wait for a render. A slow breath on black so "Dressing you" feels alive —
+  the payoff is coming, not stalled.
+*/
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pulse-slow {
+  animation: breathe 2.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
+  .reveal,
+  .pulse-slow {
     animation: none;
   }
 }

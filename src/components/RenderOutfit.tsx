@@ -9,9 +9,11 @@ import { btnPrimary, btnSecondary } from "@/lib/ui";
 export function RenderOutfit({
   outfitId,
   hasRender,
+  center = false,
 }: {
   outfitId: string;
   hasRender: boolean;
+  center?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -47,23 +49,34 @@ export function RenderOutfit({
   }, [outfitId, router]);
 
   return (
-    <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={run}
-        disabled={busy}
-        className={`${hasRender ? btnSecondary : btnPrimary} self-start`}
-      >
-        {busy
-          ? "Dressing you."
-          : hasRender
-            ? "Re-render"
-            : "See it on you"}
-      </button>
+    <div className={`flex flex-col gap-3 ${center ? "items-center" : ""}`}>
+      {busy ? (
+        // Alive on black — the payoff is coming, not stalled.
+        <div className="flex flex-col items-center gap-3 py-8">
+          <p className="pulse-slow uppercase tracking-[0.25em] text-bone text-sm">
+            Dressing you
+          </p>
+          <span aria-hidden className="pulse-slow block h-px w-16 bg-bone" />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={run}
+          className={`${hasRender ? btnSecondary : btnPrimary} ${center ? "" : "self-start"}`}
+        >
+          {hasRender ? "Re-render" : "See it on you"}
+        </button>
+      )}
 
-      {notice ? <p className="text-ash text-sm max-w-md">{notice}</p> : null}
+      {notice ? (
+        <p className={`text-ash text-sm max-w-md ${center ? "text-center" : ""}`}>
+          {notice}
+        </p>
+      ) : null}
       {error ? (
-        <p className="text-blood text-sm border border-blood px-3 py-2 max-w-md">
+        <p
+          className={`text-blood text-sm border border-blood px-3 py-2 max-w-md ${center ? "text-center" : ""}`}
+        >
           {error}
         </p>
       ) : null}
