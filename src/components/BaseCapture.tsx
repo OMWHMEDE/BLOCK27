@@ -16,11 +16,18 @@ const REQUIRED = [
 const WARNING =
   "Nude, revealing, or inappropriate photos are rejected and not stored. Repeated attempts get the account removed.";
 
+// The base photo is the one-time ceremony — hold the branded screen so it lands,
+// even on a fast network. Only here: garment uploads stay quick (you add them in
+// batches), and this is a floor, not a delay — a slower upload just counts toward
+// it. A failure skips the hold and shows the error at once.
+const MIN_LOADING_MS = 2500;
+
 export function BaseCapture({ userId }: { userId: string }) {
   const router = useRouter();
 
   const onUse = useCallback(
     async (blob: Blob): Promise<string | null> => {
+      const started = Date.now();
       const supabase = createClient();
       const { error } = await supabase.storage
         .from(USER_PHOTOS_BUCKET)
@@ -29,6 +36,12 @@ export function BaseCapture({ userId }: { userId: string }) {
           contentType: "image/jpeg",
         });
       if (error) return "Didn't save. Check your connection.";
+
+      const remaining = MIN_LOADING_MS - (Date.now() - started);
+      if (remaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remaining));
+      }
+
       router.replace("/wardrobe");
       router.refresh();
       return null;
