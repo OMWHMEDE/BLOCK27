@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { btnPrimary } from "@/lib/ui";
 
 // Shared login/signup form. Server component: the form posts straight to a
 // server action, no client JS required.
@@ -42,7 +43,7 @@ export function AuthForm({
             name="email"
             autoComplete="email"
             required
-            className="bg-transparent border border-iron px-3 py-2.5 text-paper outline-none focus:border-paper"
+            className="bg-transparent border border-iron px-4 py-3 text-paper outline-none transition-colors duration-200 focus:border-paper"
           />
         </label>
 
@@ -56,7 +57,7 @@ export function AuthForm({
             autoComplete="current-password"
             required
             minLength={8}
-            className="bg-transparent border border-iron px-3 py-2.5 text-paper outline-none focus:border-paper"
+            className="bg-transparent border border-iron px-4 py-3 text-paper outline-none transition-colors duration-200 focus:border-paper"
           />
         </label>
 
@@ -66,10 +67,7 @@ export function AuthForm({
           </p>
         ) : null}
 
-        <button
-          type="submit"
-          className="bg-paper text-void py-3 mt-2 uppercase tracking-[0.08em] text-sm hover:bg-bone"
-        >
+        <button type="submit" className={`${btnPrimary} w-full mt-2`}>
           {submitLabel}
         </button>
       </form>

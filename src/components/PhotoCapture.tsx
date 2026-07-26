@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { btnNav, btnPrimary, btnSecondary } from "@/lib/ui";
 
 type Stage = "prep" | "live" | "review" | "saving";
 type Facing = "user" | "environment";
@@ -199,7 +200,7 @@ export function PhotoCapture({
             <button
               type="button"
               onClick={() => startCamera(facing)}
-              className="bg-paper text-void py-3 uppercase tracking-wide text-sm hover:bg-bone"
+              className={`${btnPrimary} w-full`}
             >
               Open camera
             </button>
@@ -240,14 +241,14 @@ export function PhotoCapture({
                   return next;
                 })
               }
-              className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
+              className={btnNav}
             >
               Flip
             </button>
             <button
               type="button"
               onClick={() => setStage("prep")}
-              className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
+              className={btnNav}
             >
               Cancel
             </button>
@@ -256,7 +257,7 @@ export function PhotoCapture({
           <button
             type="button"
             onClick={capture}
-            className="bg-paper text-void py-3 uppercase tracking-wide text-sm hover:bg-bone"
+            className={`${btnPrimary} w-full`}
           >
             Take photo
           </button>
@@ -282,7 +283,7 @@ export function PhotoCapture({
               type="button"
               onClick={save}
               disabled={stage === "saving"}
-              className="bg-paper text-void py-3 uppercase tracking-wide text-sm hover:bg-bone disabled:opacity-50"
+              className={`${btnPrimary} w-full`}
             >
               {stage === "saving" ? "Saving." : "Use this"}
             </button>
@@ -293,7 +294,7 @@ export function PhotoCapture({
                 setStage("prep");
               }}
               disabled={stage === "saving"}
-              className="border border-iron text-bone py-3 uppercase tracking-wide text-sm hover:border-paper hover:text-paper disabled:opacity-50"
+              className={`${btnSecondary} w-full`}
             >
               Retake
             </button>
@@ -403,7 +404,7 @@ function GalleryUpload({
   onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
-    <label className="border border-iron text-bone py-3 uppercase tracking-wide text-sm text-center cursor-pointer hover:border-paper hover:text-paper">
+    <label className={`${btnSecondary} w-full cursor-pointer`}>
       Upload from gallery
       <input
         type="file"

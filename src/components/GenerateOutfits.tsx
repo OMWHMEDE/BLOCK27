@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { btnPrimary } from "@/lib/ui";
 
 // Triggers outfit composition and surfaces the result: the brain's gap note
 // (honest thin-wardrobe truth) or a real error. Never a silent spinner.
@@ -40,7 +41,7 @@ export function GenerateOutfits() {
         type="button"
         onClick={run}
         disabled={busy}
-        className="bg-paper text-void py-3 uppercase tracking-wide text-sm hover:bg-bone disabled:opacity-50 self-start px-6"
+        className={`${btnPrimary} self-start`}
       >
         {busy ? "Cooking." : "Generate outfits"}
       </button>
