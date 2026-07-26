@@ -42,7 +42,7 @@ export function BaseCapture({ userId }: { userId: string }) {
       title="Shoot your base."
       requirements={REQUIRED}
       warning={WARNING}
-      exampleSrc="/examples/base-good.jpg"
+      exampleSrc="/examples/base-good.png"
       exampleLabel="A good base"
       intro="Every outfit is built on this one photo. Get it right once."
       guide={<SilhouetteGuide />}
