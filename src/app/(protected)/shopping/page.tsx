@@ -5,6 +5,8 @@ import {
   type RecommendationView,
 } from "@/lib/supabase/storage";
 import { ShopGaps } from "@/components/ShopGaps";
+import { Wordmark } from "@/components/Wordmark";
+import { btnNav } from "@/lib/ui";
 
 export default async function ShoppingPage() {
   const supabase = await createClient();
@@ -16,25 +18,19 @@ export default async function ShoppingPage() {
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
-      <div className="flex items-baseline justify-between mb-16">
-        <span className="text-sm tracking-tight">BLOCK27</span>
-        <div className="flex items-baseline gap-6">
-          <Link
-            href="/wardrobe"
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-          >
+      <div className="flex items-center justify-between mb-16">
+        <Wordmark />
+        <div className="flex items-center gap-2">
+          <Link href="/wardrobe" className={btnNav}>
             Wardrobe
           </Link>
-          <Link
-            href="/outfits"
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-          >
+          <Link href="/outfits" className={btnNav}>
             Outfits
           </Link>
         </div>
       </div>
 
-      <h1 className="text-3xl font-semibold tracking-tight leading-[0.9] mb-3">
+      <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
         What to buy.
       </h1>
       <p className="text-ash max-w-md mb-10">

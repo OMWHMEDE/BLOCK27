@@ -7,6 +7,8 @@ import {
 } from "@/lib/supabase/storage";
 import { logout } from "@/app/logout/actions";
 import { GarmentAnalyzer } from "@/components/GarmentAnalyzer";
+import { Wordmark } from "@/components/Wordmark";
+import { btnNav, btnSecondary } from "@/lib/ui";
 
 export default async function WardrobePage() {
   const supabase = await createClient();
@@ -29,26 +31,17 @@ export default async function WardrobePage() {
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
       <GarmentAnalyzer pendingIds={pendingIds} active={anyActive} />
 
-      <div className="flex items-baseline justify-between mb-16">
-        <span className="text-sm tracking-tight">BLOCK27</span>
-        <div className="flex items-baseline gap-6">
-          <Link
-            href="/outfits"
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-          >
+      <div className="flex items-center justify-between mb-16">
+        <Wordmark />
+        <div className="flex items-center gap-2">
+          <Link href="/outfits" className={btnNav}>
             Outfits
           </Link>
-          <Link
-            href="/shopping"
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-          >
+          <Link href="/shopping" className={btnNav}>
             Shop
           </Link>
           <form action={logout}>
-            <button
-              type="submit"
-              className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-            >
+            <button type="submit" className={btnNav}>
               Log out
             </button>
           </form>
@@ -79,18 +72,12 @@ export default async function WardrobePage() {
                 className="h-full w-full object-cover"
               />
             </div>
-            <Link
-              href="/capture"
-              className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper pb-1"
-            >
+            <Link href="/capture" className={btnNav}>
               Retake
             </Link>
           </div>
         ) : (
-          <Link
-            href="/capture"
-            className="inline-flex items-center justify-center border border-iron text-bone px-5 py-3 uppercase tracking-wide text-sm hover:border-paper hover:text-paper"
-          >
+          <Link href="/capture" className={btnSecondary}>
             Shoot your base
           </Link>
         )}
@@ -105,10 +92,7 @@ export default async function WardrobePage() {
               {String(garments.length).padStart(2, "0")}
             </span>
           </p>
-          <Link
-            href="/garments/new"
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-          >
+          <Link href="/garments/new" className={btnNav}>
             Add
           </Link>
         </div>

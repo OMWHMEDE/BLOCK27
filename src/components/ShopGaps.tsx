@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { btnPrimary, btnSecondary } from "@/lib/ui";
 
 // Triggers the shopping consultation and surfaces the brain's verdict — the
 // honest overall read, including "you're solid, buy nothing" — or a real error.
@@ -42,12 +43,7 @@ export function ShopGaps({ hasRecs }: { hasRecs: boolean }) {
         type="button"
         onClick={run}
         disabled={busy}
-        className={
-          "self-start px-6 py-3 uppercase tracking-wide text-sm disabled:opacity-50 " +
-          (hasRecs
-            ? "border border-iron text-bone hover:border-paper hover:text-paper"
-            : "bg-paper text-void hover:bg-bone")
-        }
+        className={`${hasRecs ? btnSecondary : btnPrimary} self-start`}
       >
         {busy
           ? "Reading your wardrobe"

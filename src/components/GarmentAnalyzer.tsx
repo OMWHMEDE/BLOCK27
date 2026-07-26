@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { btnNav } from "@/lib/ui";
 
 // Drives garment analysis from the wardrobe: kicks off analysis for any garment
 // still 'pending' (once each, deduped by id), refreshes while anything is in
@@ -67,11 +68,7 @@ export function GarmentAnalyzer({
         </p>
         <p className="text-ash text-sm mt-1 break-words">{error}</p>
       </div>
-      <button
-        type="button"
-        onClick={retry}
-        className="shrink-0 text-xs uppercase tracking-[0.08em] text-paper hover:text-bone"
-      >
+      <button type="button" onClick={retry} className={`${btnNav} shrink-0`}>
         Retry
       </button>
     </div>

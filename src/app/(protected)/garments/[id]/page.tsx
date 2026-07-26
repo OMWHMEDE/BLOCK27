@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getGarmentDetail, type GarmentDetail } from "@/lib/supabase/storage";
 import { formalityLabel, type GarmentAnalysis } from "@/lib/brain/types";
+import { Wordmark } from "@/components/Wordmark";
+import { btnNav, btnSecondary } from "@/lib/ui";
 import { DeleteGarment } from "./DeleteGarment";
 
 export default async function GarmentDetailPage({
@@ -22,12 +24,9 @@ export default async function GarmentDetailPage({
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
-      <div className="flex items-baseline justify-between mb-16">
-        <span className="text-sm tracking-tight">BLOCK27</span>
-        <Link
-          href="/wardrobe"
-          className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-        >
+      <div className="flex items-center justify-between mb-16">
+        <Wordmark />
+        <Link href="/wardrobe" className={btnNav}>
           Wardrobe
         </Link>
       </div>
@@ -70,10 +69,7 @@ function GarmentBody({ garment }: { garment: GarmentDetail }) {
         <p className="text-bone leading-snug max-w-md">
           {reject_reason || "This photo won't read. Shoot it again — flat, even light, whole garment in frame."}
         </p>
-        <Link
-          href="/garments/new"
-          className="self-start border border-iron text-bone px-5 py-3 uppercase tracking-wide text-sm hover:border-paper hover:text-paper"
-        >
+        <Link href="/garments/new" className={`${btnSecondary} self-start`}>
           Reshoot
         </Link>
       </div>

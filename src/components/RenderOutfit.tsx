@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { btnPrimary, btnSecondary } from "@/lib/ui";
 
 // Triggers a render and never leaves a silent spinner: a loading state while it
 // runs, a plain block when the quota is hit, or a real error with Retry.
@@ -51,12 +52,7 @@ export function RenderOutfit({
         type="button"
         onClick={run}
         disabled={busy}
-        className={
-          "self-start px-6 py-3 uppercase tracking-wide text-sm disabled:opacity-60 " +
-          (hasRender
-            ? "border border-iron text-bone hover:border-paper hover:text-paper"
-            : "bg-paper text-void hover:bg-bone")
-        }
+        className={`${hasRender ? btnSecondary : btnPrimary} self-start`}
       >
         {busy
           ? "Dressing you."

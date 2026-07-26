@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { btnDanger, btnSecondary } from "@/lib/ui";
 import { deleteGarmentAction } from "./actions";
 
 // Two-step delete. The first press arms it and states the cost plainly; the
@@ -32,7 +33,7 @@ export function DeleteGarment({ id }: { id: string }) {
       <button
         type="button"
         onClick={() => setArmed(true)}
-        className="self-start border border-iron text-ash px-5 py-3 uppercase tracking-wide text-sm hover:border-blood hover:text-blood"
+        className={`${btnSecondary} self-start`}
       >
         Delete this piece
       </button>
@@ -49,7 +50,7 @@ export function DeleteGarment({ id }: { id: string }) {
           type="button"
           onClick={run}
           disabled={pending}
-          className="bg-blood text-paper px-5 py-3 uppercase tracking-wide text-sm disabled:opacity-60"
+          className={btnDanger}
         >
           {pending ? "Deleting…" : "Delete"}
         </button>
@@ -57,7 +58,7 @@ export function DeleteGarment({ id }: { id: string }) {
           type="button"
           onClick={() => setArmed(false)}
           disabled={pending}
-          className="border border-iron text-ash px-5 py-3 uppercase tracking-wide text-sm hover:border-paper hover:text-paper disabled:opacity-60"
+          className={btnSecondary}
         >
           Keep it
         </button>

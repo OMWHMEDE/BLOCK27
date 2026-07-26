@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { listOutfits, type OutfitView } from "@/lib/supabase/storage";
 import { GenerateOutfits } from "@/components/GenerateOutfits";
 import { RenderOutfit } from "@/components/RenderOutfit";
+import { Wordmark } from "@/components/Wordmark";
+import { btnNav } from "@/lib/ui";
 
 export default async function OutfitsPage() {
   const supabase = await createClient();
@@ -14,19 +16,13 @@ export default async function OutfitsPage() {
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
-      <div className="flex items-baseline justify-between mb-16">
-        <span className="text-sm tracking-tight">BLOCK27</span>
-        <div className="flex items-baseline gap-6">
-          <Link
-            href="/wardrobe"
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-          >
+      <div className="flex items-center justify-between mb-16">
+        <Wordmark />
+        <div className="flex items-center gap-2">
+          <Link href="/wardrobe" className={btnNav}>
             Wardrobe
           </Link>
-          <Link
-            href="/shopping"
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-paper"
-          >
+          <Link href="/shopping" className={btnNav}>
             Shop
           </Link>
         </div>
