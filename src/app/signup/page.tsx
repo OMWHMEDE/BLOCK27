@@ -12,9 +12,9 @@ export default async function SignupPage({
     <AuthForm
       action={signup}
       submitLabel="Create account"
-      altPrompt="Already have an account?"
+      altPrompt="Already have one."
       altHref="/login"
-      altLabel="Log in"
+      altLabel="Log in."
       error={error}
     />
   );
