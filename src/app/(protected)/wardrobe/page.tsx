@@ -29,7 +29,7 @@ export default async function WardrobePage() {
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
       <GarmentAnalyzer pendingIds={pendingIds} active={anyActive} />
 
-      <div className="flex items-baseline justify-between mb-24">
+      <div className="flex items-baseline justify-between mb-16">
         <span className="text-sm tracking-tight">BLOCK27</span>
         <div className="flex items-baseline gap-6">
           <Link
@@ -54,6 +54,13 @@ export default async function WardrobePage() {
           </form>
         </div>
       </div>
+
+      <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
+        Wardrobe.
+      </h1>
+      <p className="text-ash max-w-md mb-16">
+        Everything you own, as I read it.
+      </p>
 
       {/* Base photo — the foundation, stays at the top. */}
       <section className="mb-24">
@@ -93,7 +100,7 @@ export default async function WardrobePage() {
       <section>
         <div className="flex items-baseline justify-between mb-6">
           <p className="text-xs uppercase tracking-[0.08em] text-ash">
-            Wardrobe{" "}
+            Pieces{" "}
             <span className="text-iron">
               {String(garments.length).padStart(2, "0")}
             </span>
