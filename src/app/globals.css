@@ -77,9 +77,45 @@ body {
   animation: breathe 2.2s ease-in-out infinite;
 }
 
+/*
+  The branded loading screen. Everything fades in on black — the whole field of
+  27s, then the one big 27 that breathes so it feels alive. No hard cuts.
+*/
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes breatheSoft {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.035);
+  }
+}
+.loader-in {
+  animation: fadeIn 0.5s ease both;
+}
+.loader-bit {
+  animation: fadeIn 1.4s ease both;
+}
+.breathe-soft {
+  animation: breatheSoft 3s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal,
-  .pulse-slow {
+  .pulse-slow,
+  .loader-in,
+  .loader-bit,
+  .breathe-soft {
     animation: none;
   }
 }

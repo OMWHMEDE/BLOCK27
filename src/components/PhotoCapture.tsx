@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { btnNav, btnPrimary, btnSecondary } from "@/lib/ui";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 type Stage = "prep" | "live" | "review" | "saving";
 type Facing = "user" | "environment";
@@ -166,6 +167,9 @@ export function PhotoCapture({
 
   return (
     <main className="flex flex-1 flex-col px-6 py-10 max-w-md w-full mx-auto">
+      {/* Uploading: the branded screen takes over — no plain black gap. */}
+      {stage === "saving" && <LoadingScreen />}
+
       <p className="text-xs uppercase tracking-[0.08em] text-ash mb-2">
         {eyebrow}
       </p>
