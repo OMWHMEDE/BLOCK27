@@ -58,38 +58,48 @@ export default async function OutfitsPage() {
 
 function OutfitCard({ outfit }: { outfit: OutfitView }) {
   return (
-    <li className="flex flex-col gap-5 border-t border-iron pt-8 first:border-t-0 first:pt-0">
-      {/* The payoff: the user wearing it. */}
+    <li className="flex flex-col gap-6 border-t border-iron pt-12 first:border-t-0 first:pt-0">
+      {/* The hero: you, wearing it. The payoff of the whole product, so it
+          rises into place — a reveal, not a thumbnail. */}
       {outfit.renderUrl ? (
-        <div className="w-full max-w-xs aspect-[3/4] bg-void overflow-hidden border border-iron">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={outfit.renderUrl}
-            alt="You in this outfit"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      ) : null}
-
-      <div className="flex gap-1">
-        {outfit.items.map((it) => (
-          <div
-            key={it.id}
-            className="w-16 aspect-[3/4] bg-void overflow-hidden border border-iron"
-          >
-            {it.url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={it.url}
-                alt={it.descriptor || "Garment"}
-                className="h-full w-full object-cover"
-              />
-            ) : null}
+        <figure className="reveal">
+          <div className="w-full max-w-md aspect-[3/4] bg-void overflow-hidden border border-iron">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={outfit.renderUrl}
+              alt="You in this outfit"
+              className="h-full w-full object-cover"
+            />
           </div>
-        ))}
-      </div>
+          <figcaption className="text-bone leading-snug max-w-md mt-5">
+            {outfit.reasoning}
+          </figcaption>
+        </figure>
+      ) : (
+        <p className="text-bone leading-snug max-w-md">{outfit.reasoning}</p>
+      )}
 
-      <p className="text-bone leading-snug max-w-md">{outfit.reasoning}</p>
+      {/* The pieces — the parts, secondary to the whole. */}
+      <div className="flex flex-col gap-2">
+        <p className="text-xs uppercase tracking-[0.08em] text-ash">The pieces</p>
+        <div className="flex gap-1">
+          {outfit.items.map((it) => (
+            <div
+              key={it.id}
+              className="w-14 aspect-[3/4] bg-void overflow-hidden border border-iron"
+            >
+              {it.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={it.url}
+                  alt={it.descriptor || "Garment"}
+                  className="h-full w-full object-cover"
+                />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
 
       <RenderOutfit outfitId={outfit.id} hasRender={!!outfit.renderUrl} />
     </li>
