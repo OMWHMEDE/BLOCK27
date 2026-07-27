@@ -70,23 +70,24 @@ function RecCard({ rec, n }: { rec: RecommendationView; n: number }) {
   const price = priceLabel(rec.price_low, rec.price_high);
 
   return (
-    <li className="flex flex-col gap-3 border-t border-iron pt-8 first:border-t-0 first:pt-0">
-      <div className="flex items-baseline justify-between gap-4">
-        <div className="flex items-baseline gap-3 min-w-0">
-          <span className="text-iron text-sm">
-            {String(n).padStart(2, "0")}
-          </span>
-          <h2 className="text-xl font-semibold tracking-tight truncate">
-            {rec.title}
-          </h2>
-        </div>
+    <li className="border-t border-iron pt-10 first:border-t-0 first:pt-0">
+      {/* Index and price frame the entry; the number recedes into iron. */}
+      <div className="flex items-baseline justify-between gap-4 mb-5">
+        <span className="text-2xl font-bold tabular-nums leading-none text-iron">
+          {String(n).padStart(2, "0")}
+        </span>
         {price ? (
-          <span className="text-ash text-sm shrink-0">{price}</span>
+          <span className="text-bone text-sm tabular-nums shrink-0">
+            {price}
+          </span>
         ) : null}
       </div>
 
+      <h2 className="text-2xl font-bold tracking-tight leading-[0.95] mb-1">
+        {rec.title}
+      </h2>
       {rec.category ? (
-        <p className="text-xs uppercase tracking-[0.08em] text-ash">
+        <p className="text-xs uppercase tracking-[0.08em] text-ash mb-5">
           {rec.category}
         </p>
       ) : null}
@@ -95,8 +96,9 @@ function RecCard({ rec, n }: { rec: RecommendationView; n: number }) {
       <p className="text-bone leading-snug max-w-md">{rec.why}</p>
 
       {rec.look_for ? (
-        <p className="text-ash text-sm leading-snug max-w-md">
-          Look for: {rec.look_for}
+        <p className="text-ash text-sm leading-snug max-w-md mt-4">
+          <span className="uppercase tracking-[0.08em] text-xs">Look for</span>{" "}
+          — {rec.look_for}
         </p>
       ) : null}
     </li>
