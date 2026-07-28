@@ -21,3 +21,10 @@ export const btnNav = `${BTN_BASE} px-3 py-1.5 text-xs border border-iron text-a
 
 // Danger: blood fill. A destructive, irreversible action only.
 export const btnDanger = `${BTN_BASE} px-6 py-3 text-sm bg-blood text-paper hover:opacity-90 active:opacity-80`;
+
+// Squared block toggle — the section-nav language. A bordered hairline block in
+// --paper text; when active it reverses out of a --paper block (the house
+// device). Used by the header nav and the occasion quick-taps.
+const BLOCK_BASE = `${BTN_BASE} px-4 py-2 text-xs`;
+export const blockInactive = `${BLOCK_BASE} border border-iron text-paper hover:bg-iron active:bg-iron`;
+export const blockActive = `${BLOCK_BASE} bg-paper text-void`;
