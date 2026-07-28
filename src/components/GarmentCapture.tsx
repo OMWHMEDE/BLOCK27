@@ -2,9 +2,8 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { USER_PHOTOS_BUCKET, garmentPhotoPath } from "@/lib/photos";
 import { PhotoCapture } from "@/components/PhotoCapture";
+import { enqueueGarmentUpload } from "@/lib/uploadQueue";
 
 const DOS = ["Laid flat", "Plain surface", "Whole item in frame"];
 const DONTS = ["On a hanger", "Wrinkled", "Half in frame"];
@@ -14,27 +13,10 @@ export function GarmentCapture({ userId }: { userId: string }) {
 
   const onUse = useCallback(
     async (blob: Blob): Promise<string | null> => {
-      const supabase = createClient();
-      const garmentId = crypto.randomUUID();
-      const path = garmentPhotoPath(userId, garmentId);
-
-      // Upload the image first, then record the row. If the row insert fails,
-      // remove the orphaned object so storage never drifts from the table.
-      const { error: upErr } = await supabase.storage
-        .from(USER_PHOTOS_BUCKET)
-        .upload(path, blob, { upsert: false, contentType: "image/jpeg" });
-      if (upErr) return "Didn't save. Check your connection.";
-
-      const { error: insErr } = await supabase.from("garments").insert({
-        id: garmentId,
-        user_id: userId,
-        photo_path: path,
-        status: "pending",
-      });
-      if (insErr) {
-        await supabase.storage.from(USER_PHOTOS_BUCKET).remove([path]);
-        return "Didn't save. Check your connection.";
-      }
+      // The upload runs in the module-scoped queue, so it survives leaving this
+      // screen and never restarts from zero.
+      const err = await enqueueGarmentUpload(blob, userId);
+      if (err) return err;
 
       router.replace("/wardrobe");
       router.refresh();

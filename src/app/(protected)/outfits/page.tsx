@@ -3,6 +3,7 @@ import { listOutfits, type OutfitView } from "@/lib/supabase/storage";
 import { GenerateOutfits } from "@/components/GenerateOutfits";
 import { RenderOutfit } from "@/components/RenderOutfit";
 import { RenderHero } from "@/components/RenderHero";
+import { DownloadRender } from "@/components/DownloadRender";
 import { AppHeader } from "@/components/AppHeader";
 
 export default async function OutfitsPage() {
@@ -79,8 +80,9 @@ function OutfitCard({ outfit }: { outfit: OutfitView }) {
 
         <div className="mt-8 flex justify-center">{pieces}</div>
 
-        <div className="mt-10">
+        <div className="mt-10 flex flex-col items-center gap-4">
           <RenderOutfit outfitId={outfit.id} hasRender center />
+          <DownloadRender outfitId={outfit.id} />
         </div>
       </li>
     );
