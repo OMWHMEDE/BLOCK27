@@ -2,8 +2,6 @@
 
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
 import { PhotoCapture } from "@/components/PhotoCapture";
 
 const REQUIRED = [
@@ -22,20 +20,31 @@ const WARNING =
 // it. A failure skips the hold and shows the error at once.
 const MIN_LOADING_MS = 2500;
 
-export function BaseCapture({ userId }: { userId: string }) {
+export function BaseCapture() {
   const router = useRouter();
 
   const onUse = useCallback(
     async (blob: Blob): Promise<string | null> => {
       const started = Date.now();
-      const supabase = createClient();
-      const { error } = await supabase.storage
-        .from(USER_PHOTOS_BUCKET)
-        .upload(basePhotoPath(userId), blob, {
-          upsert: true,
-          contentType: "image/jpeg",
+
+      // Moderated server-side before storage. A rejected image is never stored;
+      // the cold reason comes back for the capture screen to show.
+      const form = new FormData();
+      form.append("file", blob, "base.jpg");
+      let body: { ok?: boolean; reason?: string };
+      try {
+        const res = await fetch("/api/photos/base", {
+          method: "POST",
+          body: form,
         });
-      if (error) return "Didn't save. Check your connection.";
+        body = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          reason?: string;
+        };
+      } catch {
+        return "Couldn't reach the server. Try again.";
+      }
+      if (!body.ok) return body.reason || "Didn't save. Try again.";
 
       const remaining = MIN_LOADING_MS - (Date.now() - started);
       if (remaining > 0) {
@@ -46,7 +55,7 @@ export function BaseCapture({ userId }: { userId: string }) {
       router.refresh();
       return null;
     },
-    [userId, router],
+    [router],
   );
 
   return (

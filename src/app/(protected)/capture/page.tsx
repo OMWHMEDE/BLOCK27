@@ -8,9 +8,9 @@ export default async function CapturePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Middleware already guards this route; this is defense in depth and gives
-  // the client component a guaranteed user id to namespace the upload path.
+  // Middleware already guards this route; this is defense in depth. The upload
+  // is namespaced server-side from the session, not from a client-supplied id.
   if (!user) redirect("/login");
 
-  return <BaseCapture userId={user.id} />;
+  return <BaseCapture />;
 }

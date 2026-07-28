@@ -21,7 +21,7 @@ export default async function UploadGarmentsPage() {
         Upload a batch. I read each one and slot it into your wardrobe.
       </p>
 
-      <MultiGarmentUpload userId={user.id} />
+      <MultiGarmentUpload />
     </main>
   );
 }
