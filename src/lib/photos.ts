@@ -12,6 +12,13 @@ export function basePhotoPath(userId: string) {
   return `${userId}/${BASE_PHOTO_FILENAME}`;
 }
 
+// The user's avatar. First path segment is the user id, so the BUILD-01 storage
+// RLS holds — private, owner-only, served through a signed URL like everything
+// else in this bucket.
+export function avatarPath(userId: string) {
+  return `${userId}/avatar.jpg`;
+}
+
 // Each garment is its own object under the user's folder, keyed by garment id.
 // First path segment is still the user id, so the BUILD-01 storage RLS holds.
 export function garmentPhotoPath(userId: string, garmentId: string) {

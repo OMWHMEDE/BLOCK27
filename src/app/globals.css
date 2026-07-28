@@ -20,6 +20,8 @@
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue",
     Arial, sans-serif;
+  /* Numbers only — quota, counts, price. System monospace, no webfont. */
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
 /* border-radius: 0. Globally. No corner is ever soft. */

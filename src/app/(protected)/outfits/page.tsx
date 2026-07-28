@@ -1,11 +1,9 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listOutfits, type OutfitView } from "@/lib/supabase/storage";
 import { GenerateOutfits } from "@/components/GenerateOutfits";
 import { RenderOutfit } from "@/components/RenderOutfit";
 import { RenderHero } from "@/components/RenderHero";
-import { Wordmark } from "@/components/Wordmark";
-import { btnNav } from "@/lib/ui";
+import { AppHeader } from "@/components/AppHeader";
 
 export default async function OutfitsPage() {
   const supabase = await createClient();
@@ -17,17 +15,7 @@ export default async function OutfitsPage() {
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
-      <div className="flex items-center justify-between mb-16">
-        <Wordmark />
-        <div className="flex items-center gap-2">
-          <Link href="/wardrobe" className={btnNav}>
-            Wardrobe
-          </Link>
-          <Link href="/shopping" className={btnNav}>
-            Shop
-          </Link>
-        </div>
-      </div>
+      <AppHeader current="outfits" />
 
       <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
         Outfits.
