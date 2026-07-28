@@ -126,7 +126,7 @@ export function WardrobeGrid() {
 
   return (
     <section>
-      <div className="flex items-baseline justify-between mb-6">
+      <div className="flex items-center justify-between gap-4 mb-6">
         <p className="text-xs uppercase tracking-[0.08em] text-ash">
           Pieces{" "}
           <span className="text-iron font-mono">
@@ -136,9 +136,14 @@ export function WardrobeGrid() {
             <span className="ml-3 text-bone">Uploading {uploading}</span>
           ) : null}
         </p>
-        <Link href="/garments/new" className={btnNav}>
-          Add
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/garments/upload" className={btnNav}>
+            Batch
+          </Link>
+          <Link href="/garments/new" className={btnNav}>
+            Add
+          </Link>
+        </div>
       </div>
 
       {error ? (
