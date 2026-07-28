@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getGarmentDetail, type GarmentDetail } from "@/lib/supabase/storage";
 import { formalityLabel, type GarmentAnalysis } from "@/lib/brain/types";
-import { Wordmark } from "@/components/Wordmark";
-import { btnNav, btnSecondary } from "@/lib/ui";
+import { AppHeader } from "@/components/AppHeader";
+import { btnSecondary } from "@/lib/ui";
 import { DeleteGarment } from "./DeleteGarment";
 
 export default async function GarmentDetailPage({
@@ -24,12 +24,7 @@ export default async function GarmentDetailPage({
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
-      <div className="flex items-center justify-between mb-16">
-        <Wordmark />
-        <Link href="/wardrobe" className={btnNav}>
-          Wardrobe
-        </Link>
-      </div>
+      <AppHeader />
 
       <div className="flex flex-col gap-10 sm:flex-row sm:gap-10">
         <div className="w-full max-w-[16rem] shrink-0 aspect-[3/4] bg-void overflow-hidden border border-iron">

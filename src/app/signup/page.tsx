@@ -16,6 +16,7 @@ export default async function SignupPage({
       altHref="/login"
       altLabel="Log in."
       error={error}
+      profileFields
     />
   );
 }

@@ -1,12 +1,10 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   listRecommendations,
   type RecommendationView,
 } from "@/lib/supabase/storage";
 import { ShopGaps } from "@/components/ShopGaps";
-import { Wordmark } from "@/components/Wordmark";
-import { btnNav } from "@/lib/ui";
+import { AppHeader } from "@/components/AppHeader";
 
 export default async function ShoppingPage() {
   const supabase = await createClient();
@@ -18,17 +16,7 @@ export default async function ShoppingPage() {
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
-      <div className="flex items-center justify-between mb-16">
-        <Wordmark />
-        <div className="flex items-center gap-2">
-          <Link href="/wardrobe" className={btnNav}>
-            Wardrobe
-          </Link>
-          <Link href="/outfits" className={btnNav}>
-            Outfits
-          </Link>
-        </div>
-      </div>
+      <AppHeader current="shop" />
 
       <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
         What to buy.

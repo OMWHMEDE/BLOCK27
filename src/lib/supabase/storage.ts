@@ -1,8 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
-import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
+import { USER_PHOTOS_BUCKET, basePhotoPath, avatarPath } from "@/lib/photos";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 
 export { USER_PHOTOS_BUCKET };
+
+export type Profile = {
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
+/**
+ * A user's display name and a signed URL for their avatar. Both are optional —
+ * an account with neither reads back {null, null}, which the UI renders as no
+ * name and a plain block. The signed URL doubles as the avatar existence check.
+ */
+export async function getProfile(userId: string): Promise<Profile> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("users")
+    .select("display_name")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return {
+    displayName: (data?.display_name as string | null) ?? null,
+    avatarUrl: await signedUrl(avatarPath(userId)),
+  };
+}
 
 /**
  * The ONLY way anything is allowed to read from the user-photos bucket.

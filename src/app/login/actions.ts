@@ -2,6 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { USER_PHOTOS_BUCKET, avatarPath } from "@/lib/photos";
+
+const MAX_AVATAR_BYTES = 8 * 1024 * 1024; // 8 MB
 
 function cleanCredentials(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -31,10 +34,19 @@ export async function signup(formData: FormData) {
     redirect("/signup?error=Enter+your+email+and+password");
   }
 
+  const displayName = String(formData.get("display_name") ?? "")
+    .trim()
+    .slice(0, 40);
+  const avatar = formData.get("avatar");
+
   const supabase = await createClient();
-  // The users and style_profile rows are created by a Postgres trigger on
-  // auth.users insert, so they land in the same transaction as the account.
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  // display_name rides in the auth metadata; the handle_new_user trigger reads
+  // it and writes public.users.display_name in the same transaction as the row.
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: displayName ? { data: { display_name: displayName } } : undefined,
+  });
 
   if (error) {
     redirect("/signup?error=" + encodeURIComponent(error.message));
@@ -45,13 +57,30 @@ export async function signup(formData: FormData) {
   // no session yet — say so plainly instead of bouncing to /login with no word,
   // which reads as a silent failure. Same branch also catches the enumeration-
   // protection case where an existing email returns success with no session.
-  if (!data.session) {
+  if (!data.session || !data.user) {
     redirect(
       "/login?notice=" +
         encodeURIComponent(
           "Account created. Confirm it from the email we sent, then log in.",
         ),
     );
+  }
+
+  // Optional avatar. The session now exists, so this runs as the owner and RLS
+  // allows their own path. Best-effort: a failed or oversized avatar never fails
+  // signup — it can always be set later in Settings.
+  if (
+    avatar instanceof File &&
+    avatar.size > 0 &&
+    avatar.size <= MAX_AVATAR_BYTES &&
+    avatar.type.startsWith("image/")
+  ) {
+    await supabase.storage
+      .from(USER_PHOTOS_BUCKET)
+      .upload(avatarPath(data.user.id), avatar, {
+        upsert: true,
+        contentType: avatar.type,
+      });
   }
 
   redirect("/wardrobe");

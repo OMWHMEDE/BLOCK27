@@ -5,9 +5,8 @@ import {
   listGarmentThumbs,
   type GarmentThumb,
 } from "@/lib/supabase/storage";
-import { logout } from "@/app/logout/actions";
 import { GarmentAnalyzer } from "@/components/GarmentAnalyzer";
-import { Wordmark } from "@/components/Wordmark";
+import { AppHeader } from "@/components/AppHeader";
 import { btnNav, btnSecondary } from "@/lib/ui";
 
 export default async function WardrobePage() {
@@ -31,22 +30,7 @@ export default async function WardrobePage() {
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
       <GarmentAnalyzer pendingIds={pendingIds} active={anyActive} />
 
-      <div className="flex items-center justify-between mb-16">
-        <Wordmark />
-        <div className="flex items-center gap-2">
-          <Link href="/outfits" className={btnNav}>
-            Outfits
-          </Link>
-          <Link href="/shopping" className={btnNav}>
-            Shop
-          </Link>
-          <form action={logout}>
-            <button type="submit" className={btnNav}>
-              Log out
-            </button>
-          </form>
-        </div>
-      </div>
+      <AppHeader current="wardrobe" />
 
       <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
         Wardrobe.
