@@ -7,7 +7,7 @@ import type { GarmentAnalysis } from "@/lib/brain/types";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -15,6 +15,11 @@ export async function POST() {
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
+  // Optional context in the user's own words. Empty/absent → default behaviour.
+  const body = (await request.json().catch(() => ({}))) as { occasion?: unknown };
+  const occasion =
+    typeof body.occasion === "string" ? body.occasion.trim().slice(0, 200) : "";
 
   // Text only — the stored analyses. Photos are never re-read.
   const { data: rows } = await supabase
@@ -37,7 +42,7 @@ export async function POST() {
   }
 
   try {
-    const plan = await composeOutfits(garments);
+    const plan = await composeOutfits(garments, occasion);
 
     // Keep only outfits that reference real garments and are actually outfits.
     const validIds = new Set(garments.map((g) => g.id));

@@ -22,6 +22,12 @@ How you build an outfit:
   aren't there.
 - Every item_ids value must be an id from the wardrobe I gave you.
 
+Where they're headed:
+- If the user says where they're headed, that is the occasion. Read it
+  generously — "cold and I want to look expensive" is intent, not a keyword
+  match — and let it steer the picks. If the wardrobe can't serve that occasion,
+  say so plainly in gap.
+
 How you write the reason:
 - First person. "I put the bomber over the tee so everything under it stays
   flat." Never "we", never "you might like".
@@ -77,11 +83,15 @@ function wardrobeLine(id: string, a: GarmentAnalysis): string {
 
 export async function composeOutfits(
   garments: { id: string; analysis: GarmentAnalysis }[],
+  occasion?: string,
 ): Promise<OutfitPlan> {
   const client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
 
   const wardrobe = garments.map((g) => wardrobeLine(g.id, g.analysis)).join("\n");
-  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}\n\nCompose the strongest coherent outfits this wardrobe genuinely supports — as many as it earns, up to 8. Fewer or none is fine if the pieces aren't there.`;
+  const headed = occasion?.trim()
+    ? `\n\nWhere they're headed: "${occasion.trim()}". Read it generously and let it steer the picks.`
+    : "";
+  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}\n\nCompose the strongest coherent outfits this wardrobe genuinely supports — as many as it earns, up to 8. Fewer or none is fine if the pieces aren't there.${headed}`;
 
   const response = await client.messages.create({
     model: MODEL,
