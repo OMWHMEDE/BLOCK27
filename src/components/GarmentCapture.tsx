@@ -8,21 +8,21 @@ import { enqueueGarmentUpload } from "@/lib/uploadQueue";
 const DOS = ["Laid flat", "Plain surface", "Whole item in frame"];
 const DONTS = ["On a hanger", "Wrinkled", "Half in frame"];
 
-export function GarmentCapture({ userId }: { userId: string }) {
+export function GarmentCapture() {
   const router = useRouter();
 
   const onUse = useCallback(
     async (blob: Blob): Promise<string | null> => {
-      // The upload runs in the module-scoped queue, so it survives leaving this
-      // screen and never restarts from zero.
-      const err = await enqueueGarmentUpload(blob, userId);
+      // The upload runs in the module-scoped queue (moderated server-side before
+      // storage), so it survives leaving this screen and never restarts.
+      const err = await enqueueGarmentUpload(blob);
       if (err) return err;
 
       router.replace("/wardrobe");
       router.refresh();
       return null;
     },
-    [userId, router],
+    [router],
   );
 
   return (

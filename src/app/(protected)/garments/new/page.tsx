@@ -10,5 +10,5 @@ export default async function NewGarmentPage() {
 
   if (!user) redirect("/login");
 
-  return <GarmentCapture userId={user.id} />;
+  return <GarmentCapture />;
 }

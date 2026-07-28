@@ -7,7 +7,7 @@ import { enqueueGarmentUpload } from "@/lib/uploadQueue";
 import { btnNav, btnPrimary, btnSecondary } from "@/lib/ui";
 
 type Status = "queued" | "uploading" | "done" | "failed";
-type Item = { id: string; file: File; status: Status };
+type Item = { id: string; file: File; status: Status; error?: string };
 
 const CONCURRENCY = 3;
 
@@ -17,7 +17,7 @@ const COACHING = [
   "Whole item in frame",
 ];
 
-export function MultiGarmentUpload({ userId }: { userId: string }) {
+export function MultiGarmentUpload() {
   const router = useRouter();
   const [remaining, setRemaining] = useState<number | null>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -73,7 +73,11 @@ export function MultiGarmentUpload({ userId }: { userId: string }) {
       (i) => i.status === "queued" || i.status === "failed",
     );
     setItems((prev) =>
-      prev.map((p) => (p.status === "failed" ? { ...p, status: "queued" } : p)),
+      prev.map((p) =>
+        p.status === "failed"
+          ? { ...p, status: "queued", error: undefined }
+          : p,
+      ),
     );
 
     let failed = 0;
@@ -84,12 +88,16 @@ export function MultiGarmentUpload({ userId }: { userId: string }) {
         setItems((prev) =>
           prev.map((p) => (p.id === it.id ? { ...p, status: "uploading" } : p)),
         );
-        const err = await enqueueGarmentUpload(it.file, userId);
+        const err = await enqueueGarmentUpload(it.file);
         if (err) failed += 1;
         setItems((prev) =>
           prev.map((p) =>
             p.id === it.id
-              ? { ...p, status: err ? "failed" : "done" }
+              ? {
+                  ...p,
+                  status: err ? "failed" : "done",
+                  error: err ?? undefined,
+                }
               : p,
           ),
         );
@@ -108,7 +116,7 @@ export function MultiGarmentUpload({ userId }: { userId: string }) {
     } else {
       setNotice(`${failed} didn't upload. Retry.`);
     }
-  }, [items, userId, router, loadCapacity]);
+  }, [items, router, loadCapacity]);
 
   const done = items.filter((i) => i.status === "done").length;
   const hasItems = items.length > 0;
@@ -169,12 +177,17 @@ export function MultiGarmentUpload({ userId }: { userId: string }) {
             {items.map((it, i) => (
               <li
                 key={it.id}
-                className="flex items-center justify-between gap-4 border-t border-iron py-2.5 first:border-t-0"
+                className="flex flex-col gap-1 border-t border-iron py-2.5 first:border-t-0"
               >
-                <span className="text-bone text-sm truncate font-mono">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <StatusLabel status={it.status} />
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-bone text-sm truncate font-mono">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <StatusLabel status={it.status} />
+                </div>
+                {it.status === "failed" && it.error ? (
+                  <p className="text-ash text-xs leading-snug">{it.error}</p>
+                ) : null}
               </li>
             ))}
           </ul>
