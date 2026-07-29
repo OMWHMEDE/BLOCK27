@@ -92,15 +92,18 @@ export async function putGuestObject(
   return !error;
 }
 
+// Returns whether the row actually persisted. A swallowed insert error is how a
+// guest piece could vanish — stored image, no row, so the listing found nothing.
+// The caller reacts to a false and never reports a phantom success.
 export async function insertGuestGarment(input: {
   guestId: string;
   ip: string | null;
   path: string;
   mediaType: string;
   analysis: GarmentAnalysis;
-}): Promise<void> {
+}): Promise<boolean> {
   const admin = createAdminClient();
-  await admin.from("guest_garments").insert({
+  const { error } = await admin.from("guest_garments").insert({
     guest_id: input.guestId,
     ip: input.ip,
     photo_path: input.path,
@@ -108,6 +111,18 @@ export async function insertGuestGarment(input: {
     analysis: input.analysis,
     descriptor: input.analysis.descriptor ?? null,
   });
+  if (error) {
+    console.error("[guest] insert failed", error.message);
+    return false;
+  }
+  return true;
+}
+
+// Undo a stored object when the row it belongs to didn't persist — never leave
+// an orphan in the bucket.
+export async function removeGuestObject(path: string): Promise<void> {
+  const admin = createAdminClient();
+  await admin.storage.from(USER_PHOTOS_BUCKET).remove([path]);
 }
 
 export type GuestOutfit = { item_ids: string[]; reasoning: string };

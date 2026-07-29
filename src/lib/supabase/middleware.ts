@@ -1,5 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  GUEST_COOKIE,
+  GUEST_COOKIE_MAX_AGE,
+  isGuestId,
+} from "@/lib/guest/identity";
 
 // Routes that require a session. An unauthenticated hit is redirected to /login.
 //
@@ -47,6 +52,26 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/wardrobe";
     return NextResponse.redirect(url);
+  }
+
+  // Guest identity at the edge. A visitor with no account gets a stable guest id
+  // minted on arrival — BEFORE their first upload — so the guest routes only ever
+  // READ this cookie, never create it mid-request. This is the fix for the
+  // vanishing guest upload: the id used to be created inside the POST, and when
+  // that fresh cookie didn't survive to the follow-up GET, the listing looked up
+  // a different (or missing) id and the piece disappeared. Set on both the
+  // request (so this request's handler sees it) and the response (so the browser
+  // keeps it). A cookie with no pieces creates no data — nothing to purge.
+  if (!user && !isGuestId(request.cookies.get(GUEST_COOKIE)?.value)) {
+    const id = crypto.randomUUID();
+    request.cookies.set(GUEST_COOKIE, id);
+    supabaseResponse.cookies.set(GUEST_COOKIE, id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: GUEST_COOKIE_MAX_AGE,
+    });
   }
 
   return supabaseResponse;
