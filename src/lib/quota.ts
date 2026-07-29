@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { getPlan } from "@/lib/plan";
 
-// Fair-use limits. The render caps match the render route's placeholder (3/day,
-// 30/month); the piece cap is a placeholder too — per-plan limits aren't coded
-// yet. All three are env-overridable and clamped to a positive integer.
+// Fair-use limits. The render caps match the render route (3/day, 30/month);
+// they are env-overridable and clamped to a positive integer. The piece cap is
+// plan-aware and lives in @/lib/plan (free = 15).
 function limitFromEnv(name: string, fallback: number): number {
   const n = Number(process.env[name]);
   return Number.isInteger(n) && n > 0 ? n : fallback;
@@ -10,7 +11,6 @@ function limitFromEnv(name: string, fallback: number): number {
 
 export const DAILY_RENDER_LIMIT = limitFromEnv("RENDER_DAILY_LIMIT", 3);
 export const MONTHLY_RENDER_LIMIT = limitFromEnv("RENDER_MONTHLY_LIMIT", 30);
-export const PIECE_LIMIT = limitFromEnv("PIECE_LIMIT", 50);
 
 export type Quota = {
   rendersToday: number;
@@ -24,6 +24,7 @@ export type Quota = {
 // Read-only usage for the settings screen. RLS scopes every count to the user.
 export async function getQuota(userId: string): Promise<Quota> {
   const supabase = await createClient();
+  const plan = await getPlan(userId);
 
   const now = new Date();
   const dayStart = new Date(
@@ -56,6 +57,6 @@ export async function getQuota(userId: string): Promise<Quota> {
     dailyRenderLimit: DAILY_RENDER_LIMIT,
     monthlyRenderLimit: MONTHLY_RENDER_LIMIT,
     pieces: pieceRes.count ?? 0,
-    pieceLimit: PIECE_LIMIT,
+    pieceLimit: plan.pieceLimit,
   };
 }

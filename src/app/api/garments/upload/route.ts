@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET, garmentPhotoPath } from "@/lib/photos";
 import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
+import { getPlan } from "@/lib/plan";
 
 // Garment upload — moderated before storage, exactly like the base photo. Bytes
 // checked in memory; only a passing image is written and its row recorded. A
@@ -17,6 +18,23 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Piece cap — enforced here, not just in the UI. Free = 15. Checked before the
+  // moderation call so we don't spend a vision call on a piece we won't keep.
+  const plan = await getPlan(user.id);
+  const { count } = await supabase
+    .from("garments")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  if ((count ?? 0) >= plan.pieceLimit) {
+    return NextResponse.json({
+      ok: false,
+      full: true,
+      reason: plan.paid
+        ? `You're at the ${plan.pieceLimit}-piece cap.`
+        : "Fifteen is the free limit. Upgrade for more.",
+    });
   }
 
   const form = await request.formData().catch(() => null);

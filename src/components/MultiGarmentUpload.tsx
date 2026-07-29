@@ -20,6 +20,7 @@ const COACHING = [
 export function MultiGarmentUpload() {
   const router = useRouter();
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [paid, setPaid] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -27,8 +28,14 @@ export function MultiGarmentUpload() {
   const loadCapacity = useCallback(async () => {
     try {
       const res = await fetch("/api/garments/capacity");
-      const b = (await res.json().catch(() => ({}))) as { remaining?: number };
-      if (res.ok) setRemaining(b.remaining ?? null);
+      const b = (await res.json().catch(() => ({}))) as {
+        remaining?: number;
+        paid?: boolean;
+      };
+      if (res.ok) {
+        setRemaining(b.remaining ?? null);
+        setPaid(!!b.paid);
+      }
     } catch {
       // leave remaining null — the gate simply won't pre-empt, the row insert
       // still respects RLS.
@@ -136,7 +143,20 @@ export function MultiGarmentUpload() {
         </p>
       </div>
 
-      {!hasItems ? (
+      {!hasItems && remaining === 0 ? (
+        <div className="flex flex-col gap-5">
+          <p className="text-bone leading-snug max-w-md">
+            {paid
+              ? "You're at the cap for now."
+              : "Fifteen is the free limit. Upgrade for more."}
+          </p>
+          {!paid ? (
+            <Link href="/settings" className={`${btnPrimary} self-start`}>
+              Upgrade
+            </Link>
+          ) : null}
+        </div>
+      ) : !hasItems ? (
         <div className="flex flex-col gap-6">
           <ul className="flex flex-col gap-2">
             {COACHING.map((line) => (

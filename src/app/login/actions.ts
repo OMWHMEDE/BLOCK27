@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET, avatarPath } from "@/lib/photos";
+import { migrateGuestToUser } from "@/lib/guest/migrate";
 
 const MAX_AVATAR_BYTES = 8 * 1024 * 1024; // 8 MB
 
@@ -82,6 +83,9 @@ export async function signup(formData: FormData) {
         contentType: avatar.type,
       });
   }
+
+  // Carry any guest pieces into the new account. Best-effort, never blocks.
+  await migrateGuestToUser(data.user.id);
 
   redirect("/wardrobe");
 }

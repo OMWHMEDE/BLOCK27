@@ -31,11 +31,14 @@ export function RenderOutfit({
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         quota?: boolean;
+        paywall?: boolean;
         message?: string;
         error?: string;
       };
       if (res.ok && body.ok) {
         router.refresh();
+      } else if (body.paywall) {
+        setNotice(body.message || "Try-on is paid. Upgrade to see it on you.");
       } else if (body.quota) {
         setNotice(body.message || "Render limit reached.");
       } else {
