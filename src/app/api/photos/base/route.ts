@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
 import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
+import { getPlan } from "@/lib/plan";
 
 // Base photo upload — moderated before storage. The bytes are checked in memory;
 // only a passing image is ever written to the permanent bucket. A rejected image
@@ -18,6 +19,17 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Base capture is paid-only. Free never uploads a base — the slot is locked
+  // behind the 27-field, and this closes the direct path too. Nothing is read or
+  // stored for a free account.
+  if (!(await getPlan(user.id)).paid) {
+    return NextResponse.json({
+      ok: false,
+      paywall: true,
+      reason: "Your base is a paid thing. Upgrade to unlock it.",
+    });
   }
 
   const form = await request.formData().catch(() => null);

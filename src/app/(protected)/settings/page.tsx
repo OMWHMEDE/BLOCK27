@@ -2,7 +2,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, getBasePhotoUrl } from "@/lib/supabase/storage";
 import { getQuota } from "@/lib/quota";
+import { getPlan } from "@/lib/plan";
 import { AppHeader } from "@/components/AppHeader";
+import { LockField } from "@/components/LockField";
 import { logout } from "@/app/logout/actions";
 import { btnNav, btnSecondary } from "@/lib/ui";
 import { EditProfile } from "./EditProfile";
@@ -15,13 +17,15 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [profile, baseUrl, quota] = user
+  const [profile, baseUrl, quota, plan] = user
     ? await Promise.all([
         getProfile(user.id),
         getBasePhotoUrl(user.id),
         getQuota(user.id),
+        getPlan(user.id),
       ])
-    : [null, null, null];
+    : [null, null, null, null];
+  const paid = plan?.paid ?? false;
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
@@ -39,21 +43,29 @@ export default async function SettingsPage() {
       </Section>
 
       <Section label="Base photo">
-        <div className="flex items-end gap-5">
-          {baseUrl ? (
-            <div className="w-24 aspect-[3/4] bg-void overflow-hidden border border-iron">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={baseUrl}
-                alt="Your base photo"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          ) : null}
-          <Link href="/capture" className={btnSecondary}>
-            {baseUrl ? "Change base photo" : "Shoot your base"}
-          </Link>
-        </div>
+        {!paid ? (
+          <LockField
+            className="w-24 aspect-[3/4]"
+            message="Your base is a paid thing. Upgrade to unlock it."
+            label="Base photo — locked. Upgrade to unlock."
+          />
+        ) : (
+          <div className="flex items-end gap-5">
+            {baseUrl ? (
+              <div className="w-24 aspect-[3/4] bg-void overflow-hidden border border-iron">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={baseUrl}
+                  alt="Your base photo"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ) : null}
+            <Link href="/capture" className={btnSecondary}>
+              {baseUrl ? "Change base photo" : "Shoot your base"}
+            </Link>
+          </div>
+        )}
       </Section>
 
       <Section label="Email">

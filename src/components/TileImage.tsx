@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Field27 } from "@/components/Field27";
 
-// A repeating field of "27", small and mono in --ash on --void — the same
-// loading language as the full 27 screen. It is the tile's ground, so a tile is
-// never black: the field shows until the image fades in over it.
-const FIELD = "27 ".repeat(140).trim();
+// The tile's ground is the "27" field (see Field27), so a tile is never black:
+// the field shows until the image fades in over it.
 
 // URL reuse is the anti-reflash trick. Signed URLs rotate their token every time
 // the server signs one, so a fresh URL is always a browser cache miss → the tile
@@ -52,12 +51,7 @@ export function TileImage({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-void">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 select-none break-words p-1 font-mono text-[10px] leading-[1.5] tracking-[0.08em] text-ash/20"
-      >
-        {FIELD}
-      </div>
+      <Field27 />
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img

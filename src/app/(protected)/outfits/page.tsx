@@ -6,7 +6,7 @@ import { GenerateOutfits } from "@/components/GenerateOutfits";
 import { RenderOutfit } from "@/components/RenderOutfit";
 import { RenderHero } from "@/components/RenderHero";
 import { DownloadRender } from "@/components/DownloadRender";
-import { LockedTryOn } from "@/components/LockedTryOn";
+import { LockField } from "@/components/LockField";
 import { AppHeader } from "@/components/AppHeader";
 
 export default async function OutfitsPage() {
@@ -114,10 +114,10 @@ function OutfitCard({ outfit, paid }: { outfit: OutfitView; paid: boolean }) {
       {paid ? (
         <RenderOutfit outfitId={outfit.id} hasRender={false} />
       ) : (
-        <LockedTryOn
-          headline="That's the outfit. Seeing it on you is paid."
-          href="/settings"
-          cta="Upgrade"
+        <LockField
+          className="w-full max-w-xs aspect-[3/4]"
+          message="Seeing it on you is paid. Upgrade your plan."
+          label="See it on you — locked. Upgrade to unlock."
         />
       )}
     </li>
