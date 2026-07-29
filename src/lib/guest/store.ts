@@ -44,10 +44,13 @@ export type GuestGarmentRow = {
 
 export async function countGuestGarments(guestId: string): Promise<number> {
   const admin = createAdminClient();
-  const { count } = await admin
+  const { count, error } = await admin
     .from("guest_garments")
     .select("id", { count: "exact", head: true })
     .eq("guest_id", guestId);
+  // Don't swallow it. A missing table (migration not applied) used to return 0
+  // here, letting the upload proceed into a doomed insert with no signal.
+  if (error) console.error("[guest] count failed", error.message);
   return count ?? 0;
 }
 
@@ -55,11 +58,12 @@ export async function listGuestGarments(
   guestId: string,
 ): Promise<GuestGarmentRow[]> {
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("guest_garments")
     .select("id, photo_path, media_type, analysis, descriptor")
     .eq("guest_id", guestId)
     .order("created_at", { ascending: true });
+  if (error) console.error("[guest] list failed", error.message);
   return (data ?? []) as GuestGarmentRow[];
 }
 
@@ -71,9 +75,10 @@ export async function signGuestThumbs(
   const map = new Map<string, string>();
   if (paths.length === 0) return map;
   const admin = createAdminClient();
-  const { data } = await admin.storage
+  const { data, error } = await admin.storage
     .from(USER_PHOTOS_BUCKET)
     .createSignedUrls(paths, seconds);
+  if (error) console.error("[guest] sign thumbs failed", error.message);
   for (const s of data ?? []) {
     if (s.path && s.signedUrl) map.set(s.path, s.signedUrl);
   }
@@ -131,11 +136,12 @@ export async function getGeneration(
   guestId: string,
 ): Promise<{ outfits: GuestOutfit[]; occasion: string | null } | null> {
   const admin = createAdminClient();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("guest_generations")
     .select("outfits, occasion")
     .eq("guest_id", guestId)
     .maybeSingle();
+  if (error) console.error("[guest] getGeneration failed", error.message);
   if (!data) return null;
   return {
     outfits: (data.outfits as GuestOutfit[]) ?? [],
@@ -168,11 +174,12 @@ async function countByIpSince(
   if (!ip) return 0;
   const admin = createAdminClient();
   const since = new Date(Date.now() - IP_WINDOW_MS).toISOString();
-  const { count } = await admin
+  const { count, error } = await admin
     .from(table)
     .select("id", { count: "exact", head: true })
     .eq("ip", ip)
     .gte("created_at", since);
+  if (error) console.error("[guest] ip count failed", table, error.message);
   return count ?? 0;
 }
 

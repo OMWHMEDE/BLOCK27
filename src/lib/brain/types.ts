@@ -32,26 +32,43 @@ export type OutfitPlan = {
   gap: string;
 };
 
-// A single shopping recommendation — a real gap the wardrobe has, and the piece
-// that would close it. search_query is the terse, shoppable string; it is the
-// seam an affiliate/brand link will later wrap. Nothing is wired to a brand yet.
-export type Recommendation = {
-  category: string; // tops | bottoms | outerwear | footwear | ...
+// A STRUCTURAL gap the wardrobe has, from the system audit — not a product, a
+// weakness. unlocks is the leverage: roughly how many new coherent outfits
+// closing this gap would make possible. The list is ranked by it, highest first.
+export type ShopGap = {
+  need: string; // the gap, terse: "wide dark trousers"
+  why: string; // the system reason: "8 tops, 2 bottoms — the bottoms bottleneck"
+  unlocks: number; // new outfits this unlocks — the leverage
+};
+
+// A specific piece to buy that closes a gap. look_for is the precise, shoppable
+// description (cut, colour/undertone, fabric feel, formality, band) — this
+// precision is the value. spend is what the brain allocates from the budget to
+// this pick (0 when there is no budget). search_query is the retailer-ready
+// string the search URL is built from; that URL lands in the affiliate_url seam.
+export type ShopPick = {
+  category: string;
   title: string; // terse label, e.g. "Mid-grey wool trousers"
-  look_for: string; // what specifically to look for
+  look_for: string; // precise: "wide, matte, mid-rise, dark, under $80"
   why: string; // why this unlocks the most, in the brain's voice
   price_low: number; // rough USD floor
   price_high: number; // rough USD ceiling
+  spend: number; // allocated from the budget; 0 when unallocated / no budget
   search_query: string; // shoppable string; the affiliate seam's input
 };
 
-// What the brain returns from a shopping consultation. When the wardrobe is
-// already strong, solid is true, recommendations is short or empty, and verdict
-// says so plainly. The brain never pads the list to sell.
+// What the brain returns from a shopping consultation. It audits the wardrobe as
+// a system (gaps, ranked by leverage), then names the pieces that close the
+// biggest ones (picks), allocating a budget across them. When the wardrobe is
+// already strong, solid is true and picks is short or empty. advice is the
+// closing line — willing to say "stop at two, you already own that". Budget and
+// remaining are computed at the route from the input and the picks' spend, not
+// trusted from the model's arithmetic.
 export type ShoppingPlan = {
-  verdict: string; // the honest overall read, first person
+  gaps: ShopGap[]; // the system audit, most-leverage first
+  picks: ShopPick[]; // specific buys, most-unlocking first
+  advice: string; // the closing read, first person; may say buy nothing more
   solid: boolean; // true → wardrobe is strong; don't buy for the sake of it
-  recommendations: Recommendation[]; // most-unlocking first
 };
 
 // 1–5 formality → a word, for display.
