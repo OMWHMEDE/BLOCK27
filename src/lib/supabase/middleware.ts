@@ -2,11 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Routes that require a session. An unauthenticated hit is redirected to /login.
+//
+// The app shell — /wardrobe and /outfits — is deliberately NOT here: a visitor
+// with no account lands straight in it as a guest (cookie identity, guest
+// tables), like opening Claude or ChatGPT. Those pages render a guest variant
+// when there is no session. The gates that must stay closed to a guest —
+// capture (base is paid), the signed-in garment uploaders, shopping, settings —
+// are still listed and still bounce to /login.
 const PROTECTED_PREFIXES = [
-  "/wardrobe",
   "/capture",
   "/garments",
-  "/outfits",
   "/shopping",
   "/settings",
 ];

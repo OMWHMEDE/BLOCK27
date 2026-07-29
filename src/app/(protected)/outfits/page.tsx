@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listOutfits, type OutfitView } from "@/lib/supabase/storage";
 import { getPlan } from "@/lib/plan";
 import { GenerateOutfits } from "@/components/GenerateOutfits";
+import { GuestOutfits } from "@/components/GuestOutfits";
 import { RenderOutfit } from "@/components/RenderOutfit";
 import { RenderHero } from "@/components/RenderHero";
 import { DownloadRender } from "@/components/DownloadRender";
@@ -15,8 +16,26 @@ export default async function OutfitsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const outfits = user ? await listOutfits(user.id) : [];
-  const paid = user ? (await getPlan(user.id)).paid : false;
+  // No account — the guest composes one outfit as text; the render stays locked.
+  if (!user) {
+    return (
+      <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
+        <AppHeader current="outfits" guest />
+
+        <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
+          Outfits.
+        </h1>
+        <p className="text-ash max-w-md mb-16">
+          I put your pieces together and tell you why. One outfit, no account.
+        </p>
+
+        <GuestOutfits />
+      </main>
+    );
+  }
+
+  const outfits = await listOutfits(user.id);
+  const paid = (await getPlan(user.id)).paid;
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">

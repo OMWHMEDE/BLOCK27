@@ -20,11 +20,18 @@ export async function login(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
     redirect("/login?error=" + encodeURIComponent(error.message));
   }
+
+  // Carry any guest pieces into the account they just signed into. Best-effort,
+  // never blocks — a guest who signs in keeps the work they did anonymously.
+  if (data.user) await migrateGuestToUser(data.user.id);
 
   redirect("/wardrobe");
 }
