@@ -92,8 +92,8 @@ export async function POST(request: Request) {
 }
 
 // The guest's current state — pieces (with signed thumbnails) and, once they've
-// used their single generation, the composed outfits. Drives the /try screen on
-// load and after each action.
+// used their single generation, the composed outfits. Drives the guest wardrobe
+// and outfits screens on load and after each action.
 export async function GET() {
   const guestId = await readGuestId();
   if (!guestId) {

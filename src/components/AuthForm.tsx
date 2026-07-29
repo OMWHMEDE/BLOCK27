@@ -12,7 +12,6 @@ export function AuthForm({
   error,
   notice,
   profileFields = false,
-  tryLink = false,
 }: {
   action: (formData: FormData) => void;
   submitLabel: string;
@@ -23,8 +22,6 @@ export function AuthForm({
   notice?: string;
   // Signup only: an optional display name and avatar, captured up front.
   profileFields?: boolean;
-  // Login only: a route into the no-account guest flow.
-  tryLink?: boolean;
 }) {
   return (
     <main className="flex flex-1 flex-col justify-center px-8 py-24 max-w-sm w-full mx-auto">
@@ -113,18 +110,6 @@ export function AuthForm({
           {altLabel}
         </Link>
       </p>
-
-      {tryLink ? (
-        <p className="text-ash text-sm mt-3">
-          No account?{" "}
-          <Link
-            href="/try"
-            className="text-paper hover:text-bone underline underline-offset-4"
-          >
-            Style three pieces first.
-          </Link>
-        </p>
-      ) : null}
     </main>
   );
 }

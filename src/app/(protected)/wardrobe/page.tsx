@@ -5,6 +5,7 @@ import { getPlan } from "@/lib/plan";
 import { AppHeader } from "@/components/AppHeader";
 import { TileImage } from "@/components/TileImage";
 import { WardrobeGrid } from "@/components/WardrobeGrid";
+import { GuestWardrobe } from "@/components/GuestWardrobe";
 import { LockField } from "@/components/LockField";
 import { btnNav, btnSecondary } from "@/lib/ui";
 
@@ -16,6 +17,37 @@ export default async function WardrobePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // No account — the guest lands here. Same shell, guest data, locked base.
+  if (!user) {
+    return (
+      <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
+        <AppHeader current="wardrobe" guest />
+
+        <h1 className="text-4xl font-bold tracking-tight leading-[0.9] mb-3">
+          Wardrobe.
+        </h1>
+        <p className="text-ash max-w-md mb-16">
+          Three pieces, no account. I read what you own.
+        </p>
+
+        <section className="mb-24">
+          <p className="text-xs uppercase tracking-[0.08em] text-ash mb-4">
+            Your base
+          </p>
+          <LockField
+            className="w-32 aspect-[3/4]"
+            message="Your base needs an account. Sign in to unlock it."
+            href="/login"
+            cta="Sign in"
+            label="Base photo — locked. Sign in to unlock."
+          />
+        </section>
+
+        <GuestWardrobe />
+      </main>
+    );
+  }
 
   const [baseUrl, paid] = user
     ? await Promise.all([
