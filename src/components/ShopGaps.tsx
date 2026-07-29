@@ -4,55 +4,87 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
 
-// Triggers the shopping consultation and surfaces the brain's verdict — the
-// honest overall read, including "you're solid, buy nothing" — or a real error.
-// Never a silent spinner.
-export function ShopGaps({ hasRecs }: { hasRecs: boolean }) {
+// The consultation control. It asks the one cold question — what are you working
+// with — then runs the audit. Skipping is allowed: the brain then advises without
+// allocating a budget. Never a silent spinner; a real error surfaces with the
+// wording the user can act on.
+export function ShopGaps({ hasSession }: { hasSession: boolean }) {
   const router = useRouter();
+  const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
-  const [verdict, setVerdict] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const run = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setVerdict(null);
-    try {
-      const res = await fetch("/api/shopping", { method: "POST" });
-      const body = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        verdict?: string;
-        error?: string;
-      };
-      if (!res.ok || !body.ok) {
-        setError(body.error || `Consultation failed (${res.status}).`);
-      } else {
-        setVerdict(body.verdict || null);
-        router.refresh();
+  const run = useCallback(
+    async (withBudget: boolean) => {
+      setBusy(true);
+      setError(null);
+      const budget = withBudget ? Number(amount) : null;
+      try {
+        const res = await fetch("/api/shopping", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ budget }),
+        });
+        const b = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          error?: string;
+        };
+        if (!res.ok || !b.ok) {
+          setError(b.error || `Consultation failed (${res.status}).`);
+        } else {
+          router.refresh();
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Consultation request failed.");
+      } finally {
+        setBusy(false);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Consultation request failed.");
-    } finally {
-      setBusy(false);
-    }
-  }, [router]);
+    },
+    [amount, router],
+  );
+
+  const validAmount = Number(amount) > 0;
 
   return (
-    <div className="flex flex-col gap-3">
-      <button
-        type="button"
-        onClick={run}
-        disabled={busy}
-        className={`${hasRecs ? btnSecondary : btnPrimary} self-start`}
-      >
-        {busy
-          ? "Reading your wardrobe"
-          : hasRecs
-            ? "Run it again"
-            : "Find my gaps"}
-      </button>
+    <div className="flex flex-col gap-5">
+      <label className="flex flex-col gap-2">
+        <span className="text-xs uppercase tracking-[0.08em] text-ash">
+          What are you working with?
+        </span>
+        <div className="flex items-center border border-iron focus-within:border-paper max-w-[12rem]">
+          <span className="pl-4 pr-1 text-ash font-mono select-none">$</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Amount"
+            disabled={busy}
+            className="w-full bg-transparent py-3 pr-4 text-paper font-mono outline-none placeholder:text-iron"
+          />
+        </div>
+      </label>
 
-      {verdict ? <p className="text-bone text-sm max-w-md">{verdict}</p> : null}
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => run(true)}
+          disabled={busy || !validAmount}
+          className={`${btnPrimary} self-start`}
+        >
+          {busy ? "Reading your wardrobe" : hasSession ? "Run it again" : "Find my gaps"}
+        </button>
+        <button
+          type="button"
+          onClick={() => run(false)}
+          disabled={busy}
+          className={`${btnSecondary} self-start`}
+        >
+          Skip — just advise
+        </button>
+      </div>
+
       {error ? (
         <p className="text-blood text-sm border border-blood px-3 py-2 max-w-md">
           {error}

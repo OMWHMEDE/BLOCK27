@@ -218,12 +218,15 @@ export type RecommendationView = {
   why: string;
   price_low: number | null;
   price_high: number | null;
+  spend: number | null;
   search_query: string;
+  link: string | null; // the ready-to-shop search URL (affiliate_url seam)
 };
 
 /**
- * The user's current shopping recommendations, most-unlocking first. No images,
- * so no signing — just an RLS-scoped read of the stored consultation.
+ * The user's current shopping picks, most-unlocking first. No images, so no
+ * signing — just an RLS-scoped read of the stored consultation. `link` is the
+ * search URL written into affiliate_url; `spend` is the budget allocation.
  */
 export async function listRecommendations(
   userId: string,
@@ -231,7 +234,9 @@ export async function listRecommendations(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("recommendations")
-    .select("id, category, title, look_for, why, price_low, price_high, search_query")
+    .select(
+      "id, category, title, look_for, why, price_low, price_high, spend, search_query, affiliate_url",
+    )
     .eq("user_id", userId)
     .order("priority", { ascending: true });
 
@@ -244,8 +249,47 @@ export async function listRecommendations(
     why: r.why as string,
     price_low: (r.price_low as number | null) ?? null,
     price_high: (r.price_high as number | null) ?? null,
+    spend: (r.spend as number | null) ?? null,
     search_query: (r.search_query as string) ?? "",
+    link: (r.affiliate_url as string | null) ?? null,
   }));
+}
+
+export type ShoppingSessionView = {
+  budget: number | null;
+  spent: number;
+  remaining: number | null;
+  solid: boolean;
+  advice: string;
+  gaps: { need: string; why: string; unlocks: number }[];
+};
+
+/**
+ * The consultation frame — budget, allocation, the ranked system audit, and the
+ * closing advice — for the user's latest run. Null when they've never run one.
+ * RLS scopes it to the owner.
+ */
+export async function getShoppingSession(
+  userId: string,
+): Promise<ShoppingSessionView | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("shopping_sessions")
+    .select("budget, spent, remaining, solid, advice, gaps")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!data) return null;
+  return {
+    budget: (data.budget as number | null) ?? null,
+    spent: (data.spent as number | null) ?? 0,
+    remaining: (data.remaining as number | null) ?? null,
+    solid: (data.solid as boolean | null) ?? false,
+    advice: (data.advice as string | null) ?? "",
+    gaps:
+      (data.gaps as { need: string; why: string; unlocks: number }[] | null) ??
+      [],
+  };
 }
 
 export type OutfitView = {
