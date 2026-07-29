@@ -20,6 +20,23 @@ import { onQueueChange, queueSize } from "@/lib/uploadQueue";
 const CACHE_KEY = "b27:wardrobe:v1";
 const CACHE_TTL_MS = 55 * 60 * 1000;
 
+// Analysis is PENDING-DRIVEN, not upload-callback-driven. Whatever created the
+// rows — one at a time or a batch — the driver finds every 'pending' row and
+// works through them at low fixed concurrency (never a parallel storm). It is
+// idempotent (the endpoint claims each row, so nothing is analyzed twice),
+// resumable (a pending row left mid-flight is picked up on the next poll or on
+// return), and it never leaves a row stuck: a row that keeps failing is marked
+// failed with a retry, and a row stranded in 'analyzing' by a killed function is
+// reclaimed once it's provably dead.
+const POLL_MS = 3000;
+const CONCURRENCY = 2;
+const MAX_ATTEMPTS = 3;
+// A live analysis has a 45s vision timeout inside a 60s function. Only reclaim a
+// row we've watched sit in 'analyzing' longer than that — by then any real call
+// has already finished or reverted the row to 'pending', so a reclaim can never
+// race a live one into a double charge.
+const RECLAIM_AFTER_MS = 50_000;
+
 function readCache(): GarmentThumb[] | null {
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -42,27 +59,23 @@ function writeCache(garments: GarmentThumb[]) {
 export function WardrobeGrid() {
   const [garments, setGarments] = useState<GarmentThumb[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const triggered = useRef<Set<string>>(new Set());
+  const [failedIds, setFailedIds] = useState<string[]>([]);
+  // Bumped each time a worker finishes, to re-run the driver and refill slots.
+  const [drainTick, setDrainTick] = useState(0);
+
+  // Driver bookkeeping — refs so it survives polls without re-rendering.
+  // inFlight: ids being analyzed right now. attempts: per-id failure count.
+  // settled: ids the endpoint has resolved (bridges the gap until the next poll
+  // shows analyzed/rejected). analyzingSince: first time a row was seen in
+  // 'analyzing', for the reclaim window.
+  const inFlight = useRef<Set<string>>(new Set());
+  const attempts = useRef<Map<string, number>>(new Map());
+  const settled = useRef<Set<string>>(new Set());
+  const analyzingSince = useRef<Map<string, number>>(new Map());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Subscribe to the module-scoped upload queue (0 on the server).
   const uploading = useSyncExternalStore(onQueueChange, queueSize, () => 0);
-
-  const analyze = useCallback(async (id: string) => {
-    try {
-      const res = await fetch("/api/garments/analyze", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ garmentId: id }),
-      });
-      if (!res.ok) {
-        const b = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(b.error || `Analysis failed (${res.status}).`);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Analysis request failed.");
-    }
-  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -72,18 +85,30 @@ export function WardrobeGrid() {
         garments?: GarmentThumb[];
       };
       const list = b.garments ?? [];
-      setGarments(list);
-      writeCache(list);
+
+      // Start/stop the reclaim clock per row, and drop bookkeeping for rows that
+      // are gone (deleted).
+      const now = Date.now();
+      const present = new Set(list.map((g) => g.id));
       for (const g of list) {
-        if (g.status === "pending" && !triggered.current.has(g.id)) {
-          triggered.current.add(g.id);
-          void analyze(g.id);
+        if (g.status === "analyzing") {
+          if (!analyzingSince.current.has(g.id)) {
+            analyzingSince.current.set(g.id, now);
+          }
+        } else {
+          analyzingSince.current.delete(g.id);
         }
       }
+      for (const id of [...analyzingSince.current.keys()]) {
+        if (!present.has(id)) analyzingSince.current.delete(id);
+      }
+
+      setGarments(list);
+      writeCache(list);
     } catch {
       // Network blip — keep showing the cache.
     }
-  }, [analyze]);
+  }, []);
 
   useEffect(() => {
     // Cache-first paint from sessionStorage (browser-only), then revalidate.
@@ -93,9 +118,90 @@ export function WardrobeGrid() {
     void load();
   }, [load]);
 
+  // THE DRIVER. Reacts to the list (and to a worker finishing) and keeps up to
+  // CONCURRENCY analyses in flight over the pending rows. Runs entirely in an
+  // effect, so it reads refs off the render path and setState happens in async
+  // callbacks, not synchronously in the effect body.
+  useEffect(() => {
+    const list = garments ?? [];
+    const now = Date.now();
+
+    const markFailedView = () => {
+      const failed = list
+        .filter(
+          (g) =>
+            (g.status === "pending" || g.status === "analyzing") &&
+            !settled.current.has(g.id) &&
+            (attempts.current.get(g.id) ?? 0) >= MAX_ATTEMPTS,
+        )
+        .map((g) => g.id);
+      setFailedIds(failed);
+    };
+
+    const launch = (id: string, reclaim: boolean) => {
+      inFlight.current.add(id);
+      void (async () => {
+        try {
+          const res = await fetch("/api/garments/analyze", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ garmentId: id, reclaim }),
+          });
+          const body = (await res.json().catch(() => ({}))) as {
+            error?: string;
+            skipped?: boolean;
+            rejected?: boolean;
+          };
+          if (res.ok) {
+            // Analyzed or rejected — resolved. 'skipped' means another claim owns
+            // it; leave it for polling, don't count it as progress or failure.
+            if (!body.skipped) settled.current.add(id);
+            attempts.current.delete(id);
+          } else {
+            const n = (attempts.current.get(id) ?? 0) + 1;
+            attempts.current.set(id, n);
+            if (n >= MAX_ATTEMPTS) setError(body.error || "Some pieces didn't read.");
+          }
+        } catch {
+          const n = (attempts.current.get(id) ?? 0) + 1;
+          attempts.current.set(id, n);
+          if (n >= MAX_ATTEMPTS) {
+            setError("Some pieces didn't read. Check your connection.");
+          }
+        } finally {
+          inFlight.current.delete(id);
+          analyzingSince.current.delete(id);
+          markFailedView();
+          setDrainTick((t) => t + 1); // refill the freed slot
+        }
+      })();
+    };
+
+    for (const g of list) {
+      if (inFlight.current.size >= CONCURRENCY) break;
+      if (inFlight.current.has(g.id)) continue;
+      if (settled.current.has(g.id)) continue;
+      if ((attempts.current.get(g.id) ?? 0) >= MAX_ATTEMPTS) continue;
+
+      if (g.status === "pending") {
+        launch(g.id, false);
+      } else if (g.status === "analyzing") {
+        const since = analyzingSince.current.get(g.id);
+        if (since != null && now - since >= RECLAIM_AFTER_MS) {
+          launch(g.id, true);
+        }
+      }
+    }
+  }, [garments, drainTick]);
+
+  // Poll while work is outstanding: any row still on its way, or an upload in
+  // flight. A row we've given up on (failed) does not keep the poll alive.
+  const failedSet = new Set(failedIds);
   const active =
     (garments ?? []).some(
-      (g) => g.status === "pending" || g.status === "analyzing",
+      (g) =>
+        (g.status === "pending" || g.status === "analyzing") &&
+        !failedSet.has(g.id),
     ) || uploading > 0;
 
   useEffect(() => {
@@ -107,7 +213,7 @@ export function WardrobeGrid() {
       return;
     }
     if (pollRef.current) return;
-    pollRef.current = setInterval(() => void load(), 3000);
+    pollRef.current = setInterval(() => void load(), POLL_MS);
     return () => {
       if (pollRef.current) {
         clearInterval(pollRef.current);
@@ -117,8 +223,11 @@ export function WardrobeGrid() {
   }, [active, load]);
 
   const retry = useCallback(() => {
-    triggered.current.clear();
+    attempts.current.clear();
+    analyzingSince.current.clear();
     setError(null);
+    setFailedIds([]);
+    setDrainTick((t) => t + 1);
     void load();
   }, [load]);
 
@@ -150,7 +259,7 @@ export function WardrobeGrid() {
         <div className="border border-blood px-4 py-3 mb-6 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-blood text-sm uppercase tracking-[0.08em]">
-              Analysis failed
+              Didn&rsquo;t read
             </p>
             <p className="text-ash text-sm mt-1 break-words">{error}</p>
           </div>
@@ -177,7 +286,7 @@ export function WardrobeGrid() {
       ) : (
         <ul className="grid grid-cols-3 gap-1">
           {garments.map((g) => (
-            <GarmentTile key={g.id} garment={g} />
+            <GarmentTile key={g.id} garment={g} failed={failedSet.has(g.id)} />
           ))}
         </ul>
       )}
@@ -185,10 +294,24 @@ export function WardrobeGrid() {
   );
 }
 
-function GarmentTile({ garment }: { garment: GarmentThumb }) {
+function GarmentTile({
+  garment,
+  failed,
+}: {
+  garment: GarmentThumb;
+  failed: boolean;
+}) {
   const { id, status, url, analysis } = garment;
   const rejected = status === "rejected";
   const analyzed = status === "analyzed" && analysis;
+
+  const label = analyzed
+    ? analysis.descriptor
+    : rejected
+      ? "Won't read"
+      : failed
+        ? "Didn't read — retry"
+        : "Reading…";
 
   return (
     <li>
@@ -196,7 +319,7 @@ function GarmentTile({ garment }: { garment: GarmentThumb }) {
         <div
           className={
             "aspect-[3/4] border border-iron group-hover:border-paper " +
-            (rejected ? "opacity-40" : "")
+            (rejected || failed ? "opacity-40" : "")
           }
         >
           <TileImage
@@ -205,9 +328,7 @@ function GarmentTile({ garment }: { garment: GarmentThumb }) {
             alt={analyzed ? analysis.descriptor : "Garment"}
           />
         </div>
-        <p className="text-ash text-xs mt-1 truncate">
-          {analyzed ? analysis.descriptor : rejected ? "Won't read" : "Reading…"}
-        </p>
+        <p className="text-ash text-xs mt-1 truncate">{label}</p>
       </Link>
     </li>
   );
