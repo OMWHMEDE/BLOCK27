@@ -60,6 +60,33 @@ body {
 }
 
 /*
+  Scroll reveal. Sections and full-bleed images ARRIVE as they enter the
+  viewport — a slow, weighted fade with a short rise, on the house easing curve.
+  A transition (not a keyframe) so it fires once when the Reveal wrapper marks it
+  in-view. One orchestrated reveal per section, never scattered. Honoured off
+  under reduced motion — the content is simply present.
+*/
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal-on-scroll.is-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/*
   The render reveal. A finished outfit rises into place — the payoff of the whole
   product, so it arrives, it doesn't just appear. No glow, no shadow, no gradient
   (none exist here); motion and scale carry the drama.
