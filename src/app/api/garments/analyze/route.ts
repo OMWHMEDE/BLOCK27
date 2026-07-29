@@ -14,8 +14,9 @@ export const maxDuration = 60;
 // dense text record is stored and status becomes analyzed (or rejected). On a
 // transient failure the garment returns to pending so it can be retried later.
 export async function POST(request: Request) {
-  const { garmentId } = (await request.json().catch(() => ({}))) as {
+  const { garmentId, reclaim } = (await request.json().catch(() => ({}))) as {
     garmentId?: string;
+    reclaim?: boolean;
   };
   if (!garmentId) {
     return NextResponse.json({ error: "garmentId required" }, { status: 400 });
@@ -29,13 +30,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Claim: only one caller wins the pending -> analyzing transition.
-  const { data: claimed, error: claimErr } = await supabase
+  // Claim: only one caller wins the transition to 'analyzing'. Normally that is
+  // pending -> analyzing. `reclaim` also allows analyzing -> analyzing, to pick
+  // up a row stranded by a function that died mid-analysis without reverting it.
+  // The client only sets reclaim once a row is provably dead (watched in
+  // 'analyzing' past the vision timeout), so this never interrupts a live call.
+  // Either way the claim is atomic — one caller wins — and the analysis below is
+  // unchanged.
+  const claim = supabase
     .from("garments")
     .update({ status: "analyzing" })
     .eq("id", garmentId)
-    .eq("user_id", user.id)
-    .eq("status", "pending")
+    .eq("user_id", user.id);
+  const { data: claimed, error: claimErr } = await (reclaim
+    ? claim.in("status", ["pending", "analyzing"])
+    : claim.eq("status", "pending")
+  )
     .select("id, photo_path")
     .maybeSingle();
 
