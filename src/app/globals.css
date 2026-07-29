@@ -44,6 +44,22 @@ body {
 }
 
 /*
+  Grain — the single most effective anti-AI tell. A faint fractal-noise field,
+  fixed over the page, so true black reads as a material and not a flat value.
+  Static (no animation, nothing to reduce), ~4% opacity, never interactive. Sits
+  above the black ground and below the content, which carries its own z-index.
+*/
+.grain-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-repeat: repeat;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/*
   The render reveal. A finished outfit rises into place — the payoff of the whole
   product, so it arrives, it doesn't just appear. No glow, no shadow, no gradient
   (none exist here); motion and scale carry the drama.
