@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBasePhotoUrl, signedUrl } from "@/lib/supabase/storage";
 import { renderPath } from "@/lib/photos";
 import { renderOutfit, type RenderLayer } from "@/lib/render/renderOutfit";
+import { getPlan } from "@/lib/plan";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
 
@@ -45,6 +46,19 @@ export async function POST(
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // THE HARD RULE: the hand is paid-only. A free (or guest) account never
+  // reaches the provider. This gate is first — before the base photo, the
+  // outfit, the layers, the quota — so there is exactly one line between a
+  // request and a render, and it is closed for everyone who hasn't paid.
+  const plan = await getPlan(user.id);
+  if (!plan.paid) {
+    return NextResponse.json({
+      ok: false,
+      paywall: true,
+      message: "Try-on is paid. Upgrade to see it on you.",
+    });
   }
 
   // Need a base photo to dress.

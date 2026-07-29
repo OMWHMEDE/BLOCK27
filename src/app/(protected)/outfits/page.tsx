@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listOutfits, type OutfitView } from "@/lib/supabase/storage";
+import { getPlan } from "@/lib/plan";
 import { GenerateOutfits } from "@/components/GenerateOutfits";
 import { RenderOutfit } from "@/components/RenderOutfit";
 import { RenderHero } from "@/components/RenderHero";
 import { DownloadRender } from "@/components/DownloadRender";
+import { LockedTryOn } from "@/components/LockedTryOn";
 import { AppHeader } from "@/components/AppHeader";
 
 export default async function OutfitsPage() {
@@ -13,6 +16,7 @@ export default async function OutfitsPage() {
   } = await supabase.auth.getUser();
 
   const outfits = user ? await listOutfits(user.id) : [];
+  const paid = user ? (await getPlan(user.id)).paid : false;
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
@@ -38,7 +42,7 @@ export default async function OutfitsPage() {
       ) : (
         <ul className="flex flex-col gap-12">
           {outfits.map((o) => (
-            <OutfitCard key={o.id} outfit={o} />
+            <OutfitCard key={o.id} outfit={o} paid={paid} />
           ))}
         </ul>
       )}
@@ -46,7 +50,7 @@ export default async function OutfitsPage() {
   );
 }
 
-function OutfitCard({ outfit }: { outfit: OutfitView }) {
+function OutfitCard({ outfit, paid }: { outfit: OutfitView; paid: boolean }) {
   const pieces = (
     <div className="flex gap-1">
       {outfit.items.map((it) => (
@@ -81,14 +85,25 @@ function OutfitCard({ outfit }: { outfit: OutfitView }) {
         <div className="mt-8 flex justify-center">{pieces}</div>
 
         <div className="mt-10 flex flex-col items-center gap-4">
-          <RenderOutfit outfitId={outfit.id} hasRender center />
+          {paid ? (
+            <RenderOutfit outfitId={outfit.id} hasRender center />
+          ) : (
+            <Link
+              href="/settings"
+              className="text-xs uppercase tracking-[0.08em] text-ash underline underline-offset-4 hover:text-paper"
+            >
+              Re-render is paid. Upgrade.
+            </Link>
+          )}
           <DownloadRender outfitId={outfit.id} />
         </div>
       </li>
     );
   }
 
-  // Not rendered yet: compact — the read, the pieces, and the call to reveal.
+  // Not rendered yet: compact — the read, the pieces, and the payoff. Paid
+  // accounts get the render button; free accounts get the block, locked. The
+  // hand never runs for a free account — this is the whole gate, made visible.
   return (
     <li className="flex flex-col gap-5 border-t border-iron pt-10 first:border-t-0 first:pt-0">
       <p className="text-bone leading-snug max-w-md">{outfit.reasoning}</p>
@@ -96,7 +111,15 @@ function OutfitCard({ outfit }: { outfit: OutfitView }) {
         <p className="text-xs uppercase tracking-[0.08em] text-ash">The pieces</p>
         {pieces}
       </div>
-      <RenderOutfit outfitId={outfit.id} hasRender={false} />
+      {paid ? (
+        <RenderOutfit outfitId={outfit.id} hasRender={false} />
+      ) : (
+        <LockedTryOn
+          headline="That's the outfit. Seeing it on you is paid."
+          href="/settings"
+          cta="Upgrade"
+        />
+      )}
     </li>
   );
 }

@@ -17,6 +17,7 @@ export default async function LoginPage({
       altLabel="Create one."
       error={error}
       notice={notice}
+      tryLink
     />
   );
 }
