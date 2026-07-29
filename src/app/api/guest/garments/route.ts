@@ -11,6 +11,7 @@ import {
   ipUploadsExceeded,
   listGuestGarments,
   putGuestObject,
+  removeGuestObject,
   signGuestThumbs,
   getGeneration,
 } from "@/lib/guest/store";
@@ -80,13 +81,22 @@ export async function POST(request: Request) {
       reason: "Didn't save. Check your connection.",
     });
   }
-  await insertGuestGarment({
+  const inserted = await insertGuestGarment({
     guestId,
     ip,
     path,
     mediaType: result.mediaType,
     analysis,
   });
+  if (!inserted) {
+    // The row didn't persist — undo the object so nothing is orphaned, and tell
+    // the truth instead of reporting a success the listing will contradict.
+    await removeGuestObject(path);
+    return NextResponse.json({
+      ok: false,
+      reason: "Didn't save. Try again.",
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }
