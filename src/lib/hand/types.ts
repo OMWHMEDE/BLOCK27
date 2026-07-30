@@ -22,7 +22,10 @@ export type RenderResult =
 // deliberately editing this line. Every render is maximum quality. Every one.
 export type Quality = "max";
 
-export type RenderCategory = "tops" | "bottoms" | "one-piece";
+// What the hand can place on the body. FASHN's tryon-max supports footwear and
+// accessories too (it auto-detects from the product image); footwear is wired
+// through here so shoes render as the last layer.
+export type RenderCategory = "tops" | "bottoms" | "one-piece" | "footwear";
 
 export interface Hand {
   render(input: {
