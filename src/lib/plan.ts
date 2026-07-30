@@ -11,10 +11,13 @@ import { createClient } from "@/lib/supabase/server";
 // so it can move without a deploy. Stripe isn't wired yet, so a paid account is
 // one whose subscription_status is a live status (set directly for now).
 //
-// PAID_OVERRIDE=1 forces paid across an environment — the founder's render
-// testing would otherwise be blocked, since every account is 'none' today. It
-// is the same escape hatch as the RENDER_*_LIMIT overrides: set it in a testing
-// environment only, never in real production.
+// PAID_OVERRIDE_UIDS is a SCOPED testing allowlist: a comma-separated list of
+// user ids that get paid access regardless of their status. It is per-account,
+// never global — only the ids in the list are affected, everyone else follows
+// their real status. Empty or unset means nobody is overridden (identical to no
+// override). This replaces the old global PAID_OVERRIDE=1 switch, which granted
+// paid to EVERY user and was unsafe to leave on. Setting PAID_OVERRIDE has no
+// effect anymore.
 
 export const FREE_PIECE_LIMIT = 15;
 
@@ -27,12 +30,27 @@ export const PRO_PIECE_LIMIT = limitFromEnv("PRO_PIECE_LIMIT", 50);
 
 const PAID_STATUSES = new Set(["active", "trialing", "past_due", "pro", "paid"]);
 
-export function paidOverride(): boolean {
-  return process.env.PAID_OVERRIDE === "1";
+// The override allowlist, parsed fresh each call (env is read at request time on
+// the server). Trimmed, empty entries dropped — so "", " , ", and unset all
+// yield an empty set and override nobody.
+function paidOverrideUids(): Set<string> {
+  const raw = process.env.PAID_OVERRIDE_UIDS ?? "";
+  return new Set(
+    raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0),
+  );
 }
 
+// True only when this exact user id is on the testing allowlist. Never global.
+export function isOverriddenUid(userId: string): boolean {
+  return paidOverrideUids().has(userId);
+}
+
+// Pure status check — no override. The override is a per-user concern and is
+// applied in getPlan, which has the user id.
 export function isPaidStatus(status: string | null | undefined): boolean {
-  if (paidOverride()) return true;
   return !!status && PAID_STATUSES.has(status);
 }
 
@@ -58,6 +76,8 @@ export async function getPlan(userId: string): Promise<Plan> {
     .maybeSingle();
 
   const status = (data?.subscription_status as string | null) ?? "none";
-  const paid = isPaidStatus(status);
+  // Paid if this exact user is on the testing allowlist, OR their real status is
+  // a paid one. The allowlist is the only override and it is per-user.
+  const paid = isOverriddenUid(userId) || isPaidStatus(status);
   return { paid, status, pieceLimit: pieceLimitFor(paid) };
 }
