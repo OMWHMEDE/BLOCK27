@@ -25,17 +25,17 @@ const DAILY_LIMIT = limitFromEnv("RENDER_DAILY_LIMIT", 3);
 const MONTHLY_LIMIT = limitFromEnv("RENDER_MONTHLY_LIMIT", 30);
 
 // The brain decides which garments; the hand only executes. This maps a
-// garment's category to a layer order (bottoms first, then tops, then
-// outerwear) and to the provider's category. Footwear/accessories are NOT here
-// on purpose: the apparel try-on can't place them on the body (see
-// @/lib/render/categories). They aren't rendered — and the outfit says so
-// honestly rather than silently keeping the base photo's own shoes. The keys
-// here must match RENDERABLE_CATEGORIES.
+// garment's category to a layer ORDER — bottoms first, then tops, then
+// outerwear, then footwear LAST (per block27-render) — and to the provider's
+// category. tryon-max auto-detects the garment, so footwear renders as the
+// final layer. Accessories are not here yet (see @/lib/render/categories). The
+// keys here must match RENDERABLE_CATEGORIES.
 const LAYER: Record<string, { order: number; category: RenderCategory }> = {
   "one-piece": { order: 0, category: "one-piece" },
   bottoms: { order: 1, category: "bottoms" },
   tops: { order: 2, category: "tops" },
   outerwear: { order: 3, category: "tops" },
+  footwear: { order: 4, category: "footwear" },
 };
 
 export async function POST(
@@ -125,7 +125,7 @@ export async function POST(
       ok: false,
       error:
         unplaceable.length > 0
-          ? "This is only shoes or accessories — I can't put those on you. Add a top or a bottom."
+          ? "This is only accessories — I can't put those on you yet. Add clothes or shoes."
           : "Nothing here to render — this outfit has no tops or bottoms.",
     });
   }

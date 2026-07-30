@@ -1,18 +1,19 @@
 // Which garment categories the hand can place on the body.
 //
-// The provider (FASHN) is an APPAREL try-on: it renders garments — tops,
-// bottoms, one-pieces — by auto-detecting the garment on the person. It cannot
-// place FOOTWEAR or ACCESSORIES: there is no shoe category, and feeding a shoe
-// to a garment model auto-detects it as apparel and corrupts the image. So those
-// are never sent to the hand. Instead of silently keeping the base photo's own
-// shoes (which reads as a wrong result), the outfit surfaces them honestly.
+// The provider (FASHN) renders these by auto-detecting the garment on the
+// person. tryon-max (our default model) supports clothing AND footwear —
+// verified against FASHN's docs and a manual test — so shoes render as the last
+// layer. Accessories (hats, jewelry, bags) are ALSO supported by tryon-max but
+// are intentionally left out here for now (not yet wired/validated); an outfit
+// that contains only accessories is surfaced honestly rather than rendered.
 //
-// Keep this in sync with the LAYER map in the render route — same four keys.
+// Keep this in sync with the LAYER map in the render route — same keys.
 export const RENDERABLE_CATEGORIES = new Set([
   "one-piece",
   "bottoms",
   "tops",
   "outerwear",
+  "footwear",
 ]);
 
 export function isRenderable(category: string | null | undefined): boolean {

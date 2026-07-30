@@ -33,8 +33,14 @@ const SIGN_SECONDS = 600; // long enough for FASHN to fetch the inputs
 // tryon-max 2k @ quality = 4 credits × $0.075 = $0.30. Informational only.
 const COST_ESTIMATE_USD = isMaxModel ? 0.3 : 0.075;
 
+// Only the v1.6 model consumes an explicit category; tryon-max auto-detects the
+// garment (incl. footwear) from product_image and ignores this. v1.6 has no
+// footwear category, so fall back to "auto" there — but footwear support really
+// comes from tryon-max, the default.
 function fashnCategory(c: RenderCategory): string {
-  return c === "one-piece" ? "one-pieces" : c;
+  if (c === "one-piece") return "one-pieces";
+  if (c === "footwear") return "auto";
+  return c; // tops | bottoms
 }
 
 // tryon-max takes product_image + resolution + generation_mode and auto-detects
