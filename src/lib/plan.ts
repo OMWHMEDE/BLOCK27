@@ -62,6 +62,12 @@ export type Plan = {
   paid: boolean;
   status: string;
   pieceLimit: number;
+  // The single test-account bypass. True only when this user's id is in
+  // PAID_OVERRIDE_UIDS. When true, EVERY usage limit is off for this account —
+  // plan gate, daily/monthly render caps, piece cap. It covers usage limits
+  // ONLY: it never affects moderation, RLS, or account deletion. Always false
+  // for anyone not on the allowlist, so their real limits are untouched.
+  exempt: boolean;
 };
 
 // Resolve a user's plan from their row. A missing row (shouldn't happen for a
@@ -76,8 +82,10 @@ export async function getPlan(userId: string): Promise<Plan> {
     .maybeSingle();
 
   const status = (data?.subscription_status as string | null) ?? "none";
-  // Paid if this exact user is on the testing allowlist, OR their real status is
-  // a paid one. The allowlist is the only override and it is per-user.
-  const paid = isOverriddenUid(userId) || isPaidStatus(status);
-  return { paid, status, pieceLimit: pieceLimitFor(paid) };
+  // The one allowlist, read once here and surfaced as `exempt` for every limit
+  // check to reuse — so there is a single source of truth, not a bypass per cap.
+  const exempt = isOverriddenUid(userId);
+  // Paid if exempt, OR their real status is a paid one.
+  const paid = exempt || isPaidStatus(status);
+  return { paid, status, pieceLimit: pieceLimitFor(paid), exempt };
 }

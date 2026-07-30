@@ -22,19 +22,23 @@ export async function POST(request: Request) {
 
   // Piece cap — enforced here, not just in the UI. Free = 15. Checked before the
   // moderation call so we don't spend a vision call on a piece we won't keep.
+  // Piece cap — skipped for a test-exempt account (PAID_OVERRIDE_UIDS). Everyone
+  // else is enforced exactly as before.
   const plan = await getPlan(user.id);
-  const { count } = await supabase
-    .from("garments")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
-  if ((count ?? 0) >= plan.pieceLimit) {
-    return NextResponse.json({
-      ok: false,
-      full: true,
-      reason: plan.paid
-        ? `You're at the ${plan.pieceLimit}-piece cap.`
-        : "Fifteen is the free limit. Upgrade for more.",
-    });
+  if (!plan.exempt) {
+    const { count } = await supabase
+      .from("garments")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if ((count ?? 0) >= plan.pieceLimit) {
+      return NextResponse.json({
+        ok: false,
+        full: true,
+        reason: plan.paid
+          ? `You're at the ${plan.pieceLimit}-piece cap.`
+          : "Fifteen is the free limit. Upgrade for more.",
+      });
+    }
   }
 
   const form = await request.formData().catch(() => null);
