@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBasePhotoUrl, signedUrl } from "@/lib/supabase/storage";
 import { renderPath } from "@/lib/photos";
 import { renderOutfit, type RenderLayer } from "@/lib/render/renderOutfit";
+import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
@@ -25,8 +26,11 @@ const MONTHLY_LIMIT = limitFromEnv("RENDER_MONTHLY_LIMIT", 30);
 
 // The brain decides which garments; the hand only executes. This maps a
 // garment's category to a layer order (bottoms first, then tops, then
-// outerwear) and to the provider's category. Footwear/accessories are skipped —
-// try-on renders garments, not shoes.
+// outerwear) and to the provider's category. Footwear/accessories are NOT here
+// on purpose: the apparel try-on can't place them on the body (see
+// @/lib/render/categories). They aren't rendered — and the outfit says so
+// honestly rather than silently keeping the base photo's own shoes. The keys
+// here must match RENDERABLE_CATEGORIES.
 const LAYER: Record<string, { order: number; category: RenderCategory }> = {
   "one-piece": { order: 0, category: "one-piece" },
   bottoms: { order: 1, category: "bottoms" },
@@ -99,10 +103,30 @@ export async function POST(
     .sort((a, b) => a.order - b.order)
     .map(({ garmentPath, category }) => ({ garmentPath, category }));
 
+  // Garments the hand can't place on the body (footwear, accessories). They are
+  // not sent to the provider — but they're not hidden either: the outfit view
+  // names them so the render is never mistaken for showing the wrong shoes.
+  const unplaceable = (garments ?? [])
+    .map((g) => g.analysis as GarmentAnalysis | null)
+    .filter((a): a is GarmentAnalysis => !!a && !isRenderable(a.category))
+    .map((a) => a.descriptor || a.category);
+
+  console.log(
+    "[render] outfit",
+    outfitId,
+    "| placing:",
+    layers.map((l) => l.category),
+    "| not placeable on body:",
+    unplaceable,
+  );
+
   if (layers.length === 0) {
     return NextResponse.json({
       ok: false,
-      error: "Nothing here to render — this outfit has no tops or bottoms.",
+      error:
+        unplaceable.length > 0
+          ? "This is only shoes or accessories — I can't put those on you. Add a top or a bottom."
+          : "Nothing here to render — this outfit has no tops or bottoms.",
     });
   }
 

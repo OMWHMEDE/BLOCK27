@@ -296,7 +296,12 @@ export type OutfitView = {
   id: string;
   reasoning: string;
   renderUrl: string | null;
-  items: { id: string; url: string | null; descriptor: string }[];
+  items: {
+    id: string;
+    url: string | null;
+    descriptor: string;
+    category: string;
+  }[];
 };
 
 /**
@@ -356,6 +361,7 @@ export async function listOutfits(
           id,
           url: urlByPath.get(g.photo_path) ?? null,
           descriptor: a?.descriptor ?? "",
+          category: a?.category ?? "",
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null),
