@@ -27,21 +27,21 @@ const BEATS: {
   {
     meta: "Read",
     line: "It reads your closet.",
-    img: "/landing/read-1.jpg",
+    img: "/landing/read-1-v2.jpg",
     alt: "A wardrobe read piece by piece",
     aspect: "736 / 920",
   },
   {
     meta: "Compose",
     line: "It puts the fit together.",
-    img: "/landing/read-2.jpg",
+    img: "/landing/read-2-v2.jpg",
     alt: "An outfit composed from owned pieces",
     aspect: "827 / 741",
   },
   {
     meta: "Render",
     line: "It shows it on you.",
-    img: "/landing/read-3.jpg",
+    img: "/landing/read-3-v2.jpg",
     alt: "The outfit rendered on your own body",
     aspect: "1200 / 896",
   },
@@ -108,7 +108,7 @@ export default function LandingPage() {
           <div className="grid w-full grid-cols-2">
             <div className="relative">
               <Plate
-                src="/landing/proof-before.jpg"
+                src="/landing/proof-before-v2.jpg"
                 alt="Before — your clothes as you wear them now"
                 aspectRatio="1055 / 768"
                 objectClass="object-top"
@@ -120,7 +120,7 @@ export default function LandingPage() {
             </div>
             <div className="relative border-l-2 border-paper">
               <Plate
-                src="/landing/proof-after.jpg"
+                src="/landing/proof-after-v2.jpg"
                 alt="After — the outfit rendered on you"
                 aspectRatio="1200 / 896"
                 objectClass="object-top"
