@@ -12,10 +12,11 @@ import { Plate } from "@/components/Plate";
 
 const CTA_HREF = "/wardrobe";
 
-// Each beat's box is sized to the REAL aspect ratio of its image file, so the
-// photo fills it with no crop and no dead space. read-1 is portrait (taller than
-// wide) because its source image is; read-2 is a very tall portrait (the current
-// file is 828x1556). Update the ratio here if an image is replaced.
+// Each beat's box is sized to the REAL aspect ratio of its source image, so the
+// photo fills it with no crop and no dead space. read-1 is portrait (736x920,
+// taller than wide); read-2 (827x741) and read-3 (1200x896) are landscape — so
+// the sections are intentionally different shapes. Update the ratio here if an
+// image is replaced with different dimensions.
 const BEATS: {
   meta: string;
   line: string;
@@ -35,7 +36,7 @@ const BEATS: {
     line: "It puts the fit together.",
     img: "/landing/read-2.jpg",
     alt: "An outfit composed from owned pieces",
-    aspect: "828 / 1556",
+    aspect: "827 / 741",
   },
   {
     meta: "Render",
