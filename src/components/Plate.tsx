@@ -12,14 +12,24 @@ export function Plate({
   alt,
   className = "",
   eager = false,
+  objectClass = "object-center",
 }: {
   src: string;
   alt: string;
   className?: string;
   eager?: boolean;
+  // object-position, per section. Default center; pass e.g. "object-top" when a
+  // taller crop would otherwise cut a face/head off.
+  objectClass?: string;
 }) {
   const [broken, setBroken] = useState(false);
 
+  // The container's size comes entirely from `className` (aspect ratio + width).
+  // Both the placeholder and the image are ABSOLUTELY positioned to fill it, so
+  // the box never collapses to the image's intrinsic size — the image covers the
+  // full section edge to edge and object-cover crops whatever the real photo's
+  // dimensions happen to be. (An in-flow image with h-full resolves its height
+  // to auto against an aspect-ratio parent, which is what boxed it before.)
   return (
     <div className={`relative overflow-hidden bg-void ${className}`}>
       <div
@@ -37,7 +47,7 @@ export function Plate({
           alt={alt}
           loading={eager ? "eager" : "lazy"}
           onError={() => setBroken(true)}
-          className="relative z-[1] h-full w-full object-cover"
+          className={`absolute inset-0 z-[1] h-full w-full object-cover ${objectClass}`}
         />
       ) : null}
     </div>
