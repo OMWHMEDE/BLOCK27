@@ -13,6 +13,7 @@ export function Plate({
   className = "",
   eager = false,
   objectClass = "object-center",
+  aspectRatio,
 }: {
   src: string;
   alt: string;
@@ -21,6 +22,11 @@ export function Plate({
   // object-position, per section. Default center; pass e.g. "object-top" when a
   // taller crop would otherwise cut a face/head off.
   objectClass?: string;
+  // The box's aspect ratio, e.g. "736 / 920". Set it to the real image's ratio
+  // so the box fits the photo with no crop and no dead space. Inline (not a
+  // Tailwind class) because per-image values are dynamic and wouldn't be JIT-
+  // generated. The container sizes to this; nothing imposes a fixed height.
+  aspectRatio?: string;
 }) {
   const [broken, setBroken] = useState(false);
 
@@ -31,7 +37,10 @@ export function Plate({
   // dimensions happen to be. (An in-flow image with h-full resolves its height
   // to auto against an aspect-ratio parent, which is what boxed it before.)
   return (
-    <div className={`relative overflow-hidden bg-void ${className}`}>
+    <div
+      className={`relative overflow-hidden bg-void ${className}`}
+      style={aspectRatio ? { aspectRatio } : undefined}
+    >
       <div
         aria-hidden
         className="absolute inset-0 flex items-center justify-center"
