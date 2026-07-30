@@ -95,6 +95,7 @@ export default function LandingPage() {
                 src="/landing/proof-before.jpg"
                 alt="Before — your clothes as you wear them now"
                 className="aspect-[3/4]"
+                objectClass="object-top"
                 eager
               />
               <span className="absolute bottom-3 left-3 bg-void px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-paper">
@@ -106,6 +107,7 @@ export default function LandingPage() {
                 src="/landing/proof-after.jpg"
                 alt="After — the outfit rendered on you"
                 className="aspect-[3/4]"
+                objectClass="object-top"
               />
               <span className="absolute bottom-3 right-3 bg-void px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-paper">
                 On you
