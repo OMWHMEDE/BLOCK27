@@ -12,24 +12,37 @@ import { Plate } from "@/components/Plate";
 
 const CTA_HREF = "/wardrobe";
 
-const BEATS: { meta: string; line: string; img: string; alt: string }[] = [
+// Each beat's box is sized to the REAL aspect ratio of its image file, so the
+// photo fills it with no crop and no dead space. read-1 is portrait (taller than
+// wide) because its source image is; read-2 is a very tall portrait (the current
+// file is 828x1556). Update the ratio here if an image is replaced.
+const BEATS: {
+  meta: string;
+  line: string;
+  img: string;
+  alt: string;
+  aspect: string;
+}[] = [
   {
     meta: "Read",
     line: "It reads your closet.",
     img: "/landing/read-1.jpg",
     alt: "A wardrobe read piece by piece",
+    aspect: "736 / 920",
   },
   {
     meta: "Compose",
     line: "It puts the fit together.",
     img: "/landing/read-2.jpg",
     alt: "An outfit composed from owned pieces",
+    aspect: "828 / 1556",
   },
   {
     meta: "Render",
     line: "It shows it on you.",
     img: "/landing/read-3.jpg",
     alt: "The outfit rendered on your own body",
+    aspect: "1200 / 896",
   },
 ];
 
@@ -96,7 +109,7 @@ export default function LandingPage() {
               <Plate
                 src="/landing/proof-before.jpg"
                 alt="Before — your clothes as you wear them now"
-                className="aspect-[3/4]"
+                aspectRatio="1055 / 768"
                 objectClass="object-top"
                 eager
               />
@@ -108,7 +121,7 @@ export default function LandingPage() {
               <Plate
                 src="/landing/proof-after.jpg"
                 alt="After — the outfit rendered on you"
-                className="aspect-[3/4]"
+                aspectRatio="1200 / 896"
                 objectClass="object-top"
               />
               <span className="absolute bottom-3 right-3 bg-void px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-paper">
@@ -138,7 +151,12 @@ export default function LandingPage() {
                   {b.line}
                 </h2>
               </div>
-              <Plate src={b.img} alt={b.alt} className="aspect-[16/10] w-full" />
+              <Plate
+                src={b.img}
+                alt={b.alt}
+                className="w-full"
+                aspectRatio={b.aspect}
+              />
             </Reveal>
           </div>
         ))}
