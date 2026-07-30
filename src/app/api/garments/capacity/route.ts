@@ -21,8 +21,21 @@ export async function GET() {
     .from("garments")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id);
-
   const c = count ?? 0;
+
+  // Test-exempt (PAID_OVERRIDE_UIDS): no cap. Null limit/remaining tells the
+  // multi-upload UI to stop pre-empting batches — it already treats null as
+  // "no known cap" and never blocks.
+  if (plan.exempt) {
+    return NextResponse.json({
+      count: c,
+      limit: null,
+      remaining: null,
+      paid: true,
+      exempt: true,
+    });
+  }
+
   return NextResponse.json({
     count: c,
     limit: plan.pieceLimit,

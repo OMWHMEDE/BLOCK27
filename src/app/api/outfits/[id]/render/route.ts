@@ -130,41 +130,45 @@ export async function POST(
     });
   }
 
-  // Quota — count only successful renders.
-  const now = new Date();
-  const dayStart = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  ).toISOString();
-  const monthStart = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-  ).toISOString();
+  // Quota — count only successful renders. Skipped entirely for a test-exempt
+  // account (same PAID_OVERRIDE_UIDS allowlist as the plan gate above): no daily
+  // or monthly cap. Every other account is counted exactly as before.
+  if (!plan.exempt) {
+    const now = new Date();
+    const dayStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    ).toISOString();
+    const monthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    ).toISOString();
 
-  const [{ count: dayCount }, { count: monthCount }] = await Promise.all([
-    supabase
-      .from("renders")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", dayStart),
-    supabase
-      .from("renders")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", monthStart),
-  ]);
+    const [{ count: dayCount }, { count: monthCount }] = await Promise.all([
+      supabase
+        .from("renders")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", dayStart),
+      supabase
+        .from("renders")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", monthStart),
+    ]);
 
-  if ((dayCount ?? 0) >= DAILY_LIMIT) {
-    return NextResponse.json({
-      ok: false,
-      quota: true,
-      message: `That's ${DAILY_LIMIT} renders today. Come back tomorrow.`,
-    });
-  }
-  if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
-    return NextResponse.json({
-      ok: false,
-      quota: true,
-      message: `You've used all ${MONTHLY_LIMIT} renders this month.`,
-    });
+    if ((dayCount ?? 0) >= DAILY_LIMIT) {
+      return NextResponse.json({
+        ok: false,
+        quota: true,
+        message: `That's ${DAILY_LIMIT} renders today. Come back tomorrow.`,
+      });
+    }
+    if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
+      return NextResponse.json({
+        ok: false,
+        quota: true,
+        message: `You've used all ${MONTHLY_LIMIT} renders this month.`,
+      });
+    }
   }
 
   // Execute.

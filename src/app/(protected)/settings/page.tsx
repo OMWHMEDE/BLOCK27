@@ -78,23 +78,33 @@ export default async function SettingsPage() {
 
       <Section label="Usage">
         {quota ? (
-          <dl className="flex flex-col gap-3 font-mono text-sm">
-            <QuotaRow
-              label="Renders today"
-              used={quota.rendersToday}
-              limit={quota.dailyRenderLimit}
-            />
-            <QuotaRow
-              label="Renders this month"
-              used={quota.rendersMonth}
-              limit={quota.monthlyRenderLimit}
-            />
-            <QuotaRow
-              label="Pieces"
-              used={quota.pieces}
-              limit={quota.pieceLimit}
-            />
-          </dl>
+          <>
+            {quota.exempt ? (
+              <p className="text-ash text-xs uppercase tracking-[0.08em] mb-4">
+                Test account — usage limits off
+              </p>
+            ) : null}
+            <dl className="flex flex-col gap-3 font-mono text-sm">
+              <QuotaRow
+                label="Renders today"
+                used={quota.rendersToday}
+                limit={quota.dailyRenderLimit}
+                exempt={quota.exempt}
+              />
+              <QuotaRow
+                label="Renders this month"
+                used={quota.rendersMonth}
+                limit={quota.monthlyRenderLimit}
+                exempt={quota.exempt}
+              />
+              <QuotaRow
+                label="Pieces"
+                used={quota.pieces}
+                limit={quota.pieceLimit}
+                exempt={quota.exempt}
+              />
+            </dl>
+          </>
         ) : null}
       </Section>
 
@@ -157,17 +167,20 @@ function QuotaRow({
   label,
   used,
   limit,
+  exempt = false,
 }: {
   label: string;
   used: number;
   limit: number;
+  exempt?: boolean;
 }) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
     <div className="flex items-center justify-between gap-4 max-w-sm">
       <dt className="text-ash">{label}</dt>
       <dd className="text-bone tabular-nums">
-        {pad(used)} <span className="text-iron">/</span> {pad(limit)}
+        {pad(used)} <span className="text-iron">/</span>{" "}
+        {exempt ? <span className="text-ash">&#8734;</span> : pad(limit)}
       </dd>
     </div>
   );

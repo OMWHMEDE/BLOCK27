@@ -19,6 +19,9 @@ export type Quota = {
   monthlyRenderLimit: number;
   pieces: number;
   pieceLimit: number;
+  // Test-exempt (PAID_OVERRIDE_UIDS): the counts are still shown, but none of
+  // the limits bind. The settings screen reads this to say so plainly.
+  exempt: boolean;
 };
 
 // Read-only usage for the settings screen. RLS scopes every count to the user.
@@ -58,5 +61,6 @@ export async function getQuota(userId: string): Promise<Quota> {
     monthlyRenderLimit: MONTHLY_RENDER_LIMIT,
     pieces: pieceRes.count ?? 0,
     pieceLimit: plan.pieceLimit,
+    exempt: plan.exempt,
   };
 }
