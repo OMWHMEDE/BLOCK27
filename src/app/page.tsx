@@ -77,8 +77,10 @@ export default function LandingPage() {
 
       {/* 2 — THE PROOF. A real try-on, full-bleed, split hard down the middle:
           left the clothes as you own them, right the outfit on you. No slider,
-          no frame. This sells more than any sentence. */}
-      <section className="relative z-10 py-[104px]">
+          no frame. This sells more than any sentence. Top-only spacing — the
+          next section owns the gap below, so stacked sections never double up
+          into a dead black zone. */}
+      <section className="relative z-10 pt-[104px]">
         <Reveal>
           <div className="mx-auto mb-12 w-full max-w-2xl px-6">
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-ash">
@@ -118,10 +120,12 @@ export default function LandingPage() {
       </section>
 
       {/* 3 — HOW IT READS. Three beats: one cold line over one full-bleed image,
-          stacked, with massive space between. No card grid. */}
-      <section className="relative z-10">
+          stacked. A single 104px gap between beats (flex gap, not per-beat
+          padding) so each beat hugs its content and there's no doubled black
+          zone below an image. The close section owns the gap after the last. */}
+      <section className="relative z-10 flex flex-col gap-[104px] pt-[104px]">
         {BEATS.map((b) => (
-          <div key={b.meta} className="py-[104px]">
+          <div key={b.meta}>
             <Reveal>
               <div className="mx-auto mb-10 w-full max-w-2xl px-6">
                 <p className="mb-5 font-mono text-xs uppercase tracking-[0.24em] text-ash">
