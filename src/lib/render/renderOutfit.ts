@@ -10,6 +10,10 @@ import { removeFromUserPhotos } from "@/lib/supabase/storage";
 
 export type RenderLayer = { garmentPath: string; category: RenderCategory };
 
+// The render doctrine caps retries at two. A transient provider error or timeout
+// is retried; a rejected input won't change on a retry, so it fails fast.
+const MAX_ATTEMPTS = 3; // one try + two retries
+
 // Chain the hand over an outfit's layers, base photo first. The brain has
 // already decided which garments and in what order; this only executes.
 //
@@ -35,13 +39,33 @@ export async function renderOutfit(
     const outPath = isLast ? finalPath : renderTmpPath(userId, outfitId, i);
     if (!isLast) tmp.push(outPath);
 
-    const result = await hand.render({
+    // Try the layer, retrying only transient failures, capped at two retries.
+    let result = await hand.render({
       person,
       garment: { bucket: USER_PHOTOS_BUCKET, path: layers[i].garmentPath },
       out: { bucket: USER_PHOTOS_BUCKET, path: outPath },
       category: layers[i].category,
       quality: "max",
     });
+    for (
+      let attempt = 2;
+      !result.ok &&
+      attempt <= MAX_ATTEMPTS &&
+      (result.reason === "provider_error" || result.reason === "timeout");
+      attempt++
+    ) {
+      console.warn(
+        `[render] layer ${i} (${layers[i].category}) ${result.reason}, retry ${attempt - 1}/${MAX_ATTEMPTS - 1}:`,
+        result.detail,
+      );
+      result = await hand.render({
+        person,
+        garment: { bucket: USER_PHOTOS_BUCKET, path: layers[i].garmentPath },
+        out: { bucket: USER_PHOTOS_BUCKET, path: outPath },
+        category: layers[i].category,
+        quality: "max",
+      });
+    }
 
     if (!result.ok) {
       await removeFromUserPhotos(tmp).catch(() => {});

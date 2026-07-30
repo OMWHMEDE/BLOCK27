@@ -9,6 +9,7 @@ import { RenderHero } from "@/components/RenderHero";
 import { DownloadRender } from "@/components/DownloadRender";
 import { LockField } from "@/components/LockField";
 import { AppHeader } from "@/components/AppHeader";
+import { isRenderable } from "@/lib/render/categories";
 
 export default async function OutfitsPage() {
   const supabase = await createClient();
@@ -70,6 +71,10 @@ export default async function OutfitsPage() {
 }
 
 function OutfitCard({ outfit, paid }: { outfit: OutfitView; paid: boolean }) {
+  // Pieces the hand can't place on the body (shoes, accessories). Named
+  // honestly on the render so their own shoes are never mistaken for the pick.
+  const unplaced = outfit.items.filter((it) => !isRenderable(it.category));
+
   const pieces = (
     <div className="flex gap-1">
       {outfit.items.map((it) => (
@@ -100,6 +105,17 @@ function OutfitCard({ outfit, paid }: { outfit: OutfitView; paid: boolean }) {
         <p className="text-ash text-sm leading-relaxed max-w-sm mx-auto text-center mt-10">
           {outfit.reasoning}
         </p>
+
+        {unplaced.length > 0 ? (
+          <p className="text-ash text-xs leading-snug max-w-sm mx-auto text-center mt-6">
+            Not on the render — I can&rsquo;t place these on you yet, so your own
+            stay:{" "}
+            <span className="text-bone">
+              {unplaced.map((u) => u.descriptor || u.category).join(", ")}
+            </span>
+            .
+          </p>
+        ) : null}
 
         <div className="mt-8 flex justify-center">{pieces}</div>
 
