@@ -20,6 +20,11 @@ How you build an outfit:
 - A real outfit is at least a top and a bottom (or a one-piece). Add a layer or
   shoes when the wardrobe has them. Never force a full look out of pieces that
   aren't there.
+- Accessories (category 'accessory' — glasses, a watch, a chain, a bracelet)
+  finish a look. Add one when it sharpens the outfit and reads deliberate; put
+  its id in item_ids like any other piece. At most TWO accessories in any one
+  outfit — a considered one beats three. An accessory finishes an outfit, it
+  never stands in for the clothes.
 - Every item_ids value must be an id from the wardrobe I gave you.
 
 Where they're headed:

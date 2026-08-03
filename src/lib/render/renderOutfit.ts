@@ -8,7 +8,14 @@ import {
 } from "@/lib/photos";
 import { removeFromUserPhotos } from "@/lib/supabase/storage";
 
-export type RenderLayer = { garmentPath: string; category: RenderCategory };
+export type RenderLayer = {
+  garmentPath: string;
+  category: RenderCategory;
+  // Human label (the garment's descriptor) so a failure can name the exact piece
+  // that couldn't be placed — "couldn't place the steel diver's watch" — rather
+  // than a bare category. Never silently drop a layer; say which one gave out.
+  label?: string;
+};
 
 // The render doctrine caps retries at two. A transient provider error or timeout
 // is retried; a rejected input won't change on a retry, so it fails fast.
@@ -69,7 +76,10 @@ export async function renderOutfit(
 
     if (!result.ok) {
       await removeFromUserPhotos(tmp).catch(() => {});
-      return { ok: false, detail: result.detail };
+      // Name the piece that gave out, so the caller can be honest about it
+      // instead of showing a broken or silently-missing layer.
+      const piece = layers[i].label ?? layers[i].category;
+      return { ok: false, detail: `couldn't place ${piece} — ${result.detail}` };
     }
     person = result.image;
   }

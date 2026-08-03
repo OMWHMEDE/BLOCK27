@@ -25,17 +25,21 @@ const DAILY_LIMIT = limitFromEnv("RENDER_DAILY_LIMIT", 3);
 const MONTHLY_LIMIT = limitFromEnv("RENDER_MONTHLY_LIMIT", 30);
 
 // The brain decides which garments; the hand only executes. This maps a
-// garment's category to a layer ORDER — bottoms first, then tops, then
-// outerwear, then footwear LAST (per block27-render) — and to the provider's
-// category. tryon-max auto-detects the garment, so footwear renders as the
-// final layer. Accessories are not here yet (see @/lib/render/categories). The
-// keys here must match RENDERABLE_CATEGORIES.
+// garment's category to a layer ORDER — one-piece/bottoms/tops/outerwear, then
+// footwear, then accessories LAST (they sit outermost: glasses on the face, a
+// watch/bracelet on the wrist, a chain over the shirt) — and to the provider's
+// render category. tryon-max auto-detects the product, so footwear and
+// accessories render as trailing layers. Multiple accessories in one outfit are
+// simply multiple order-5 layers: FASHN takes one product per call, so they
+// chain sequentially, exactly like the clothing layers. The keys here must match
+// RENDERABLE_CATEGORIES.
 const LAYER: Record<string, { order: number; category: RenderCategory }> = {
   "one-piece": { order: 0, category: "one-piece" },
   bottoms: { order: 1, category: "bottoms" },
   tops: { order: 2, category: "tops" },
   outerwear: { order: 3, category: "tops" },
   footwear: { order: 4, category: "footwear" },
+  accessory: { order: 5, category: "accessory" },
 };
 
 export async function POST(
@@ -91,21 +95,42 @@ export async function POST(
     .eq("user_id", user.id)
     .eq("status", "analyzed");
 
-  const layers: RenderLayer[] = (garments ?? [])
-    .map((g) => {
+  type OrderedLayer = RenderLayer & { order: number };
+  const ranked: RenderLayer[] = (garments ?? [])
+    .map((g): OrderedLayer | null => {
       const a = g.analysis as GarmentAnalysis | null;
       const spec = a ? LAYER[a.category] : undefined;
-      return spec
-        ? { order: spec.order, garmentPath: g.photo_path as string, category: spec.category }
-        : null;
+      if (!spec) return null;
+      return {
+        order: spec.order,
+        garmentPath: g.photo_path as string,
+        category: spec.category,
+        label: a?.descriptor || a?.category || "a piece",
+      };
     })
-    .filter((x): x is { order: number } & RenderLayer => x !== null)
+    .filter((x): x is OrderedLayer => x !== null)
     .sort((a, b) => a.order - b.order)
-    .map(({ garmentPath, category }) => ({ garmentPath, category }));
+    .map(({ garmentPath, category, label }) => ({ garmentPath, category, label }));
 
-  // Garments the hand can't place on the body (footwear, accessories). They are
-  // not sent to the provider — but they're not hidden either: the outfit view
-  // names them so the render is never mistaken for showing the wrong shoes.
+  // Cap accessories at two per outfit. Each accessory is its own sequential
+  // max-tier call, so this bounds worst-case cost and latency. The brain is told
+  // the same limit; this is the hard backstop. Accessories are the trailing
+  // (order 5) layers, so the clothes and shoes are never what gets dropped — the
+  // brain's first two accessories (item_ids order) are kept.
+  const ACCESSORY_CAP = 2;
+  let accessoryCount = 0;
+  const dropped: string[] = [];
+  const layers = ranked.filter((l) => {
+    if (l.category !== "accessory") return true;
+    accessoryCount += 1;
+    if (accessoryCount <= ACCESSORY_CAP) return true;
+    dropped.push(l.label ?? "an accessory");
+    return false;
+  });
+
+  // Anything the hand can't place on the body. With footwear and accessories now
+  // wired, every category the eye assigns is renderable — this stays as a guard
+  // so a future unhandled category is surfaced honestly, never silently dropped.
   const unplaceable = (garments ?? [])
     .map((g) => g.analysis as GarmentAnalysis | null)
     .filter((a): a is GarmentAnalysis => !!a && !isRenderable(a.category))
@@ -116,6 +141,8 @@ export async function POST(
     outfitId,
     "| placing:",
     layers.map((l) => l.category),
+    "| accessories dropped over cap:",
+    dropped,
     "| not placeable on body:",
     unplaceable,
   );
@@ -123,10 +150,7 @@ export async function POST(
   if (layers.length === 0) {
     return NextResponse.json({
       ok: false,
-      error:
-        unplaceable.length > 0
-          ? "This is only accessories — I can't put those on you yet. Add clothes or shoes."
-          : "Nothing here to render — this outfit has no tops or bottoms.",
+      error: "Nothing here I can put on you. Add clothes, shoes or an accessory.",
     });
   }
 

@@ -22,10 +22,19 @@ export type RenderResult =
 // deliberately editing this line. Every render is maximum quality. Every one.
 export type Quality = "max";
 
-// What the hand can place on the body. FASHN's tryon-max supports footwear and
-// accessories too (it auto-detects from the product image); footwear is wired
-// through here so shoes render as the last layer.
-export type RenderCategory = "tops" | "bottoms" | "one-piece" | "footwear";
+// What the hand can place on the body. FASHN's tryon-max auto-detects the product
+// from the image and supports clothing, footwear AND accessories (jewelry, hats,
+// bags — verified against FASHN's docs). There is no per-accessory-kind provider
+// category — the model detects a watch vs. glasses vs. a chain itself — so all
+// four accessory sub_types share ONE render category here: "accessory". It is the
+// outermost layer, rendered last (glasses on the face, a watch/bracelet on the
+// wrist, a chain over the shirt). Sub-typing lives in the wardrobe, not here.
+export type RenderCategory =
+  | "tops"
+  | "bottoms"
+  | "one-piece"
+  | "footwear"
+  | "accessory";
 
 export interface Hand {
   render(input: {
