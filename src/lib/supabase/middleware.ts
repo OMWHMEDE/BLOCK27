@@ -17,6 +17,7 @@ import {
 const PROTECTED_PREFIXES = [
   "/capture",
   "/garments",
+  "/pieces",
   "/shopping",
   "/settings",
 ];
