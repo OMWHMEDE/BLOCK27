@@ -10,6 +10,10 @@ export type GarmentAnalysis = {
   reject_reason: string;
 
   category: string; // tops | bottoms | outerwear | footwear | one-piece | accessory
+  // For accessories, the specific kind: glasses | watch | chain | bracelet.
+  // "none" for every non-accessory garment (and for accessories outside those
+  // four). The garments.sub_type column is populated from this.
+  accessory_type: string;
   subcategory: string; // "bomber jacket", "slim chinos"
   descriptor: string; // human label, e.g. "black slim chinos"
   colors: string[]; // primary first

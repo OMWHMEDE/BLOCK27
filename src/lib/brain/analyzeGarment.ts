@@ -22,6 +22,17 @@ one garment — record it as one, singular, and do not reject it. Only reject fo
 and trousers, a jacket and a shoe — two different pieces that would each be their
 own wardrobe entry.
 
+Accessories are a category too. When the item is one of these four, set
+category='accessory' and accessory_type to the matching kind:
+- glasses — eyewear of any sort: prescription glasses or sunglasses. A pair is
+  one item.
+- watch — a wristwatch.
+- chain — a chain or necklace worn at the neck.
+- bracelet — a band, cuff or bracelet worn at the wrist.
+For every garment that is NOT one of these four — including any other accessory
+like a hat, belt or scarf — set accessory_type='none'. An accessory still gets a
+real formality, pairs_with, clashes_with and read like any piece.
+
 formality is 1–5: 1 gym, 2 casual, 3 smart casual, 4 sharp, 5 formal.
 
 pairs_with, clashes_with and read are the point. read is your one-line take in
@@ -61,6 +72,12 @@ const TOOL = {
           "accessory",
         ],
       },
+      accessory_type: {
+        type: "string",
+        enum: ["glasses", "watch", "chain", "bracelet", "none"],
+        description:
+          "The accessory kind when category is accessory; 'none' otherwise.",
+      },
       subcategory: { type: "string" },
       descriptor: { type: "string", description: "e.g. 'black slim chinos'" },
       colors: { type: "array", items: { type: "string" } },
@@ -78,6 +95,7 @@ const TOOL = {
       "usable",
       "reject_reason",
       "category",
+      "accessory_type",
       "subcategory",
       "descriptor",
       "colors",
