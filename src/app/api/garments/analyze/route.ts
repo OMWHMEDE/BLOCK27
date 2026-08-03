@@ -89,9 +89,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, rejected: true });
     }
 
+    // Project the accessory kind into the queryable sub_type column — only for a
+    // real accessory of one of the four typed kinds; null for everything else.
+    const ACCESSORY_TYPES = new Set(["glasses", "watch", "chain", "bracelet"]);
+    const subType =
+      analysis.category === "accessory" &&
+      ACCESSORY_TYPES.has(analysis.accessory_type)
+        ? analysis.accessory_type
+        : null;
+
     const { error: upErr } = await supabase
       .from("garments")
-      .update({ status: "analyzed", analysis, reject_reason: null })
+      .update({
+        status: "analyzed",
+        analysis,
+        reject_reason: null,
+        sub_type: subType,
+      })
       .eq("id", garmentId)
       .eq("user_id", user.id);
     if (upErr) throw new Error(`store failed: ${upErr.message}`);
