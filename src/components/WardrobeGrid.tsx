@@ -56,7 +56,7 @@ function writeCache(garments: GarmentThumb[]) {
   }
 }
 
-export function WardrobeGrid() {
+export function WardrobeGrid({ grouped = false }: { grouped?: boolean } = {}) {
   const [garments, setGarments] = useState<GarmentThumb[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [failedIds, setFailedIds] = useState<string[]>([]);
@@ -233,6 +233,14 @@ export function WardrobeGrid() {
 
   const count = garments?.length ?? 0;
 
+  // The Pieces view separates accessories into their own labeled home. An
+  // accessory is any garment the eye filed under 'accessory' (glasses, watch,
+  // chain, bracelet, or any other). Everything else is a piece. On the flat
+  // wardrobe grid this split isn't used — it's one grid, in order.
+  const isAccessory = (g: GarmentThumb) => g.analysis?.category === "accessory";
+  const pieces = grouped ? (garments ?? []).filter((g) => !isAccessory(g)) : [];
+  const accessories = grouped ? (garments ?? []).filter(isAccessory) : [];
+
   return (
     <section>
       <div className="flex items-center justify-between gap-4 mb-6">
@@ -246,6 +254,11 @@ export function WardrobeGrid() {
           ) : null}
         </p>
         <div className="flex items-center gap-2">
+          {!grouped ? (
+            <Link href="/pieces" className={btnNav}>
+              Pieces
+            </Link>
+          ) : null}
           <Link href="/garments/upload" className={btnNav}>
             Batch
           </Link>
@@ -279,18 +292,64 @@ export function WardrobeGrid() {
             </li>
           ))}
         </ul>
+      ) : grouped ? (
+        <div className="flex flex-col gap-16">
+          {pieces.length === 0 && uploading === 0 ? (
+            <p className="text-ash max-w-md">
+              Empty. Shoot five pieces and I&rsquo;ll start putting outfits
+              together.
+            </p>
+          ) : (
+            <TileGrid garments={pieces} failedSet={failedSet} />
+          )}
+
+          {/* Accessories — their own labeled home, so it's unambiguous where
+              they sit and where new ones go. Same upload flow, one door. */}
+          <div>
+            <div className="flex items-center justify-between gap-4 mb-6 border-t border-iron pt-8">
+              <p className="text-xs uppercase tracking-[0.08em] text-ash">
+                Accessories{" "}
+                <span className="text-iron font-mono">
+                  {String(accessories.length).padStart(2, "0")}
+                </span>
+              </p>
+              <Link href="/garments/new" className={btnNav}>
+                Add
+              </Link>
+            </div>
+            {accessories.length === 0 ? (
+              <p className="text-ash max-w-md">
+                Glasses, a watch, a chain, a bracelet. This is where they live.
+              </p>
+            ) : (
+              <TileGrid garments={accessories} failedSet={failedSet} />
+            )}
+          </div>
+        </div>
       ) : garments.length === 0 && uploading === 0 ? (
         <p className="text-ash max-w-md">
           Empty. Shoot five pieces and I&rsquo;ll start putting outfits together.
         </p>
       ) : (
-        <ul className="grid grid-cols-3 gap-1">
-          {garments.map((g) => (
-            <GarmentTile key={g.id} garment={g} failed={failedSet.has(g.id)} />
-          ))}
-        </ul>
+        <TileGrid garments={garments} failedSet={failedSet} />
       )}
     </section>
+  );
+}
+
+function TileGrid({
+  garments,
+  failedSet,
+}: {
+  garments: GarmentThumb[];
+  failedSet: Set<string>;
+}) {
+  return (
+    <ul className="grid grid-cols-3 gap-1">
+      {garments.map((g) => (
+        <GarmentTile key={g.id} garment={g} failed={failedSet.has(g.id)} />
+      ))}
+    </ul>
   );
 }
 
