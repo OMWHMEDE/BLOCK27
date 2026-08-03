@@ -34,12 +34,13 @@ const SIGN_SECONDS = 600; // long enough for FASHN to fetch the inputs
 const COST_ESTIMATE_USD = isMaxModel ? 0.3 : 0.075;
 
 // Only the v1.6 model consumes an explicit category; tryon-max auto-detects the
-// garment (incl. footwear) from product_image and ignores this. v1.6 has no
-// footwear category, so fall back to "auto" there — but footwear support really
-// comes from tryon-max, the default.
+// garment (incl. footwear and accessories) from product_image and ignores this.
+// v1.6's category enum is auto|tops|bottoms|one-pieces only — it has no footwear
+// or accessory category — so both fall back to "auto" there. Footwear and
+// accessory support really comes from tryon-max, the default.
 function fashnCategory(c: RenderCategory): string {
   if (c === "one-piece") return "one-pieces";
-  if (c === "footwear") return "auto";
+  if (c === "footwear" || c === "accessory") return "auto";
   return c; // tops | bottoms
 }
 
