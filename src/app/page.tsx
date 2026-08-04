@@ -188,6 +188,12 @@ export default function LandingPage() {
           </span>
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <Link
+              href="/pricing"
+              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
+            >
+              Pricing
+            </Link>
+            <Link
               href="/terms"
               className="uppercase tracking-[0.08em] text-bone hover:text-paper"
             >
