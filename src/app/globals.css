@@ -86,6 +86,218 @@ body {
   }
 }
 
+/* Landing page — a condensed editorial grotesque without a font request. The
+   local() sources use the platform's premium condensed faces when present and
+   fall through to a tightly set Helvetica/Arial stack with zero load cost. */
+@font-face {
+  font-family: "BLOCK Grotesk";
+  src: local("Helvetica Neue Condensed Bold"), local("Arial Narrow Bold"),
+    local("Roboto Condensed Bold");
+  font-weight: 700 950;
+  font-display: swap;
+}
+
+.landing {
+  --landing-gutter: clamp(1.25rem, 4vw, 4.5rem);
+  position: relative;
+  overflow: clip;
+  background: var(--color-void);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.landing h1,
+.landing h2 {
+  font-family: "BLOCK Grotesk", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.landing-grain,
+.landing-grain::after {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  content: "";
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.landing-grain::after {
+  position: absolute;
+  opacity: 0.35;
+  background-size: 87px 87px;
+  transform: translate(3%, -2%);
+}
+
+.landing-kicker,
+.landing-label,
+.landing-proof figcaption,
+.landing-proof__hint {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  line-height: 1;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.landing-hero {
+  position: relative;
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  padding: 1.5rem var(--landing-gutter) 2rem;
+}
+
+.landing-kicker { color: var(--color-ash); }
+
+.landing-wordmark {
+  display: flex;
+  width: max-content;
+  margin: auto 0;
+  margin-left: clamp(-0.5rem, -1.5vw, -1.75rem);
+  flex-direction: column;
+  font-size: clamp(7.4rem, 31vw, 34rem);
+  line-height: 0.65;
+  letter-spacing: -0.09em;
+  white-space: nowrap;
+}
+
+.landing-wordmark span:last-child {
+  align-self: flex-end;
+  color: var(--color-void);
+  background: var(--color-paper);
+  padding: 0.035em 0.075em 0.075em 0.045em;
+}
+
+.landing-hero__close {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.landing-tagline {
+  max-width: 20rem;
+  color: var(--color-bone);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.landing-cta {
+  display: inline-flex;
+  min-width: 11rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  border: 1px solid var(--color-paper);
+  padding: 1rem 1.1rem;
+  color: var(--color-paper);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: color 650ms cubic-bezier(0.16, 1, 0.3, 1), background-color 650ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-cta:hover,
+.landing-cta:focus-visible { color: var(--color-void); background: var(--color-paper); }
+.landing-cta:focus-visible { outline: 2px solid var(--color-paper); outline-offset: 4px; }
+
+.landing-proof { padding: clamp(8rem, 14vw, 14rem) 0; }
+.landing-proof__header { width: min(75rem, 88%); margin: 0 auto 3rem; }
+.landing-label { margin-bottom: 1.25rem; color: var(--color-ash); }
+.landing-proof h2,
+.landing-beat h2 {
+  font-size: clamp(3.1rem, 8vw, 9rem);
+  line-height: 0.78;
+  letter-spacing: -0.065em;
+}
+.landing-proof__split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(100%, 96rem);
+  margin-left: auto;
+  overflow: hidden;
+  transition: grid-template-columns 750ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-proof__side { position: relative; min-width: 0; overflow: hidden; }
+.landing-proof__side > div { min-width: 50vw; }
+.landing-proof__side--after { border-left: 2px solid var(--color-paper); }
+.landing-proof figcaption { position: absolute; bottom: 1rem; padding: 0.7rem; background: var(--color-void); }
+.landing-proof__side--before figcaption { left: 1rem; }
+.landing-proof__side--after figcaption { right: 1rem; }
+.landing-proof__split:has(.landing-proof__side--before:hover) { grid-template-columns: 58fr 42fr; }
+.landing-proof__split:has(.landing-proof__side--after:hover) { grid-template-columns: 42fr 58fr; }
+.landing-proof__hint { width: min(100%, 96rem); margin: 1rem auto 0; padding: 0 var(--landing-gutter); color: var(--color-ash); text-align: right; }
+
+.landing-beats { padding: clamp(4rem, 10vw, 10rem) 0; }
+.landing-beat { padding: clamp(7rem, 13vw, 14rem) var(--landing-gutter); }
+.landing-beat__inner { display: grid; align-items: center; gap: clamp(2.5rem, 7vw, 8rem); }
+.landing-beat__copy { position: relative; z-index: 2; }
+.landing-beat__image { width: min(100%, 46rem); }
+.landing-beat--portrait .landing-beat__inner { grid-template-columns: minmax(0, 0.75fr) minmax(16rem, 0.5fr); }
+.landing-beat--portrait .landing-beat__copy { margin-right: -18vw; }
+.landing-beat--reverse .landing-beat__inner { grid-template-columns: minmax(16rem, 0.65fr) minmax(0, 0.85fr); }
+.landing-beat--reverse .landing-beat__copy { order: 2; margin-left: -10vw; align-self: end; }
+.landing-beat--reverse .landing-beat__image { order: 1; margin-left: -4vw; }
+.landing-beat--wide .landing-beat__inner { display: block; }
+.landing-beat--wide .landing-beat__copy { width: 72%; margin: 0 0 -3vw auto; }
+.landing-beat--wide .landing-beat__image { width: 78%; max-width: none; margin-left: -4vw; }
+
+.landing-close {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 8rem var(--landing-gutter);
+  text-align: center;
+}
+.landing-close__inner { display: flex; flex-direction: column; align-items: center; }
+.landing-close__mark { margin: clamp(3rem, 8vw, 7rem) 0; font-size: clamp(5rem, 20vw, 19rem); line-height: 0.7; letter-spacing: -0.085em; white-space: nowrap; }
+.landing-close__mark span { display: inline-block; margin-left: 0.04em; background: var(--color-paper); color: var(--color-void); padding: 0.035em 0.06em 0.06em 0.035em; }
+
+.landing-enter { animation: landing-enter 750ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.landing-enter--1 { animation-delay: 80ms; }
+.landing-enter--2 { animation-delay: 160ms; }
+.landing-enter--3 { animation-delay: 300ms; }
+.landing-enter--4 { animation-delay: 420ms; }
+@keyframes landing-enter { from { opacity: 0; transform: translateY(24px); } }
+
+.landing .landing-sequence.reveal-on-scroll { opacity: 1; transform: none; transition: none; }
+.landing .landing-step { opacity: 0; transform: translateY(30px); transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1); }
+.landing .landing-step--2 { transition-delay: 110ms; }
+.landing .landing-step--3 { transition-delay: 220ms; }
+.landing .is-in .landing-step { opacity: 1; transform: none; }
+.landing-beat__image img { transition: transform 800ms cubic-bezier(0.16, 1, 0.3, 1); }
+.landing-beat__image:hover img { transform: scale(1.018) translateY(-0.5%); }
+
+@media (max-width: 700px) {
+  .landing-hero__close { align-items: flex-start; flex-direction: column; }
+  .landing-wordmark { font-size: clamp(6.8rem, 35vw, 12rem); }
+  .landing-proof__header { width: auto; margin-inline: var(--landing-gutter); }
+  .landing-proof__side > div { min-width: 72vw; }
+  .landing-proof__hint { display: none; }
+  .landing-beat { padding-inline: var(--landing-gutter); }
+  .landing-beat--portrait .landing-beat__inner,
+  .landing-beat--reverse .landing-beat__inner { display: flex; flex-direction: column; align-items: stretch; }
+  .landing-beat--portrait .landing-beat__copy,
+  .landing-beat--reverse .landing-beat__copy,
+  .landing-beat--reverse .landing-beat__image { order: initial; margin: 0; }
+  .landing-beat--portrait .landing-beat__image { width: 78%; margin-left: auto; }
+  .landing-beat--reverse .landing-beat__image { width: 108%; margin-left: -8%; }
+  .landing-beat--wide .landing-beat__copy { width: 100%; margin-bottom: 2.5rem; }
+  .landing-beat--wide .landing-beat__image { width: 112%; margin-left: 0; }
+  .landing-close__mark { white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-enter { animation: none; }
+  .landing .landing-step { opacity: 1; transform: none; transition: none; }
+  .landing-proof__split,
+  .landing-cta,
+  .landing-beat__image img { transition: none; }
+  .landing-beat__image:hover img { transform: none; }
+}
+
 /*
   The render reveal. A finished outfit rises into place — the payoff of the whole
   product, so it arrives, it doesn't just appear. No glow, no shadow, no gradient
