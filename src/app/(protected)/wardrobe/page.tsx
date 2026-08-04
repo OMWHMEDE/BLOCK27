@@ -37,7 +37,7 @@ export default async function WardrobePage() {
           </p>
           <LockField
             className="w-32 aspect-[3/4]"
-            message="Your base needs an account. Sign in to unlock it."
+            message="Paid feature."
             href="/login"
             cta="Sign in"
             label="Base photo — locked. Sign in to unlock."
@@ -75,7 +75,7 @@ export default async function WardrobePage() {
         {!paid ? (
           <LockField
             className="w-32 aspect-[3/4]"
-            message="Your base is a paid thing. Upgrade to unlock it."
+            message="Paid feature."
             label="Base photo — locked. Upgrade to unlock."
           />
         ) : baseUrl ? (
