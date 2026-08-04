@@ -1,35 +1,17 @@
 import Link from "next/link";
-import { btnPrimary } from "@/lib/ui";
-import { Reveal } from "@/components/Reveal";
 import { Plate } from "@/components/Plate";
-
-// The premium front. It sells with the product, not paragraphs: a wordmark that
-// fills the screen, a full-bleed before/after that does more than any copy, three
-// cold beats, and one repeated action. Luxury is the space, the type, the grain,
-// and the slow arrival — never clutter. bone-white on true black is the only
-// accent; no cards, no glow, no gradient, border-radius 0. Every "Try it now"
-// drops the visitor into the app as a guest.
+import { Reveal } from "@/components/Reveal";
 
 const CTA_HREF = "/wardrobe";
 
-// Each beat's box is sized to the REAL aspect ratio of its source image, so the
-// photo fills it with no crop and no dead space. read-1 is portrait (736x920,
-// taller than wide); read-2 (827x741) and read-3 (1200x896) are landscape — so
-// the sections are intentionally different shapes. Update the ratio here if an
-// image is replaced with different dimensions.
-const BEATS: {
-  meta: string;
-  line: string;
-  img: string;
-  alt: string;
-  aspect: string;
-}[] = [
+const BEATS = [
   {
     meta: "Read",
     line: "It reads your closet.",
     img: "/landing/read-1-v2.jpg",
     alt: "A wardrobe read piece by piece",
     aspect: "736 / 920",
+    layout: "landing-beat--portrait",
   },
   {
     meta: "Compose",
@@ -37,6 +19,7 @@ const BEATS: {
     img: "/landing/read-2-v2.jpg",
     alt: "An outfit composed from owned pieces",
     aspect: "827 / 741",
+    layout: "landing-beat--reverse",
   },
   {
     meta: "Render",
@@ -44,69 +27,45 @@ const BEATS: {
     img: "/landing/read-3-v2.jpg",
     alt: "The outfit rendered on your own body",
     aspect: "1200 / 896",
+    layout: "landing-beat--wide",
   },
-];
+] as const;
 
-function TryButton({ delayMs }: { delayMs?: number }) {
+function TryButton({ className = "" }: { className?: string }) {
   return (
-    <Link
-      href={CTA_HREF}
-      className={`${btnPrimary} reveal`}
-      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
-    >
-      Try it now
+    <Link href={CTA_HREF} className={`landing-cta ${className}`}>
+      <span>Try it now</span>
+      <span aria-hidden>↗</span>
     </Link>
   );
 }
 
 export default function LandingPage() {
   return (
-    <main className="relative w-full overflow-hidden">
-      <div aria-hidden className="grain-layer" />
+    <main className="landing">
+      <div aria-hidden className="landing-grain" />
 
-      {/* 1 — HERO. Type is the hero; the "27" reversed out of a --paper block is
-          the one structural use of the house device. */}
-      <section className="relative z-10 flex min-h-svh flex-col px-6 py-16">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center">
-          <h1
-            className="reveal font-black uppercase leading-[0.82] tracking-[-0.04em]"
-            style={{ fontSize: "clamp(4rem, 14vw, 11rem)" }}
-          >
-            <span className="block">Block</span>
-            <span className="mt-2 inline-block bg-paper px-[0.1em] pb-[0.05em] text-void">
-              27
-            </span>
-          </h1>
-          <p
-            className="reveal mt-12 max-w-md text-ash"
-            style={{ animationDelay: "120ms" }}
-          >
+      <section className="landing-hero" aria-labelledby="landing-title">
+        <p className="landing-kicker landing-enter landing-enter--1">Personal styling / 27</p>
+        <h1 id="landing-title" className="landing-wordmark landing-enter landing-enter--2">
+          <span>Block</span><span>27</span>
+        </h1>
+        <div className="landing-hero__close">
+          <p className="landing-tagline landing-enter landing-enter--3">
             You own good clothes. You wear them wrong.
           </p>
-        </div>
-        <div className="mx-auto w-full max-w-2xl">
-          <TryButton delayMs={240} />
+          <TryButton className="landing-enter landing-enter--4" />
         </div>
       </section>
 
-      {/* 2 — THE PROOF. A real try-on, full-bleed, split hard down the middle:
-          left the clothes as you own them, right the outfit on you. No slider,
-          no frame. This sells more than any sentence. Top-only spacing — the
-          next section owns the gap below, so stacked sections never double up
-          into a dead black zone. */}
-      <section className="relative z-10 pt-[104px]">
-        <Reveal>
-          <div className="mx-auto mb-12 w-full max-w-2xl px-6">
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-ash">
-              The proof
-            </p>
-            <p className="mt-4 max-w-md text-bone leading-snug">
-              Same wardrobe. One of them is wearing it right.
-            </p>
-          </div>
-
-          <div className="grid w-full grid-cols-2">
-            <div className="relative">
+      <section className="landing-proof" aria-labelledby="proof-title">
+        <Reveal className="landing-sequence">
+          <header className="landing-proof__header landing-step landing-step--1">
+            <p className="landing-label">The proof</p>
+            <h2 id="proof-title">Same wardrobe.<br />Worn right.</h2>
+          </header>
+          <div className="landing-proof__split landing-step landing-step--2">
+            <figure className="landing-proof__side landing-proof__side--before">
               <Plate
                 src="/landing/proof-before-v2.jpg"
                 alt="Before — your clothes as you wear them now"
@@ -114,68 +73,47 @@ export default function LandingPage() {
                 objectClass="object-top"
                 eager
               />
-              <span className="absolute bottom-3 left-3 bg-void px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-paper">
-                Before
-              </span>
-            </div>
-            <div className="relative border-l-2 border-paper">
+              <figcaption>Before</figcaption>
+            </figure>
+            <figure className="landing-proof__side landing-proof__side--after">
               <Plate
                 src="/landing/proof-after-v2.jpg"
                 alt="After — the outfit rendered on you"
                 aspectRatio="1200 / 896"
                 objectClass="object-top"
               />
-              <span className="absolute bottom-3 right-3 bg-void px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-paper">
-                On you
-              </span>
-            </div>
+              <figcaption>On you</figcaption>
+            </figure>
           </div>
+          <p className="landing-proof__hint landing-step landing-step--3" aria-hidden>
+            Move across the proof
+          </p>
         </Reveal>
       </section>
 
-      {/* 3 — HOW IT READS. Three beats: one cold line over one full-bleed image,
-          stacked. A single 104px gap between beats (flex gap, not per-beat
-          padding) so each beat hugs its content and there's no doubled black
-          zone below an image. The close section owns the gap after the last. */}
-      <section className="relative z-10 flex flex-col gap-[104px] pt-[104px]">
-        {BEATS.map((b) => (
-          <div key={b.meta}>
-            <Reveal>
-              <div className="mx-auto mb-10 w-full max-w-2xl px-6">
-                <p className="mb-5 font-mono text-xs uppercase tracking-[0.24em] text-ash">
-                  {b.meta}
-                </p>
-                <h2
-                  className="font-black uppercase leading-[0.9] tracking-[-0.03em]"
-                  style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
-                >
-                  {b.line}
-                </h2>
+      <section className="landing-beats" aria-label="How BLOCK27 works">
+        {BEATS.map((beat, index) => (
+          <article className={`landing-beat ${beat.layout}`} key={beat.meta}>
+            <Reveal className="landing-sequence landing-beat__inner">
+              <header className="landing-beat__copy">
+                <p className="landing-label landing-step landing-step--1">0{index + 1} / {beat.meta}</p>
+                <h2 className="landing-step landing-step--2">{beat.line}</h2>
+              </header>
+              <div className="landing-beat__image landing-step landing-step--3">
+                <Plate src={beat.img} alt={beat.alt} aspectRatio={beat.aspect} />
               </div>
-              <Plate
-                src={b.img}
-                alt={b.alt}
-                className="w-full"
-                aspectRatio={b.aspect}
-              />
             </Reveal>
-          </div>
+          </article>
         ))}
       </section>
 
-      {/* 4 — CLOSE. The mark, one last action, silence around it. */}
-      <section className="relative z-10 flex min-h-svh flex-col items-center justify-center px-6 py-[168px] text-center">
-        <Reveal className="flex flex-col items-center gap-14">
-          <h2
-            className="font-black uppercase leading-[0.85] tracking-[-0.04em]"
-            style={{ fontSize: "clamp(2.5rem, 9vw, 6rem)" }}
-          >
-            Block
-            <span className="ml-[0.12em] inline-block bg-paper px-[0.1em] pb-[0.05em] text-void">
-              27
-            </span>
+      <section className="landing-close" aria-labelledby="close-title">
+        <Reveal className="landing-sequence landing-close__inner">
+          <p className="landing-label landing-step landing-step--1">Dress with intent.</p>
+          <h2 id="close-title" className="landing-close__mark landing-step landing-step--2">
+            Block<span>27</span>
           </h2>
-          <TryButton />
+          <TryButton className="landing-step landing-step--3" />
         </Reveal>
       </section>
     </main>
