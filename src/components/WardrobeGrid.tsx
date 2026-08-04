@@ -56,6 +56,15 @@ function writeCache(garments: GarmentThumb[]) {
   }
 }
 
+// Drop one garment from the cache after it's deleted elsewhere, so the next
+// cache-first paint of the wardrobe can't flash the gone piece back before the
+// grid revalidates. No-op when the cache is absent or expired.
+export function removeGarmentFromCache(id: string) {
+  const cached = readCache();
+  if (!cached) return;
+  writeCache(cached.filter((g) => g.id !== id));
+}
+
 export function WardrobeGrid({ grouped = false }: { grouped?: boolean } = {}) {
   const [garments, setGarments] = useState<GarmentThumb[] | null>(null);
   const [error, setError] = useState<string | null>(null);
