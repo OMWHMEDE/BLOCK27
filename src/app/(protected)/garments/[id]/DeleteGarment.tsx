@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { btnDanger, btnSecondary } from "@/lib/ui";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { deleteGarmentAction } from "./actions";
 
 // Two-step delete. The first press arms it and states the cost plainly; the
@@ -11,6 +12,7 @@ import { deleteGarmentAction } from "./actions";
 export function DeleteGarment({ id }: { id: string }) {
   const router = useRouter();
   const [armed, setArmed] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -19,6 +21,9 @@ export function DeleteGarment({ id }: { id: string }) {
     start(async () => {
       const res = await deleteGarmentAction(id);
       if (res.ok) {
+        // Hand off to the house 27-transition while the wardrobe loads, so the
+        // delete resolves into the app's own loading language, not an abrupt cut.
+        setLeaving(true);
         router.push("/wardrobe");
         router.refresh();
       } else {
@@ -27,6 +32,9 @@ export function DeleteGarment({ id }: { id: string }) {
       }
     });
   }
+
+  // Deleted — hold the branded screen over everything until the wardrobe paints.
+  if (leaving) return <LoadingScreen />;
 
   if (!armed) {
     return (

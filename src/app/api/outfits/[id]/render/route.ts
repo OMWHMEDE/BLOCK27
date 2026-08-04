@@ -198,8 +198,15 @@ export async function POST(
   // Execute.
   const result = await renderOutfit(user.id, outfitId, layers);
   if (!result.ok) {
+    // The real reason (provider error, timeout, out-of-credits, rejected input)
+    // is logged for debugging and NEVER shown to the user — no billing, credit,
+    // or provider detail ever leaks to the screen. The user sees one cold,
+    // generic line regardless of cause.
     console.error("[render] failed for outfit", outfitId, result.detail);
-    return NextResponse.json({ ok: false, error: result.detail }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Something's off. Try again in a minute." },
+      { status: 500 },
+    );
   }
 
   // Persist: render_path on the outfit, and a quota log row (success only).
