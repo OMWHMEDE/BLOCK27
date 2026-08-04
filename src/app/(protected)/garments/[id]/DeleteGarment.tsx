@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { btnDanger, btnSecondary } from "@/lib/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { removeGarmentFromCache } from "@/components/WardrobeGrid";
 import { deleteGarmentAction } from "./actions";
 
 // Two-step delete. The first press arms it and states the cost plainly; the
@@ -20,16 +21,25 @@ export function DeleteGarment({ id }: { id: string }) {
     setError(null);
     start(async () => {
       const res = await deleteGarmentAction(id);
-      if (res.ok) {
-        // Hand off to the house 27-transition while the wardrobe loads, so the
-        // delete resolves into the app's own loading language, not an abrupt cut.
-        setLeaving(true);
-        router.push("/wardrobe");
-        router.refresh();
-      } else {
+      if (!res.ok) {
         setError(res.error || "Delete failed.");
         setArmed(false);
+        return;
       }
+      // Gone. Drop it from the wardrobe's client cache so it can't flash back on
+      // the cache-first paint, then hand off to the house 27-transition and land
+      // on the wardrobe. Two deliberate choices, both fixing the loop-then-404:
+      //   - No router.refresh(): this route (/garments/[id]) now 404s on refresh
+      //     because the row is gone. Refreshing it here re-ran the deleted route
+      //     into notFound() and raced the push — the source of the regression.
+      //     The wardrobe's garment list is the client WardrobeGrid, which
+      //     revalidates itself, so no server refresh is needed.
+      //   - replace(), not push(): a single, bounded navigation to an existing
+      //     route (the 27-transition plays during it, then unmounts), and the
+      //     dead [id] URL leaves history so Back can't land on a 404 either.
+      removeGarmentFromCache(id);
+      setLeaving(true);
+      router.replace("/wardrobe");
     });
   }
 
