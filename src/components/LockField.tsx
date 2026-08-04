@@ -28,43 +28,52 @@ export function LockField({
 }) {
   const [open, setOpen] = useState(false);
 
+  // Revealed: the box sizes to its CONTENT — copy + CTA + Back, with real
+  // padding — never the closed tile's forced 3:4 box. !aspect-auto drops that
+  // ratio so height follows the content (nothing clips at the top); the content
+  // is in flow (not absolute) so it actually gives the box its height; and a
+  // min-width keeps a narrow base tile (w-24/w-32) wide enough that the button
+  // sits fully inside, while a wide panel (outfits) stays wide. The button can
+  // never overflow the border again.
+  if (open) {
+    return (
+      <div
+        className={`reveal flex flex-col items-center justify-center gap-4 border border-iron bg-void p-6 text-center ${className} !aspect-auto min-w-[12rem]`}
+      >
+        <p className="text-sm leading-snug text-bone">{message}</p>
+        <Link href={href} className={btnPrimary}>
+          {cta}
+        </Link>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-xs uppercase tracking-[0.08em] text-ash hover:text-bone"
+        >
+          Back
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`relative overflow-hidden border border-iron bg-void ${className}`}
     >
       <Field27 />
 
-      {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label={label}
-          className="absolute inset-0 z-10 flex items-center justify-center p-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-paper"
-        >
-          {/* The trailing letter-space at 0.16em is balanced by a matching
-              text-indent, so the label sits optically centred in the block
-              instead of shunted left. */}
-          <span className="breathe-soft inline-block select-none bg-paper px-3 py-1.5 text-[0.7rem] uppercase tracking-[0.16em] [text-indent:0.16em] text-void">
-            Unlock
-          </span>
-        </button>
-      ) : (
-        <div className="reveal absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 bg-void px-6 text-center">
-          <p className="max-w-[15rem] text-sm leading-snug text-bone">
-            {message}
-          </p>
-          <Link href={href} className={btnPrimary}>
-            {cta}
-          </Link>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="text-xs uppercase tracking-[0.08em] text-ash hover:text-bone"
-          >
-            Back
-          </button>
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={label}
+        className="absolute inset-0 z-10 flex items-center justify-center p-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-paper"
+      >
+        {/* The trailing letter-space at 0.16em is balanced by a matching
+            text-indent, so the label sits optically centred in the block
+            instead of shunted left. */}
+        <span className="breathe-soft inline-block select-none bg-paper px-3 py-1.5 text-[0.7rem] uppercase tracking-[0.16em] [text-indent:0.16em] text-void">
+          Unlock
+        </span>
+      </button>
     </div>
   );
 }

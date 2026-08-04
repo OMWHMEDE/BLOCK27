@@ -46,7 +46,7 @@ export default async function SettingsPage() {
         {!paid ? (
           <LockField
             className="w-24 aspect-[3/4]"
-            message="Your base is a paid thing. Upgrade to unlock it."
+            message="Paid feature."
             label="Base photo — locked. Upgrade to unlock."
           />
         ) : (
