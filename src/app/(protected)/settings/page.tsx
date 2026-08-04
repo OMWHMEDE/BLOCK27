@@ -116,9 +116,9 @@ export default async function SettingsPage() {
               3 renders, up to {quota?.pieceLimit ?? "—"} pieces.
             </p>
           </div>
-          <span className="text-ash text-xs uppercase tracking-[0.08em] opacity-50">
-            Manage — soon
-          </span>
+          <Link href="/pricing" className={btnNav}>
+            See plans
+          </Link>
         </div>
       </Section>
 
