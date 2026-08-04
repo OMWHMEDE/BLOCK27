@@ -178,6 +178,36 @@ export default function LandingPage() {
           <TryButton />
         </Reveal>
       </section>
+
+      {/* Footer. The one place plain text belongs on the front — the legal
+          links live here, reachable site-wide from the homepage. */}
+      <footer className="relative z-10 border-t border-iron px-6 py-16">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <span className="font-mono text-xs uppercase tracking-[0.2em] text-ash">
+            © 2026 BLOCK27
+          </span>
+          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <Link
+              href="/terms"
+              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
+            >
+              Terms
+            </Link>
+            <Link
+              href="/privacy"
+              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/refund"
+              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
+            >
+              Refund
+            </Link>
+          </nav>
+        </div>
+      </footer>
     </main>
   );
 }

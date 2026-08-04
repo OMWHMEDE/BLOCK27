@@ -123,12 +123,15 @@ export default async function SettingsPage() {
       </Section>
 
       <Section label="Legal">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href="/privacy" className={btnNav}>
             Privacy
           </Link>
           <Link href="/terms" className={btnNav}>
             Terms
+          </Link>
+          <Link href="/refund" className={btnNav}>
+            Refund
           </Link>
         </div>
       </Section>
