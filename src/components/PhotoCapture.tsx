@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { btnNav, btnPrimary, btnSecondary } from "@/lib/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { Field27 } from "@/components/Field27";
 
 type Stage = "prep" | "live" | "review" | "saving";
 type Facing = "user" | "environment";
@@ -181,11 +180,18 @@ export function PhotoCapture({
   return (
     <main className="relative isolate flex flex-1 flex-col px-6 py-10 max-w-md w-full mx-auto">
       {/* The house "27" field as ground (base capture). isolate keeps it inside
-          this screen's stacking context; -z-10 holds it behind the content. */}
+          this screen's stacking context; -z-10 holds it behind the content. A
+          repeating tiled background (not the fixed-count Field27 text, which runs
+          out below the fold) so it fills the FULL scrollable height, however tall
+          the page grows. inset-0 stretches this to main's whole content box. */}
       {field ? (
-        <div aria-hidden className="absolute inset-0 -z-10">
-          <Field27 />
-        </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 select-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='16'%3E%3Ctext x='0' y='12' font-family='monospace' font-size='10' letter-spacing='0.08em' fill='%238A8783' fill-opacity='0.2'%3E27%3C/text%3E%3C/svg%3E")`,
+          }}
+        />
       ) : null}
 
       {/* Uploading: the branded screen takes over — no plain black gap. */}
