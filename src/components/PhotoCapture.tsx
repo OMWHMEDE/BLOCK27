@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { btnNav, btnPrimary, btnSecondary } from "@/lib/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { Field27 } from "@/components/Field27";
 
 type Stage = "prep" | "live" | "review" | "saving";
 type Facing = "user" | "environment";
@@ -19,10 +21,19 @@ export type PhotoCaptureProps = {
   requirements?: string[];
   warning?: string;
   intro?: string;
-  guide: React.ReactNode;
+  // A framing overlay on the live camera. Optional: the base photo shows none —
+  // a generic body silhouette read as ugly, and the REQUIRED rules already frame
+  // the shot. Garment capture still uses corner brackets.
+  guide?: React.ReactNode;
   previewAlt: string;
   defaultFacing?: Facing;
   galleryReminder?: string;
+  // A back link at the top of the screen (base capture → Settings). Absent on
+  // garment capture, which is reached inline from the wardrobe.
+  backHref?: string;
+  // Lay the house "27" field behind the whole screen, the same ground as the
+  // locked base slot. Off by default — garment capture stays plain black.
+  field?: boolean;
   // Optional worked example shown beside the guidance (base photo uses it). A
   // public static asset — until the file exists at exampleSrc, a styled
   // placeholder holds the space; drop the image in and it appears on next build.
@@ -49,6 +60,8 @@ export function PhotoCapture({
   previewAlt,
   defaultFacing = "user",
   galleryReminder,
+  backHref,
+  field,
   exampleSrc,
   exampleLabel,
   onUse,
@@ -166,9 +179,23 @@ export function PhotoCapture({
   );
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-10 max-w-md w-full mx-auto">
+    <main className="relative isolate flex flex-1 flex-col px-6 py-10 max-w-md w-full mx-auto">
+      {/* The house "27" field as ground (base capture). isolate keeps it inside
+          this screen's stacking context; -z-10 holds it behind the content. */}
+      {field ? (
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <Field27 />
+        </div>
+      ) : null}
+
       {/* Uploading: the branded screen takes over — no plain black gap. */}
       {stage === "saving" && <LoadingScreen />}
+
+      {backHref ? (
+        <Link href={backHref} className={`${btnNav} self-start mb-8`}>
+          Back
+        </Link>
+      ) : null}
 
       <p className="text-xs uppercase tracking-[0.08em] text-ash mb-2">
         {eyebrow}
