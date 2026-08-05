@@ -1,219 +1,163 @@
+import Image from "next/image";
 import Link from "next/link";
-import { btnPrimary } from "@/lib/ui";
-import { Reveal } from "@/components/Reveal";
-import { Plate } from "@/components/Plate";
-
-// The premium front. It sells with the product, not paragraphs: a wordmark that
-// fills the screen, a full-bleed before/after that does more than any copy, three
-// cold beats, and one repeated action. Luxury is the space, the type, the grain,
-// and the slow arrival — never clutter. bone-white on true black is the only
-// accent; no cards, no glow, no gradient, border-radius 0. Every "Try it now"
-// drops the visitor into the app as a guest.
 
 const CTA_HREF = "/wardrobe";
+const IMG = {
+  hero: "/landing/    01-hero-walk.jpg.PNG",
+  problem: "/landing/    04-editorial-concrete.jpg .PNG",
+  wardrobe: "/landing/    03-wardrobe-selection.jpg.PNG",
+  reflection: "/landing/    05-reflection.jpg.PNG",
+  gallery: "/landing/    06-gallery.jpg.PNG",
+  stairs: "/landing/    07-stairs.jpg.PNG",
+  result: "/landing/    11-studio-editorial.jpg.PNG",
+  closing: "/landing/    02-story-rooftop.jpg.PNG",
+};
 
-// Each beat's box is sized to the REAL aspect ratio of its source image, so the
-// photo fills it with no crop and no dead space. read-1 is portrait (736x920,
-// taller than wide); read-2 (827x741) and read-3 (1200x896) are landscape — so
-// the sections are intentionally different shapes. Update the ratio here if an
-// image is replaced with different dimensions.
-const BEATS: {
-  meta: string;
-  line: string;
-  img: string;
-  alt: string;
-  aspect: string;
-}[] = [
-  {
-    meta: "Read",
-    line: "It reads your closet.",
-    img: "/landing/read-1-v2.jpg",
-    alt: "A wardrobe read piece by piece",
-    aspect: "736 / 920",
-  },
-  {
-    meta: "Compose",
-    line: "It puts the fit together.",
-    img: "/landing/read-2-v2.jpg",
-    alt: "An outfit composed from owned pieces",
-    aspect: "827 / 741",
-  },
-  {
-    meta: "Render",
-    line: "It shows it on you.",
-    img: "/landing/read-3-v2.jpg",
-    alt: "The outfit rendered on your own body",
-    aspect: "1200 / 896",
-  },
-];
-
-function TryButton({ delayMs }: { delayMs?: number }) {
+function TryItNow({ className = "" }: { className?: string }) {
   return (
-    <Link
-      href={CTA_HREF}
-      className={`${btnPrimary} reveal`}
-      style={delayMs ? { animationDelay: `${delayMs}ms` } : undefined}
-    >
-      Try it now
+    <Link href={CTA_HREF} className={`landing-cta ${className}`}>
+      TRY IT NOW
     </Link>
+  );
+}
+
+function EditorialImage({
+  src,
+  alt,
+  priority = false,
+  sizes = "(max-width: 768px) 100vw, 58vw",
+  className = "",
+}: {
+  src: string;
+  alt: string;
+  priority?: boolean;
+  sizes?: string;
+  className?: string;
+}) {
+  return (
+    <div className={`landing-image ${className}`}>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        priority={priority}
+        sizes={sizes}
+        className="landing-image__frame"
+      />
+    </div>
   );
 }
 
 export default function LandingPage() {
   return (
-    <main className="relative w-full overflow-hidden">
-      <div aria-hidden className="grain-layer" />
+    <main className="landing-page">
+      <div aria-hidden className="grain-layer grain-layer--animated" />
 
-      {/* 1 — HERO. Type is the hero; the "27" reversed out of a --paper block is
-          the one structural use of the house device. */}
-      <section className="relative z-10 flex min-h-svh flex-col px-6 py-16">
-        <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center">
-          <h1
-            className="reveal font-black uppercase leading-[0.82] tracking-[-0.04em]"
-            style={{ fontSize: "clamp(4rem, 14vw, 11rem)" }}
-          >
-            <span className="block">Block</span>
-            <span className="mt-2 inline-block bg-paper px-[0.1em] pb-[0.05em] text-void">
-              27
-            </span>
+      <section className="landing-hero" aria-labelledby="hero-title">
+        <Image
+          src={IMG.hero}
+          alt="Subject 27 walking through a stark concrete passage in a tailored black-and-white look."
+          fill
+          priority
+          sizes="100vw"
+          className="landing-hero__image"
+        />
+        <div className="landing-hero__copy landing-copy-block">
+          <p className="landing-kicker">BLOCK27</p>
+          <h1 id="hero-title">
+            You own good clothes.
+            <br />
+            You wear them wrong.
           </h1>
-          <p
-            className="reveal mt-12 max-w-md text-ash"
-            style={{ animationDelay: "120ms" }}
-          >
-            You own good clothes. You wear them wrong.
-          </p>
-        </div>
-        <div className="mx-auto w-full max-w-2xl">
-          <TryButton delayMs={240} />
+          <TryItNow />
         </div>
       </section>
 
-      {/* 2 — THE PROOF. A real try-on, full-bleed, split hard down the middle:
-          left the clothes as you own them, right the outfit on you. No slider,
-          no frame. This sells more than any sentence. Top-only spacing — the
-          next section owns the gap below, so stacked sections never double up
-          into a dead black zone. */}
-      <section className="relative z-10 pt-[104px]">
-        <Reveal>
-          <div className="mx-auto mb-12 w-full max-w-2xl px-6">
-            <p className="font-mono text-xs uppercase tracking-[0.24em] text-ash">
-              The proof
-            </p>
-            <p className="mt-4 max-w-md text-bone leading-snug">
-              Same wardrobe. One of them is wearing it right.
-            </p>
-          </div>
-
-          <div className="grid w-full grid-cols-2">
-            <div className="relative">
-              <Plate
-                src="/landing/proof-before-v2.jpg"
-                alt="Before — your clothes as you wear them now"
-                aspectRatio="1055 / 768"
-                objectClass="object-top"
-                eager
-              />
-              <span className="absolute bottom-3 left-3 bg-void px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-paper">
-                Before
-              </span>
-            </div>
-            <div className="relative border-l-2 border-paper">
-              <Plate
-                src="/landing/proof-after-v2.jpg"
-                alt="After — the outfit rendered on you"
-                aspectRatio="1200 / 896"
-                objectClass="object-top"
-              />
-              <span className="absolute bottom-3 right-3 bg-void px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-paper">
-                On you
-              </span>
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* 3 — HOW IT READS. Three beats: one cold line over one full-bleed image,
-          stacked. A single 104px gap between beats (flex gap, not per-beat
-          padding) so each beat hugs its content and there's no doubled black
-          zone below an image. The close section owns the gap after the last. */}
-      <section className="relative z-10 flex flex-col gap-[104px] pt-[104px]">
-        {BEATS.map((b) => (
-          <div key={b.meta}>
-            <Reveal>
-              <div className="mx-auto mb-10 w-full max-w-2xl px-6">
-                <p className="mb-5 font-mono text-xs uppercase tracking-[0.24em] text-ash">
-                  {b.meta}
-                </p>
-                <h2
-                  className="font-black uppercase leading-[0.9] tracking-[-0.03em]"
-                  style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
-                >
-                  {b.line}
-                </h2>
-              </div>
-              <Plate
-                src={b.img}
-                alt={b.alt}
-                className="w-full"
-                aspectRatio={b.aspect}
-              />
-            </Reveal>
-          </div>
-        ))}
-      </section>
-
-      {/* 4 — CLOSE. The mark, one last action, silence around it. */}
-      <section className="relative z-10 flex min-h-svh flex-col items-center justify-center px-6 py-[168px] text-center">
-        <Reveal className="flex flex-col items-center gap-14">
-          <h2
-            className="font-black uppercase leading-[0.85] tracking-[-0.04em]"
-            style={{ fontSize: "clamp(2.5rem, 9vw, 6rem)" }}
-          >
-            Block
-            <span className="ml-[0.12em] inline-block bg-paper px-[0.1em] pb-[0.05em] text-void">
-              27
-            </span>
-          </h2>
-          <TryButton />
-        </Reveal>
-      </section>
-
-      {/* Footer. The one place plain text belongs on the front — the legal
-          links live here, reachable site-wide from the homepage. */}
-      <footer className="relative z-10 border-t border-iron px-6 py-16">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <span className="font-mono text-xs uppercase tracking-[0.2em] text-ash">
-            © 2026 BLOCK27
-          </span>
-          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-            <Link
-              href="/pricing"
-              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/terms"
-              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/privacy"
-              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-            >
-              Privacy
-            </Link>
-            <Link
-              href="/refund"
-              className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-            >
-              Refund
-            </Link>
-          </nav>
+      <section className="landing-section landing-section--problem" aria-labelledby="problem-title">
+        <div className="landing-section__copy landing-copy-block">
+          <p className="landing-kicker">The problem</p>
+          <h2 id="problem-title">Same clothes.</h2>
+          <p>Different decisions.</p>
         </div>
-      </footer>
+        <EditorialImage
+          src={IMG.problem}
+          alt="Subject 27 posed against raw concrete like a black-and-white fashion editorial."
+          className="landing-image--problem"
+        />
+      </section>
+
+      <section className="landing-section landing-section--wardrobe" aria-labelledby="wardrobe-title">
+        <EditorialImage
+          src={IMG.wardrobe}
+          alt="Subject 27 studying wardrobe pieces in a quiet monochrome room."
+          className="landing-image--wardrobe"
+        />
+        <div className="landing-section__copy landing-copy-block">
+          <p className="landing-kicker">The wardrobe</p>
+          <h2 id="wardrobe-title">It reads what you own.</h2>
+        </div>
+      </section>
+
+      <section className="landing-section landing-section--reflection" aria-labelledby="reflection-title">
+        <div className="landing-section__copy landing-copy-block">
+          <p className="landing-kicker">The reflection</p>
+          <h2 id="reflection-title">It understands proportion.</h2>
+          <p>Not trends.</p>
+        </div>
+        <EditorialImage
+          src={IMG.reflection}
+          alt="Subject 27 reflected in a mirror, creating a quiet visual handoff in the story."
+          className="landing-image--reflection"
+        />
+      </section>
+
+      <section className="landing-section landing-section--world" aria-labelledby="world-title">
+        <div className="landing-world-grid">
+          <EditorialImage
+            src={IMG.gallery}
+            alt="Subject 27 moving through a spare gallery-like interior."
+            className="landing-image--gallery"
+          />
+          <EditorialImage
+            src={IMG.stairs}
+            alt="Subject 27 on concrete stairs in the same restrained monochrome world."
+            className="landing-image--stairs"
+            sizes="(max-width: 768px) 72vw, 28vw"
+          />
+        </div>
+        <div className="landing-section__copy landing-copy-block">
+          <p className="landing-kicker">The world</p>
+          <h2 id="world-title">Built with intent.</h2>
+        </div>
+      </section>
+
+      <section className="landing-result" aria-labelledby="result-title">
+        <EditorialImage
+          src={IMG.result}
+          alt="Subject 27 in a studio editorial frame, styled with decisive proportion and restraint."
+          className="landing-image--result"
+          sizes="100vw"
+        />
+        <div className="landing-result__copy landing-copy-block">
+          <p className="landing-kicker">The result</p>
+          <h2 id="result-title">See it on you.</h2>
+        </div>
+      </section>
+
+      <section className="landing-close" aria-labelledby="close-title">
+        <Image
+          src={IMG.closing}
+          alt="Subject 27 on a rooftop in the final quiet frame of the story."
+          fill
+          sizes="100vw"
+          className="landing-close__image"
+        />
+        <div className="landing-close__copy landing-copy-block">
+          <p className="landing-mark" aria-hidden="true">27</p>
+          <h2 id="close-title">Stop guessing.</h2>
+          <TryItNow />
+        </div>
+      </section>
     </main>
   );
 }
