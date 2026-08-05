@@ -7,8 +7,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets and image optimization.
+  // Run on everything except static assets, image optimization, and the
+  // crawler files (robots.txt / sitemap.xml) — those must serve raw, with no
+  // session lookup or guest cookie, so verifiers get a clean 200.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
