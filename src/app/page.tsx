@@ -26,22 +26,22 @@ const BEATS: {
 }[] = [
   {
     meta: "Read",
-    line: "It reads your closet.",
-    img: "/landing/read-1-v2.jpg",
+    line: "I read your closet.",
+    img: "/landing/08-subject27-wardrobe.jpg",
     alt: "A wardrobe read piece by piece",
     aspect: "736 / 920",
   },
   {
     meta: "Compose",
-    line: "It puts the fit together.",
-    img: "/landing/read-2-v2.jpg",
+    line: "I put the fit together.",
+    img: "/landing/11-subject27-studio-editorial.jpg",
     alt: "An outfit composed from owned pieces",
     aspect: "827 / 741",
   },
   {
     meta: "Render",
-    line: "It shows it on you.",
-    img: "/landing/read-3-v2.jpg",
+    line: "I show it on you.",
+    img: "/landing/09-subject27-reflection.jpg",
     alt: "The outfit rendered on your own body",
     aspect: "1200 / 896",
   },
@@ -108,7 +108,7 @@ export default function LandingPage() {
           <div className="grid w-full grid-cols-2">
             <div className="relative">
               <Plate
-                src="/landing/proof-before-v2.jpg"
+                src="/landing/01-subject27-studio-bone-front.jpg"
                 alt="Before — your clothes as you wear them now"
                 aspectRatio="1055 / 768"
                 objectClass="object-top"
@@ -120,7 +120,7 @@ export default function LandingPage() {
             </div>
             <div className="relative border-l-2 border-paper">
               <Plate
-                src="/landing/proof-after-v2.jpg"
+                src="/landing/02-subject27-studio-black-front.jpg"
                 alt="After — the outfit rendered on you"
                 aspectRatio="1200 / 896"
                 objectClass="object-top"
@@ -138,29 +138,37 @@ export default function LandingPage() {
           padding) so each beat hugs its content and there's no doubled black
           zone below an image. The close section owns the gap after the last. */}
       <section className="relative z-10 flex flex-col gap-[104px] pt-[104px]">
-        {BEATS.map((b) => (
-          <div key={b.meta}>
-            <Reveal>
-              <div className="mx-auto mb-10 w-full max-w-2xl px-6">
-                <p className="mb-5 font-mono text-xs uppercase tracking-[0.24em] text-ash">
-                  {b.meta}
-                </p>
-                <h2
-                  className="font-black uppercase leading-[0.9] tracking-[-0.03em]"
-                  style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
-                >
-                  {b.line}
-                </h2>
-              </div>
-              <Plate
-                src={b.img}
-                alt={b.alt}
-                className="w-full"
-                aspectRatio={b.aspect}
-              />
-            </Reveal>
-          </div>
-        ))}
+        {BEATS.map((b) => {
+          const isReflection = b.img.includes("reflection");
+          const textClassName = isReflection
+            ? "relative z-20 mx-auto mb-16 w-full max-w-2xl px-6 sm:mb-20"
+            : "mx-auto mb-10 w-full max-w-2xl px-6";
+          const plateClassName = isReflection ? "relative z-0 w-full" : "w-full";
+
+          return (
+            <div key={b.meta}>
+              <Reveal>
+                <div className={textClassName}>
+                  <p className="mb-5 font-mono text-xs uppercase tracking-[0.24em] text-ash">
+                    {b.meta}
+                  </p>
+                  <h2
+                    className="font-black uppercase leading-[0.9] tracking-[-0.03em]"
+                    style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
+                  >
+                    {b.line}
+                  </h2>
+                </div>
+                <Plate
+                  src={b.img}
+                  alt={b.alt}
+                  className={plateClassName}
+                  aspectRatio={b.aspect}
+                />
+              </Reveal>
+            </div>
+          );
+        })}
       </section>
 
       {/* 4 — CLOSE. The mark, one last action, silence around it. */}
