@@ -116,8 +116,8 @@ export default async function SettingsPage() {
               3 renders, up to {quota?.pieceLimit ?? "—"} pieces.
             </p>
           </div>
-          <Link href="/pricing" className={btnNav}>
-            See plans
+          <Link href="/upgrade" className={btnNav}>
+            Upgrade
           </Link>
         </div>
       </Section>
