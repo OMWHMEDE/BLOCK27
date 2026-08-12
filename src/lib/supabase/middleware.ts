@@ -20,6 +20,7 @@ const PROTECTED_PREFIXES = [
   "/pieces",
   "/shopping",
   "/settings",
+  "/upgrade",
 ];
 
 // Routes an authenticated user should not see. They are bounced to the app.
