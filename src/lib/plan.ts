@@ -1,32 +1,23 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 
-// The plan line. Free is the default (users.subscription_status = 'none'). Paid
-// unlocks the hand — try-on renders — and a larger wardrobe. Two rules are coded
-// here and nowhere else:
+// The plan line. The paid tier a user is on drives every usage limit: how many
+// pieces their wardrobe holds and how many try-ons they get per month. The four
+// tiers and their numbers live in @/lib/whop/plans (the same source /pricing
+// reads); this file resolves a user to their tier and surfaces those limits.
 //
-//   FREE = 15 pieces, 0 try-ons.
+//   Free 15 pieces / 0 try-ons · Premium 30/5 · Pro 60/10 · Boss 100/20
 //
-// The paid-tier piece cap is intentionally NOT hardcoded — it reads from an env
-// so it can move without a deploy. Stripe isn't wired yet, so a paid account is
-// one whose subscription_status is a live status (set directly for now).
-//
+// The tier comes from users.plan_tier, written by the Whop webhook on payment.
 // PAID_OVERRIDE_UIDS is a SCOPED testing allowlist: a comma-separated list of
-// user ids that get paid access regardless of their status. It is per-account,
-// never global — only the ids in the list are affected, everyone else follows
-// their real status. Empty or unset means nobody is overridden (identical to no
-// override). This replaces the old global PAID_OVERRIDE=1 switch, which granted
-// paid to EVERY user and was unsafe to leave on. Setting PAID_OVERRIDE has no
-// effect anymore.
+// user ids that get full (Boss) access with all caps off, regardless of status.
+// Per-account, never global — only listed ids are affected; empty/unset affects
+// nobody. (Replaces the old global PAID_OVERRIDE switch, now ignored.)
 
-export const FREE_PIECE_LIMIT = 15;
-
-function limitFromEnv(name: string, fallback: number): number {
-  const n = Number(process.env[name]);
-  return Number.isInteger(n) && n > 0 ? n : fallback;
-}
-
-export const PRO_PIECE_LIMIT = limitFromEnv("PRO_PIECE_LIMIT", 50);
+// Kept for the guest→account migration, which caps carried-over pieces at the
+// free allowance. Sourced from the tier config so there's one number.
+export const FREE_PIECE_LIMIT = TIERS.free.pieces;
 
 const PAID_STATUSES = new Set(["active", "trialing", "past_due", "pro", "paid"]);
 
@@ -48,25 +39,25 @@ export function isOverriddenUid(userId: string): boolean {
   return paidOverrideUids().has(userId);
 }
 
-// Pure status check — no override. The override is a per-user concern and is
-// applied in getPlan, which has the user id.
+// Pure status check — no override. Used as the fallback signal when the tier
+// column isn't available yet.
 export function isPaidStatus(status: string | null | undefined): boolean {
   return !!status && PAID_STATUSES.has(status);
 }
 
-export function pieceLimitFor(paid: boolean): number {
-  return paid ? PRO_PIECE_LIMIT : FREE_PIECE_LIMIT;
-}
-
 export type Plan = {
+  // The resolved tier. Drives the limits below.
+  tier: Tier;
+  // True for any paid tier (or a test-exempt account). The render/base gates
+  // read this — a free account never reaches the hand.
   paid: boolean;
   status: string;
+  // Wardrobe capacity and monthly try-on allowance for this tier.
   pieceLimit: number;
+  tryOnsPerMonth: number;
   // The single test-account bypass. True only when this user's id is in
-  // PAID_OVERRIDE_UIDS. When true, EVERY usage limit is off for this account —
-  // plan gate, daily/monthly render caps, piece cap. It covers usage limits
-  // ONLY: it never affects moderation, RLS, or account deletion. Always false
-  // for anyone not on the allowlist, so their real limits are untouched.
+  // PAID_OVERRIDE_UIDS: EVERY usage limit is off (piece cap, try-on cap, plan
+  // gate). Usage limits ONLY — never moderation, RLS, or account deletion.
   exempt: boolean;
 };
 
@@ -75,17 +66,51 @@ export type Plan = {
 // looser one. The render gate depends on this being conservative.
 export async function getPlan(userId: string): Promise<Plan> {
   const supabase = await createClient();
-  const { data } = await supabase
+
+  // Read the tier column alongside status. If migration 0011 hasn't been run
+  // yet, selecting plan_tier errors on the missing column — fall back to a
+  // status-only read so nothing 500s during the migration window.
+  let status = "none";
+  let tierRaw: string | null = null;
+
+  const withTier = await supabase
     .from("users")
-    .select("subscription_status")
+    .select("subscription_status, plan_tier")
     .eq("id", userId)
     .maybeSingle();
 
-  const status = (data?.subscription_status as string | null) ?? "none";
-  // The one allowlist, read once here and surfaced as `exempt` for every limit
-  // check to reuse — so there is a single source of truth, not a bypass per cap.
+  if (withTier.error) {
+    const fallback = await supabase
+      .from("users")
+      .select("subscription_status")
+      .eq("id", userId)
+      .maybeSingle();
+    status = (fallback.data?.subscription_status as string | null) ?? "none";
+  } else {
+    status = (withTier.data?.subscription_status as string | null) ?? "none";
+    tierRaw = (withTier.data?.plan_tier as string | null) ?? null;
+  }
+
   const exempt = isOverriddenUid(userId);
-  // Paid if exempt, OR their real status is a paid one.
-  const paid = exempt || isPaidStatus(status);
-  return { paid, status, pieceLimit: pieceLimitFor(paid), exempt };
+
+  // Effective tier: test accounts get Boss limits (everything, with caps off);
+  // otherwise the stored plan_tier. When plan_tier is absent (pre-migration), a
+  // paid status still grants paid access — default it to Pro so such an account
+  // isn't stranded on free piece limits.
+  let tier: Tier;
+  if (exempt) tier = "boss";
+  else if (tierRaw) tier = toTier(tierRaw);
+  else tier = isPaidStatus(status) ? "pro" : "free";
+
+  const limits = TIERS[tier];
+  const paid = exempt || tier !== "free" || isPaidStatus(status);
+
+  return {
+    tier,
+    paid,
+    status,
+    pieceLimit: limits.pieces,
+    tryOnsPerMonth: limits.tryOnsPerMonth,
+    exempt,
+  };
 }

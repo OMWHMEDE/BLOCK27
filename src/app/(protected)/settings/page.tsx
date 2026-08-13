@@ -86,15 +86,9 @@ export default async function SettingsPage() {
             ) : null}
             <dl className="flex flex-col gap-3 font-mono text-sm">
               <QuotaRow
-                label="Renders today"
-                used={quota.rendersToday}
-                limit={quota.dailyRenderLimit}
-                exempt={quota.exempt}
-              />
-              <QuotaRow
-                label="Renders this month"
+                label="Try-ons this month"
                 used={quota.rendersMonth}
-                limit={quota.monthlyRenderLimit}
+                limit={quota.tryOnsPerMonth}
                 exempt={quota.exempt}
               />
               <QuotaRow
@@ -111,13 +105,15 @@ export default async function SettingsPage() {
       <Section label="Plan">
         <div className="flex items-center justify-between gap-4 border border-iron px-4 py-3 max-w-sm">
           <div>
-            <p className="text-bone">Free</p>
+            <p className="text-bone">{quota?.tierLabel ?? "Free"}</p>
             <p className="text-ash text-sm mt-0.5">
-              3 renders, up to {quota?.pieceLimit ?? "—"} pieces.
+              {quota
+                ? `${quota.tryOnsPerMonth} try-ons/mo · up to ${quota.pieceLimit} pieces`
+                : "—"}
             </p>
           </div>
           <Link href="/upgrade" className={btnNav}>
-            Upgrade
+            {quota && quota.tier !== "free" ? "Change" : "Upgrade"}
           </Link>
         </div>
       </Section>

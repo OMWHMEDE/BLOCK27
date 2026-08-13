@@ -14,15 +14,8 @@ import type { RenderCategory } from "@/lib/hand";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// Fair-use quota. Only successful renders count (failures never do). Defaults
-// are the product limits (3/day, 30/month); RENDER_DAILY_LIMIT /
-// RENDER_MONTHLY_LIMIT override them (server-only) for founder testing.
-function limitFromEnv(name: string, fallback: number): number {
-  const n = Number(process.env[name]);
-  return Number.isInteger(n) && n > 0 ? n : fallback;
-}
-const DAILY_LIMIT = limitFromEnv("RENDER_DAILY_LIMIT", 3);
-const MONTHLY_LIMIT = limitFromEnv("RENDER_MONTHLY_LIMIT", 30);
+// The try-on allowance is monthly and per-tier (Premium 5, Pro 10, Boss 20;
+// Free 0). It comes from the user's plan (@/lib/plan) — there is no daily cap.
 
 // The brain decides which garments; the hand only executes. This maps a
 // garment's category to a layer ORDER — one-piece/bottoms/tops/outerwear, then
@@ -154,43 +147,27 @@ export async function POST(
     });
   }
 
-  // Quota — count only successful renders. Skipped entirely for a test-exempt
-  // account (same PAID_OVERRIDE_UIDS allowlist as the plan gate above): no daily
-  // or monthly cap. Every other account is counted exactly as before.
+  // Quota — the tier's monthly try-on allowance. Only successful renders count
+  // (failures never do). Skipped for a test-exempt account (PAID_OVERRIDE_UIDS):
+  // no cap. No daily cap. A Free account never reaches here — it's stopped by the
+  // paywall above (tryOnsPerMonth 0, paid false).
   if (!plan.exempt) {
     const now = new Date();
-    const dayStart = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    ).toISOString();
     const monthStart = new Date(
       Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
     ).toISOString();
 
-    const [{ count: dayCount }, { count: monthCount }] = await Promise.all([
-      supabase
-        .from("renders")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .gte("created_at", dayStart),
-      supabase
-        .from("renders")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .gte("created_at", monthStart),
-    ]);
+    const { count: monthCount } = await supabase
+      .from("renders")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", monthStart);
 
-    if ((dayCount ?? 0) >= DAILY_LIMIT) {
+    if ((monthCount ?? 0) >= plan.tryOnsPerMonth) {
       return NextResponse.json({
         ok: false,
         quota: true,
-        message: `That's ${DAILY_LIMIT} renders today. Come back tomorrow.`,
-      });
-    }
-    if ((monthCount ?? 0) >= MONTHLY_LIMIT) {
-      return NextResponse.json({
-        ok: false,
-        quota: true,
-        message: `You've used all ${MONTHLY_LIMIT} renders this month.`,
+        message: `You've used all ${plan.tryOnsPerMonth} try-ons this month.`,
       });
     }
   }
