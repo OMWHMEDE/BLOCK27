@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
-import { btnPrimary } from "@/lib/ui";
+import { btnPrimary, btnSecondary } from "@/lib/ui";
 
 export const metadata = {
   title: "BLOCK27 — Pricing",
@@ -114,6 +114,17 @@ export default function PricingPage() {
                 </div>
               ))}
             </dl>
+
+            {/* Paid tiers link to the authed checkout (/upgrade). A logged-out
+                visitor is bounced to /login by the proxy first. */}
+            {p.name !== "Free" ? (
+              <Link
+                href={`/upgrade?tier=${p.name.toLowerCase()}`}
+                className={`${btnSecondary} mt-6`}
+              >
+                Choose {p.name}
+              </Link>
+            ) : null}
           </section>
         ))}
       </div>

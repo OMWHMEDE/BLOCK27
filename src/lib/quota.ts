@@ -1,22 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPlan } from "@/lib/plan";
+import { TIERS, type Tier } from "@/lib/whop/plans";
 
-// Fair-use limits. The render caps match the render route (3/day, 30/month);
-// they are env-overridable and clamped to a positive integer. The piece cap is
-// plan-aware and lives in @/lib/plan (free = 15).
-function limitFromEnv(name: string, fallback: number): number {
-  const n = Number(process.env[name]);
-  return Number.isInteger(n) && n > 0 ? n : fallback;
-}
-
-export const DAILY_RENDER_LIMIT = limitFromEnv("RENDER_DAILY_LIMIT", 3);
-export const MONTHLY_RENDER_LIMIT = limitFromEnv("RENDER_MONTHLY_LIMIT", 30);
+// Read-only usage for the settings screen. The try-on allowance is monthly and
+// per-tier (Premium 5, Pro 10, Boss 20, Free 0) — there is no daily cap. The
+// piece cap is plan-aware and lives in @/lib/plan.
 
 export type Quota = {
-  rendersToday: number;
+  tier: Tier;
+  tierLabel: string;
   rendersMonth: number;
-  dailyRenderLimit: number;
-  monthlyRenderLimit: number;
+  tryOnsPerMonth: number;
   pieces: number;
   pieceLimit: number;
   // Test-exempt (PAID_OVERRIDE_UIDS): the counts are still shown, but none of
@@ -24,25 +18,17 @@ export type Quota = {
   exempt: boolean;
 };
 
-// Read-only usage for the settings screen. RLS scopes every count to the user.
+// RLS scopes every count to the user.
 export async function getQuota(userId: string): Promise<Quota> {
   const supabase = await createClient();
   const plan = await getPlan(userId);
 
   const now = new Date();
-  const dayStart = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  ).toISOString();
   const monthStart = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
   ).toISOString();
 
-  const [dayRes, monthRes, pieceRes] = await Promise.all([
-    supabase
-      .from("renders")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", dayStart),
+  const [monthRes, pieceRes] = await Promise.all([
     supabase
       .from("renders")
       .select("id", { count: "exact", head: true })
@@ -55,10 +41,10 @@ export async function getQuota(userId: string): Promise<Quota> {
   ]);
 
   return {
-    rendersToday: dayRes.count ?? 0,
+    tier: plan.tier,
+    tierLabel: TIERS[plan.tier].label,
     rendersMonth: monthRes.count ?? 0,
-    dailyRenderLimit: DAILY_RENDER_LIMIT,
-    monthlyRenderLimit: MONTHLY_RENDER_LIMIT,
+    tryOnsPerMonth: plan.tryOnsPerMonth,
     pieces: pieceRes.count ?? 0,
     pieceLimit: plan.pieceLimit,
     exempt: plan.exempt,
