@@ -42,6 +42,8 @@ function EditorialImage({
         fill
         priority={priority}
         sizes={sizes}
+        unoptimized
+        quality={100}
         className="landing-image__frame"
       />
     </div>
@@ -60,6 +62,8 @@ export default function LandingPage() {
           fill
           priority
           sizes="100vw"
+          unoptimized
+          quality={100}
           className="landing-hero__image"
         />
         <div className="landing-hero__copy landing-copy-block">
@@ -150,6 +154,8 @@ export default function LandingPage() {
           alt="Subject 27 on a rooftop in the final quiet frame of the story."
           fill
           sizes="100vw"
+          unoptimized
+          quality={100}
           className="landing-close__image"
         />
         <div className="landing-close__copy landing-copy-block">
