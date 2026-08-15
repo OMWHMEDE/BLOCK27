@@ -25,7 +25,8 @@ const PLANS: Plan[] = [
     note: "The stylist, on your own wardrobe. See what it says before you pay.",
     rows: [
       { label: "Pieces", value: "15" },
-      { label: "Outfit compositions", value: "Included" },
+      { label: "Outfit compositions", value: "10 / mo" },
+      { label: "Shopping consults", value: "10 / mo" },
       { label: "Try-ons", value: "0" },
     ],
   },
@@ -36,7 +37,8 @@ const PLANS: Plan[] = [
     note: "Start seeing outfits on your own body.",
     rows: [
       { label: "Pieces", value: "30" },
-      { label: "Outfit compositions", value: "10 / mo" },
+      { label: "Outfit compositions", value: "30 / mo" },
+      { label: "Shopping consults", value: "60 / mo" },
       { label: "Try-ons", value: "5 / mo" },
     ],
   },
@@ -47,7 +49,8 @@ const PLANS: Plan[] = [
     note: "A full wardrobe, worked hard.",
     rows: [
       { label: "Pieces", value: "60" },
-      { label: "Outfit compositions", value: "20 / mo" },
+      { label: "Outfit compositions", value: "60 / mo" },
+      { label: "Shopping consults", value: "120 / mo" },
       { label: "Try-ons", value: "10 / mo" },
     ],
   },
@@ -58,7 +61,8 @@ const PLANS: Plan[] = [
     note: "Everything, no thinking about limits.",
     rows: [
       { label: "Pieces", value: "100" },
-      { label: "Outfit compositions", value: "45 / mo" },
+      { label: "Outfit compositions", value: "150 / mo" },
+      { label: "Shopping consults", value: "200 / mo" },
       { label: "Try-ons", value: "20 / mo" },
     ],
   },

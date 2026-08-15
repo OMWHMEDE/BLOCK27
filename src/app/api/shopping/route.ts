@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { recommendGaps } from "@/lib/brain/recommendGaps";
 import { searchUrl } from "@/lib/shopping/searchUrl";
+import { getPlan } from "@/lib/plan";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 
 // Node runtime + room for a reasoning call.
@@ -44,6 +45,36 @@ export async function POST(request: Request) {
       advice:
         "Nothing to shop for yet. Add the pieces you already own first — I audit a wardrobe, I don't guess into empty space.",
     });
+  }
+
+  // Consultation allowance — per-tier monthly cap, reserved before the brain
+  // call and refunded on failure. Same billing-anchored window as try-ons.
+  const userPlan = await getPlan(user.id);
+  const periodStart = userPlan.windowStart.toISOString();
+  if (!userPlan.exempt) {
+    const { data: reserved, error: reserveErr } = await supabase.rpc(
+      "reserve_usage",
+      {
+        p_kind: "shopping",
+        p_period_start: periodStart,
+        p_cap: userPlan.shoppingPerMonth,
+      },
+    );
+    if (reserveErr) {
+      // Fail closed — don't consult if the cap can't be checked.
+      console.error("[shopping] reserve_usage failed", reserveErr.message);
+      return NextResponse.json(
+        { ok: false, error: "Couldn't check your plan just now. Try again in a moment." },
+        { status: 503 },
+      );
+    }
+    if (!reserved) {
+      // Soft, on-brand: shown as an ash note by ShopGaps.
+      return NextResponse.json({
+        ok: true,
+        note: `You've used all ${userPlan.shoppingPerMonth} consultations this cycle. Upgrade for more.`,
+      });
+    }
   }
 
   try {
@@ -107,6 +138,14 @@ export async function POST(request: Request) {
       advice: plan.advice,
     });
   } catch (err) {
+    // A failed consultation must not burn the reserved slot.
+    if (!userPlan.exempt) {
+      const { error: relErr } = await supabase.rpc("release_usage", {
+        p_kind: "shopping",
+        p_period_start: periodStart,
+      });
+      if (relErr) console.error("[shopping] release_usage failed", relErr.message);
+    }
     const message = err instanceof Error ? err.message : "Consultation failed";
     console.error("[shopping] failed", message);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });

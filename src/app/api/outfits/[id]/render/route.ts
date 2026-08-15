@@ -14,8 +14,10 @@ import type { RenderCategory } from "@/lib/hand";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// The try-on allowance is monthly and per-tier (Premium 5, Pro 10, Boss 20;
-// Free 0). It comes from the user's plan (@/lib/plan) — there is no daily cap.
+// The try-on allowance is per-tier (Premium 5, Pro 10, Boss 20; Free 0) over a
+// billing-anchored monthly window from the user's plan (@/lib/plan). It's
+// reserved atomically before the provider call so concurrent requests can't
+// exceed it, and refunded on failure. No daily cap.
 
 // The brain decides which garments; the hand only executes. This maps a
 // garment's category to a layer ORDER — one-piece/bottoms/tops/outerwear, then
@@ -147,30 +149,48 @@ export async function POST(
     });
   }
 
-  // Quota — the tier's monthly try-on allowance. Only successful renders count
-  // (failures never do). Skipped for a test-exempt account (PAID_OVERRIDE_UIDS):
-  // no cap. No daily cap. A Free account never reaches here — it's stopped by the
-  // paywall above (tryOnsPerMonth 0, paid false).
+  // Try-on allowance — RESERVED ATOMICALLY before the paid provider is called,
+  // so concurrent requests can never exceed the tier's cap (the old read-then-
+  // FASHN-then-insert pattern let a burst of requests all pass the check). The
+  // window is the user's billing-anchored one (plan.windowStart), not the
+  // calendar month, so there is no fresh allowance at the month boundary. A
+  // failed render releases the slot below, so a failure never burns quota.
+  // Skipped for a test-exempt account (PAID_OVERRIDE_UIDS). A Free account never
+  // reaches here — it's stopped by the paywall above (tryOnsPerMonth 0, paid
+  // false).
+  const periodStart = plan.windowStart.toISOString();
   if (!plan.exempt) {
-    const now = new Date();
-    const monthStart = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-    ).toISOString();
-
-    const { count: monthCount } = await supabase
-      .from("renders")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", monthStart);
-
-    if ((monthCount ?? 0) >= plan.tryOnsPerMonth) {
+    const { data: reserved, error: reserveErr } = await supabase.rpc(
+      "reserve_usage",
+      { p_kind: "render", p_period_start: periodStart, p_cap: plan.tryOnsPerMonth },
+    );
+    if (reserveErr) {
+      // Fail CLOSED: if the cap can't be checked, never call the paid provider.
+      console.error("[render] reserve_usage failed", reserveErr.message);
+      return NextResponse.json(
+        { ok: false, error: "Something's off. Try again in a minute." },
+        { status: 500 },
+      );
+    }
+    if (!reserved) {
       return NextResponse.json({
         ok: false,
         quota: true,
-        message: `You've used all ${plan.tryOnsPerMonth} try-ons this month.`,
+        message: `You've used all ${plan.tryOnsPerMonth} try-ons this cycle.`,
       });
     }
   }
+
+  // Refund the reserved slot on any failure the user sees, so a failed render
+  // never counts against the allowance. Exempt accounts never reserved one.
+  const releaseReservation = async () => {
+    if (plan.exempt) return;
+    const { error } = await supabase.rpc("release_usage", {
+      p_kind: "render",
+      p_period_start: periodStart,
+    });
+    if (error) console.error("[render] release_usage failed", error.message);
+  };
 
   // Execute.
   const result = await renderOutfit(user.id, outfitId, layers);
@@ -179,6 +199,7 @@ export async function POST(
     // is logged for debugging and NEVER shown to the user — no billing, credit,
     // or provider detail ever leaks to the screen. The user sees one cold,
     // generic line regardless of cause.
+    await releaseReservation();
     console.error("[render] failed for outfit", outfitId, result.detail);
     return NextResponse.json(
       { ok: false, error: "Something's off. Try again in a minute." },
@@ -193,6 +214,9 @@ export async function POST(
     .eq("id", outfitId)
     .eq("user_id", user.id);
   if (upErr) {
+    // The render succeeded but we can't record it — the user sees an error, so
+    // don't charge them for it either.
+    await releaseReservation();
     return NextResponse.json(
       { ok: false, error: `store failed: ${upErr.message}` },
       { status: 500 },

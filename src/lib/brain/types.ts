@@ -31,8 +31,19 @@ export type GarmentAnalysis = {
 // What the brain returns when it composes outfits from the wardrobe text.
 // item_ids reference garment ids it was given; gap is a plain statement of what
 // the wardrobe can't do ("" when it served the request).
+//
+// hero and angle are STEERING fields: the model must declare, per outfit, the one
+// piece (or layered combo) carrying the look and the distinct idea behind it. They
+// force a real hero and genuine variety across the set. They are not persisted or
+// rendered — the generate route stores only item_ids + reasoning — so they are
+// typed optional here: present in the model's output, ignored downstream.
 export type OutfitPlan = {
-  outfits: { item_ids: string[]; reasoning: string }[];
+  outfits: {
+    item_ids: string[];
+    reasoning: string;
+    hero?: string;
+    angle?: string;
+  }[];
   gap: string;
 };
 

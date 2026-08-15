@@ -16,8 +16,10 @@ export type TierLimits = {
   priceUsd: number;
   pieces: number;
   tryOnsPerMonth: number;
-  // null = not metered (free stylist access has no monthly composition cap).
-  compositionsPerMonth: number | null;
+  // Monthly caps on the brain calls (metered server-side per user). Every tier
+  // is metered — the free stylist is free up to its monthly allowance.
+  compositionsPerMonth: number;
+  shoppingPerMonth: number;
 };
 
 // Matches /pricing exactly. If pricing changes, change it here and there.
@@ -27,28 +29,32 @@ export const TIERS: Record<Tier, TierLimits> = {
     priceUsd: 0,
     pieces: 15,
     tryOnsPerMonth: 0,
-    compositionsPerMonth: null,
+    compositionsPerMonth: 10,
+    shoppingPerMonth: 10,
   },
   premium: {
     label: "Premium",
     priceUsd: 14.99,
     pieces: 30,
     tryOnsPerMonth: 5,
-    compositionsPerMonth: 10,
+    compositionsPerMonth: 30,
+    shoppingPerMonth: 60,
   },
   pro: {
     label: "Pro",
     priceUsd: 24.99,
     pieces: 60,
     tryOnsPerMonth: 10,
-    compositionsPerMonth: 20,
+    compositionsPerMonth: 60,
+    shoppingPerMonth: 120,
   },
   boss: {
     label: "Boss",
     priceUsd: 49.99,
     pieces: 100,
     tryOnsPerMonth: 20,
-    compositionsPerMonth: 45,
+    compositionsPerMonth: 150,
+    shoppingPerMonth: 200,
   },
 };
 
