@@ -3,14 +3,14 @@ import Link from "next/link";
 
 const CTA_HREF = "/wardrobe";
 const IMG = {
-  hero: "/landing/01-hero-walk-v3.png",
-  problem: "/landing/04-editorial-concrete-v3.png",
-  wardrobe: "/landing/03-wardrobe-selection-v3.png",
-  reflection: "/landing/05-reflection-v3.png",
-  gallery: "/landing/06-gallery-v3.png",
-  stairs: "/landing/07-stairs-v3.png",
-  result: "/landing/11-studio-editorial-v3.png",
-  closing: "/landing/02-story-rooftop-v3.png",
+  hero: "/landing/01-hero-walk-v4.jpg",
+  problem: "/landing/04-editorial-concrete-v4.jpg",
+  wardrobe: "/landing/03-wardrobe-selection-v4.jpg",
+  reflection: "/landing/05-reflection-v4.jpg",
+  gallery: "/landing/06-gallery-v4.jpg",
+  stairs: "/landing/07-stairs-v4.jpg",
+  result: "/landing/11-studio-editorial-v4.jpg",
+  closing: "/landing/02-story-rooftop-v4.jpg",
 };
 
 function TryItNow({ className = "" }: { className?: string }) {
