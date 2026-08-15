@@ -56,6 +56,16 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // A logged-in user has no use for the marketing landing at "/": send them
+  // straight into the app. Done here in the interceptor (before any HTML is
+  // sent) so there is no flash of the landing first. Logged-out visitors still
+  // get the landing.
+  if (user && path === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/wardrobe";
+    return NextResponse.redirect(url);
+  }
+
   // Guest identity at the edge. A visitor with no account gets a stable guest id
   // minted on arrival — BEFORE their first upload — so the guest routes only ever
   // READ this cookie, never create it mid-request. This is the fix for the

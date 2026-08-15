@@ -20,6 +20,7 @@ export function AuthForm({
   error,
   notice,
   profileFields = false,
+  showForgot = false,
 }: {
   action: (formData: FormData) => void;
   submitLabel: string;
@@ -30,6 +31,8 @@ export function AuthForm({
   notice?: string;
   // Signup only: an optional display name and avatar, captured up front.
   profileFields?: boolean;
+  // Login only: the "Forgot password?" affordance under the password field.
+  showForgot?: boolean;
 }) {
   return (
     <div className="relative isolate flex flex-1 flex-col">
@@ -98,6 +101,15 @@ export function AuthForm({
               className="bg-void border border-iron px-4 py-3 text-paper outline-none transition-colors duration-200 focus:border-paper"
             />
           </label>
+
+          {showForgot ? (
+            <Link
+              href="/reset"
+              className="-mt-3 self-end text-xs uppercase tracking-[0.08em] text-ash hover:text-bone"
+            >
+              Forgot password?
+            </Link>
+          ) : null}
 
           {profileFields ? (
             <label className="flex flex-col gap-1.5">
