@@ -19,6 +19,33 @@ import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 // free allowance. Sourced from the tier config so there's one number.
 export const FREE_PIECE_LIMIT = TIERS.free.pieces;
 
+// The start of the user's current usage window. Anchored to their plan start
+// (purchase time), falling back to account creation — never the calendar month,
+// so nobody gets a fresh allowance at the 1st. Returns the most recent monthly
+// anniversary of the anchor at or before `now`, in UTC, with the day clamped for
+// short months (a 31st anchor lands on the 30th/28th).
+export function usageWindowStart(anchor: Date, now: Date = new Date()): Date {
+  const day = anchor.getUTCDate();
+  const h = anchor.getUTCHours();
+  const mi = anchor.getUTCMinutes();
+  const s = anchor.getUTCSeconds();
+  const ms = anchor.getUTCMilliseconds();
+
+  const at = (year: number, month: number): Date => {
+    const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(year, month, Math.min(day, lastDay), h, mi, s, ms));
+  };
+
+  let cand = at(now.getUTCFullYear(), now.getUTCMonth());
+  if (cand.getTime() > now.getTime()) {
+    const y =
+      now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear();
+    const m = now.getUTCMonth() === 0 ? 11 : now.getUTCMonth() - 1;
+    cand = at(y, m);
+  }
+  return cand;
+}
+
 const PAID_STATUSES = new Set(["active", "trialing", "past_due", "pro", "paid"]);
 
 // The override allowlist, parsed fresh each call (env is read at request time on
@@ -52,9 +79,14 @@ export type Plan = {
   // read this — a free account never reaches the hand.
   paid: boolean;
   status: string;
-  // Wardrobe capacity and monthly try-on allowance for this tier.
+  // Wardrobe capacity and monthly allowances for this tier.
   pieceLimit: number;
   tryOnsPerMonth: number;
+  compositionsPerMonth: number;
+  shoppingPerMonth: number;
+  // Start of the user's current usage window (billing-anchored, not calendar).
+  // Every monthly counter — try-ons, compositions, shopping — measures from here.
+  windowStart: Date;
   // The single test-account bypass. True only when this user's id is in
   // PAID_OVERRIDE_UIDS: EVERY usage limit is off (piece cap, try-on cap, plan
   // gate). Usage limits ONLY — never moderation, RLS, or account deletion.
@@ -72,23 +104,36 @@ export async function getPlan(userId: string): Promise<Plan> {
   // status-only read so nothing 500s during the migration window.
   let status = "none";
   let tierRaw: string | null = null;
+  let anchor: Date | null = null;
+  let createdAt: Date | null = null;
 
   const withTier = await supabase
     .from("users")
-    .select("subscription_status, plan_tier")
+    .select("subscription_status, plan_tier, plan_anchor_at, created_at")
     .eq("id", userId)
     .maybeSingle();
 
   if (withTier.error) {
+    // Pre-migration (plan_tier or plan_anchor_at column absent): degrade to a
+    // status + created_at read so nothing 500s during the migration window.
     const fallback = await supabase
       .from("users")
-      .select("subscription_status")
+      .select("subscription_status, created_at")
       .eq("id", userId)
       .maybeSingle();
     status = (fallback.data?.subscription_status as string | null) ?? "none";
+    createdAt = fallback.data?.created_at
+      ? new Date(fallback.data.created_at as string)
+      : null;
   } else {
     status = (withTier.data?.subscription_status as string | null) ?? "none";
     tierRaw = (withTier.data?.plan_tier as string | null) ?? null;
+    anchor = withTier.data?.plan_anchor_at
+      ? new Date(withTier.data.plan_anchor_at as string)
+      : null;
+    createdAt = withTier.data?.created_at
+      ? new Date(withTier.data.created_at as string)
+      : null;
   }
 
   const exempt = isOverriddenUid(userId);
@@ -111,6 +156,9 @@ export async function getPlan(userId: string): Promise<Plan> {
     status,
     pieceLimit: limits.pieces,
     tryOnsPerMonth: limits.tryOnsPerMonth,
+    compositionsPerMonth: limits.compositionsPerMonth,
+    shoppingPerMonth: limits.shoppingPerMonth,
+    windowStart: usageWindowStart(anchor ?? createdAt ?? new Date()),
     exempt,
   };
 }

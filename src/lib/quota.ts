@@ -23,17 +23,17 @@ export async function getQuota(userId: string): Promise<Quota> {
   const supabase = await createClient();
   const plan = await getPlan(userId);
 
-  const now = new Date();
-  const monthStart = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-  ).toISOString();
+  // Display counts the user's actual delivered renders within the SAME
+  // billing-anchored window the cap is enforced against (plan.windowStart), so
+  // "used this cycle" on settings lines up with what the render gate allows.
+  const windowStart = plan.windowStart.toISOString();
 
   const [monthRes, pieceRes] = await Promise.all([
     supabase
       .from("renders")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
-      .gte("created_at", monthStart),
+      .gte("created_at", windowStart),
     supabase
       .from("garments")
       .select("id", { count: "exact", head: true })

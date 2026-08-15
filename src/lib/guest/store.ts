@@ -13,12 +13,17 @@ import type { ModerationMedia } from "@/lib/moderation/types";
 export const GUEST_PIECE_LIMIT = 3; // pieces one guest can pull before signup
 const GUEST_PREFIX = "guests";
 
-// Coarse per-IP rate limits over a rolling window — the per-guest caps (3 pieces
-// via count, 1 generation via a unique row) are the real guards; these just stop
-// one address from spinning up many guest sessions.
-const IP_WINDOW_MS = 60 * 60 * 1000; // 1h
-const IP_UPLOAD_MAX = 20;
-const IP_GENERATE_MAX = 8;
+// Per-IP caps over a rolling window. The per-guest caps (3 pieces via count, 1
+// generation via a unique row) are keyed to the cookie, so clearing cookies
+// mints a fresh guest and resets them — these per-IP ceilings are what stop that
+// from farming free brain calls indefinitely. Kept low and over a full day so a
+// cookie-cleared burst can't spin up many guest sessions from one address: the
+// worst case is a few cents of compose/analysis per IP per day. Tradeoff:
+// shared IPs (office, CGNAT mobile, campus) share the ceiling — acceptable since
+// the guest flow is a preview meant to push signup, which removes the cap.
+const IP_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
+const IP_UPLOAD_MAX = 12;
+const IP_GENERATE_MAX = 3;
 
 const EXT: Record<ModerationMedia, string> = {
   "image/jpeg": "jpg",

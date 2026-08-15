@@ -13,11 +13,13 @@ export function ShopGaps({ hasSession }: { hasSession: boolean }) {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
 
   const run = useCallback(
     async (withBudget: boolean) => {
       setBusy(true);
       setError(null);
+      setNote(null);
       const budget = withBudget ? Number(amount) : null;
       try {
         const res = await fetch("/api/shopping", {
@@ -28,9 +30,13 @@ export function ShopGaps({ hasSession }: { hasSession: boolean }) {
         const b = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
           error?: string;
+          note?: string;
         };
         if (!res.ok || !b.ok) {
           setError(b.error || `Consultation failed (${res.status}).`);
+        } else if (b.note) {
+          // Allowance reached — a plain, on-brand note, not an emergency.
+          setNote(b.note);
         } else {
           router.refresh();
         }
@@ -84,6 +90,8 @@ export function ShopGaps({ hasSession }: { hasSession: boolean }) {
           Skip — just advise
         </button>
       </div>
+
+      {note ? <p className="text-ash text-sm max-w-md">{note}</p> : null}
 
       {error ? (
         <p className="text-blood text-sm border border-blood px-3 py-2 max-w-md">
