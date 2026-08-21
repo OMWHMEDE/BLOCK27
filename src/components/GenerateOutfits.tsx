@@ -8,6 +8,7 @@ import {
   blockActive,
   blockInactive,
 } from "@/lib/ui";
+import { ERR_GENERIC } from "@/lib/support";
 
 // Before composing, ask one short context question and feed the answer to the
 // existing composition call as the occasion. Skipping falls back to the default
@@ -38,14 +39,14 @@ export function GenerateOutfits() {
           error?: string;
         };
         if (!res.ok) {
-          setError(body.error || `Generation failed (${res.status}).`);
+          setError(body.error || ERR_GENERIC);
         } else {
           setNote(body.gap || null);
           setAsking(false);
           router.refresh();
         }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Generation request failed.");
+      } catch {
+        setError(ERR_GENERIC);
       } finally {
         setBusy(false);
       }

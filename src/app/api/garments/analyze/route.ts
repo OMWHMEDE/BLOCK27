@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET } from "@/lib/photos";
 import { analyzeGarmentImage } from "@/lib/brain/analyzeGarment";
+import { ERR_GENERIC } from "@/lib/support";
 
 // Node runtime (the Anthropic SDK + Buffer need it), and a duration long enough
 // for a vision call. Without this the platform default (~10s) can kill the
@@ -119,8 +120,8 @@ export async function POST(request: Request) {
       .update({ status: "pending" })
       .eq("id", garmentId)
       .eq("user_id", user.id);
-    // Return the real reason so the client can show it — the owner can't read
-    // the server logs, and a silent failure is why this looked stuck.
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    // The real reason is logged above; the user sees a generic, warm line — no
+    // technical/provider detail ever reaches the screen.
+    return NextResponse.json({ ok: false, error: ERR_GENERIC }, { status: 500 });
   }
 }

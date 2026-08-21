@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
+import { ERR_GENERIC } from "@/lib/support";
 
 // The consultation control. It asks the one cold question — what are you working
 // with — then runs the audit. Skipping is allowed: the brain then advises without
@@ -33,15 +34,15 @@ export function ShopGaps({ hasSession }: { hasSession: boolean }) {
           note?: string;
         };
         if (!res.ok || !b.ok) {
-          setError(b.error || `Consultation failed (${res.status}).`);
+          setError(b.error || ERR_GENERIC);
         } else if (b.note) {
           // Allowance reached — a plain, on-brand note, not an emergency.
           setNote(b.note);
         } else {
           router.refresh();
         }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Consultation request failed.");
+      } catch {
+        setError(ERR_GENERIC);
       } finally {
         setBusy(false);
       }

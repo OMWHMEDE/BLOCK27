@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { PaidTier } from "@/lib/whop/plans";
+import { ERR_RETRY } from "@/lib/support";
 
 // The Whop embed is a browser-only iframe widget — load it client-side only so
 // it never runs during SSR.
@@ -39,10 +40,10 @@ export function WhopCheckout({ tier }: { tier: PaidTier }) {
         if (res.ok && body.ok && body.sessionId) {
           setSessionId(body.sessionId);
         } else {
-          setError(body.error || "Something's off. Try again in a minute.");
+          setError(body.error || ERR_RETRY);
         }
       } catch {
-        if (alive) setError("Something's off. Try again in a minute.");
+        if (alive) setError(ERR_RETRY);
       }
     })();
     return () => {

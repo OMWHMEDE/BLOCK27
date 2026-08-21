@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
+import { SUPPORT_EMAIL, SOCIAL_LINKS } from "@/lib/support";
 
 // Shared frame for the legal pages (/terms, /privacy, /refund): wordmark home
 // link, title, cold one-line intro, a "last updated" stamp, the clauses, and a
@@ -73,6 +74,26 @@ export function LegalShell({
           Home
         </Link>
       </nav>
+
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+        <a
+          href={`mailto:${SUPPORT_EMAIL}`}
+          className="font-mono text-xs text-bone hover:text-paper"
+        >
+          {SUPPORT_EMAIL}
+        </a>
+        {SOCIAL_LINKS.map((s) => (
+          <a
+            key={s.label}
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="uppercase tracking-[0.08em] text-bone hover:text-paper"
+          >
+            {s.label}
+          </a>
+        ))}
+      </div>
     </main>
   );
 }

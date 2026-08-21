@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
+import { ERR_GENERIC, ERR_RETRY } from "@/lib/support";
 
 type Item = { id: string; url: string | null; descriptor: string };
 
@@ -55,9 +56,9 @@ export function GuestWardrobe() {
             ok?: boolean;
             reason?: string;
           };
-          if (!b.ok) lastError = b.reason || "Didn't save. Try again.";
+          if (!b.ok) lastError = b.reason || ERR_GENERIC;
         } catch {
-          lastError = "Couldn't reach the server. Try again.";
+          lastError = ERR_RETRY;
         }
       }
       setReading(false);

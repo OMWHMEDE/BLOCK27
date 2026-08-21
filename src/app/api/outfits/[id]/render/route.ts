@@ -5,6 +5,7 @@ import { renderPath } from "@/lib/photos";
 import { renderOutfit, type RenderLayer } from "@/lib/render/renderOutfit";
 import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
+import { ERR_RETRY } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
 
@@ -168,7 +169,7 @@ export async function POST(
       // Fail CLOSED: if the cap can't be checked, never call the paid provider.
       console.error("[render] reserve_usage failed", reserveErr.message);
       return NextResponse.json(
-        { ok: false, error: "Something's off. Try again in a minute." },
+        { ok: false, error: ERR_RETRY },
         { status: 500 },
       );
     }
@@ -202,7 +203,7 @@ export async function POST(
     await releaseReservation();
     console.error("[render] failed for outfit", outfitId, result.detail);
     return NextResponse.json(
-      { ok: false, error: "Something's off. Try again in a minute." },
+      { ok: false, error: ERR_RETRY },
       { status: 500 },
     );
   }
@@ -215,12 +216,10 @@ export async function POST(
     .eq("user_id", user.id);
   if (upErr) {
     // The render succeeded but we can't record it — the user sees an error, so
-    // don't charge them for it either.
+    // don't charge them for it either. Log the real reason; show a generic line.
     await releaseReservation();
-    return NextResponse.json(
-      { ok: false, error: `store failed: ${upErr.message}` },
-      { status: 500 },
-    );
+    console.error("[render] store failed", upErr.message);
+    return NextResponse.json({ ok: false, error: ERR_RETRY }, { status: 500 });
   }
   await supabase.from("renders").insert({ user_id: user.id, outfit_id: outfitId });
 

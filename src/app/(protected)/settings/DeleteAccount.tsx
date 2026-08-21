@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { btnDanger, btnSecondary } from "@/lib/ui";
+import { ERR_GENERIC } from "@/lib/support";
 
 // A hard two-step: arm, then type DELETE to confirm. The purge runs server-side
 // (/api/account/delete, service-role key). --blood appears in exactly one place
@@ -25,7 +26,7 @@ export function DeleteAccount() {
           error?: string;
         };
         if (!res.ok || !body.ok) {
-          setError(body.error || `Delete failed (${res.status}).`);
+          setError(body.error || ERR_GENERIC);
           return;
         }
         await createClient()
@@ -34,8 +35,8 @@ export function DeleteAccount() {
         router.replace(
           "/login?notice=" + encodeURIComponent("Account deleted. Nothing kept."),
         );
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Delete request failed.");
+      } catch {
+        setError(ERR_GENERIC);
       }
     });
   }
