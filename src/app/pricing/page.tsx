@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
+import { SiteFooter } from "@/components/SiteFooter";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
 
 export const metadata = {
@@ -70,6 +71,7 @@ const PLANS: Plan[] = [
 
 export default function PricingPage() {
   return (
+    <>
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
       <Link href="/" className="mb-16 inline-block">
         <Wordmark />
@@ -144,32 +146,8 @@ export default function PricingPage() {
         </Link>
       </div>
 
-      <nav className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-iron pt-8 text-sm">
-        <Link
-          href="/terms"
-          className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-        >
-          Terms
-        </Link>
-        <Link
-          href="/privacy"
-          className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-        >
-          Privacy
-        </Link>
-        <Link
-          href="/refund"
-          className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-        >
-          Refund
-        </Link>
-        <Link
-          href="/"
-          className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-        >
-          Home
-        </Link>
-      </nav>
     </main>
+    <SiteFooter />
+    </>
   );
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { composeOutfits } from "@/lib/brain/composeOutfits";
 import { getPlan } from "@/lib/plan";
+import { ERR_GENERIC } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 
 // Node runtime + room for a reasoning call.
@@ -119,6 +120,6 @@ export async function POST(request: Request) {
     }
     const message = err instanceof Error ? err.message : "Generation failed";
     console.error("[outfits] generate failed", message);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: ERR_GENERIC }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const CTA_HREF = "/wardrobe";
 const IMG = {
@@ -52,6 +53,7 @@ function EditorialImage({
 
 export default function LandingPage() {
   return (
+    <>
     <main className="landing-page">
       <div aria-hidden className="grain-layer grain-layer--animated" />
 
@@ -165,5 +167,7 @@ export default function LandingPage() {
         </div>
       </section>
     </main>
+    <SiteFooter />
+    </>
   );
 }

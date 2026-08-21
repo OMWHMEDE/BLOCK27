@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { whopServer } from "@/lib/whop/server";
 import { whopPlanId, PAID_TIERS, type PaidTier } from "@/lib/whop/plans";
+import { ERR_RETRY } from "@/lib/support";
 
 // Create a Whop checkout session for the signed-in user and return its id. The
 // session is stamped with metadata.supabase_user_id so the payment webhook can
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     if (res?._error || !res?.id) {
       console.error("[whop] createCheckoutSession failed:", res?._error?.message);
       return NextResponse.json(
-        { ok: false, error: "Something's off. Try again in a minute." },
+        { ok: false, error: ERR_RETRY },
         { status: 502 },
       );
     }
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
       err instanceof Error ? err.message : err,
     );
     return NextResponse.json(
-      { ok: false, error: "Something's off. Try again in a minute." },
+      { ok: false, error: ERR_RETRY },
       { status: 502 },
     );
   }

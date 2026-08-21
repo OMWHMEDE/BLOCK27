@@ -6,6 +6,7 @@ import { btnDanger, btnSecondary } from "@/lib/ui";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { removeGarmentFromCache } from "@/components/WardrobeGrid";
 import { deleteGarmentAction } from "./actions";
+import { ERR_GENERIC } from "@/lib/support";
 
 // Two-step delete. The first press arms it and states the cost plainly; the
 // second commits. Real deletion — the photo goes with the row. The one --blood
@@ -22,7 +23,7 @@ export function DeleteGarment({ id }: { id: string }) {
     start(async () => {
       const res = await deleteGarmentAction(id);
       if (!res.ok) {
-        setError(res.error || "Delete failed.");
+        setError(res.error || ERR_GENERIC);
         setArmed(false);
         return;
       }

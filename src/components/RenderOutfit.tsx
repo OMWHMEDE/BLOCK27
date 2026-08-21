@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
+import { ERR_RETRY } from "@/lib/support";
 
 // Triggers a render and never leaves a silent spinner: a loading state while it
 // runs, a plain block when the quota is hit, or a real error with Retry.
@@ -42,10 +43,10 @@ export function RenderOutfit({
       } else if (body.quota) {
         setNotice(body.message || "Render limit reached.");
       } else {
-        setError(body.error || `Render failed (${res.status}).`);
+        setError(body.error || ERR_RETRY);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Render request failed.");
+    } catch {
+      setError(ERR_RETRY);
     } finally {
       setBusy(false);
     }

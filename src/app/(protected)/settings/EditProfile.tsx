@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
 import { saveProfile } from "./actions";
+import { ERR_GENERIC } from "@/lib/support";
 
 export function EditProfile({
   displayName,
@@ -31,7 +32,7 @@ export function EditProfile({
       const res = await saveProfile(fd);
       setMsg({
         ok: res.ok,
-        text: res.ok ? res.notice ?? "Saved." : res.error ?? "Failed.",
+        text: res.ok ? res.notice ?? "Saved." : res.error ?? ERR_GENERIC,
       });
       if (res.ok) {
         setPreview(null);

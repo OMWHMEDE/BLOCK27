@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { btnPrimary } from "@/lib/ui";
 import { updateEmail, updatePassword } from "./actions";
+import { ERR_GENERIC } from "@/lib/support";
 
 type Result = { ok: boolean; error?: string; notice?: string };
 
@@ -36,7 +37,7 @@ function CredentialForm({
       const res = await action(fd);
       setMsg({
         ok: res.ok,
-        text: res.ok ? res.notice ?? "Done." : res.error ?? "Failed.",
+        text: res.ok ? res.notice ?? "Done." : res.error ?? ERR_GENERIC,
       });
       if (res.ok) e.currentTarget?.reset?.();
     });

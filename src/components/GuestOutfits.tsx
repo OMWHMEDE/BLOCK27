@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { btnPrimary } from "@/lib/ui";
+import { ERR_GENERIC, ERR_RETRY } from "@/lib/support";
 import { LockField } from "@/components/LockField";
 
 type Item = { id: string; url: string | null; descriptor: string };
@@ -57,10 +58,10 @@ export function GuestOutfits() {
         setOutfits(b.outfits ?? []);
         setGap(b.gap ?? "");
       } else {
-        setNotice(b.reason || "Couldn't compose. Try again.");
+        setNotice(b.reason || ERR_GENERIC);
       }
     } catch {
-      setNotice("Couldn't reach the server. Try again.");
+      setNotice(ERR_RETRY);
     } finally {
       setCooking(false);
     }
