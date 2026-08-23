@@ -3,22 +3,11 @@ import { makeWebhookValidator } from "@whop/api";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { tierForWhopPlan } from "@/lib/whop/plans";
 
-// The Whop payment webhook — the ONLY thing that changes a user's paid tier.
-// Whop signs every request; makeWebhookValidator verifies the signature against
-// WHOP_WEBHOOK_SECRET (from the Whop dashboard → Developer → Webhooks) and
-// throws on a bad/missing signature, so an unsigned POST can never grant access.
-//
-// It runs with no user session, so it uses the service-role admin client. It is
-// fail-closed and idempotent: it grants a tier only when it can (a) verify the
-// signature, (b) map the Whop plan id to one of our tiers, AND (c) identify our
-// user from the checkout metadata. If any is missing it logs and changes nothing.
+// Whop payment webhook. Real deliveries MUST be signed. The Whop dashboard's
+// built-in "Test webhook" currently sends no Standard Webhooks signature headers;
+// we acknowledge only its empty-data probe and never process it as a real event.
 export const runtime = "nodejs";
 
-// The Whop ids in the payload are WHOP's, not ours. We link a payment to a
-// BLOCK27 account via metadata.supabase_user_id, which the checkout session sets
-// (see the activation notes / the checkout-session route). Both PaymentWebhookData
-// and MembershipWebhookData carry metadata; refund/dispute payloads nest the full
-// payment under `.payment`.
 type Meta = Record<string, unknown> | null | undefined;
 type PaymentData = {
   id?: string;
@@ -28,26 +17,63 @@ type PaymentData = {
 };
 type MembershipData = { id?: string; plan_id?: string | null; metadata?: Meta };
 type RefundOrDisputeData = { id?: string; payment?: PaymentData };
+type WebhookEvent = { action?: string; data?: unknown };
 
-// Our user id from a payload's metadata, or null.
 function uidFrom(meta: Meta): string | null {
   const v = meta?.["supabase_user_id"];
   return typeof v === "string" && v.length > 0 ? v : null;
 }
 
-type Grant = { userId: string | null; planId: string | null; membershipId: string | null };
+function isEmptyObject(value: unknown): boolean {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value as Record<string, unknown>).length === 0
+  );
+}
+
+// Whop's dashboard tester has a known behavior where it omits webhook-id,
+// webhook-timestamp and webhook-signature and sends an empty data object. We may
+// return 200 for that diagnostic probe, but we NEVER run grant/revoke for it.
+async function isUnsignedDashboardProbe(request: Request): Promise<boolean> {
+  if (
+    request.headers.get("webhook-signature") ||
+    request.headers.get("webhook-id") ||
+    request.headers.get("webhook-timestamp")
+  ) {
+    return false;
+  }
+
+  try {
+    const body = (await request.clone().json()) as WebhookEvent;
+    return typeof body?.action === "string" && isEmptyObject(body.data);
+  } catch {
+    return false;
+  }
+}
+
+type Grant = {
+  userId: string | null;
+  planId: string | null;
+  membershipId: string | null;
+};
 type Revoke = { userId: string | null; membershipId: string | null };
 
 export async function POST(request: Request) {
   const secret = process.env.WHOP_WEBHOOK_SECRET;
   if (!secret) {
-    // Never accept an unverifiable webhook. 503 so Whop retries once configured.
     console.error("[whop] WHOP_WEBHOOK_SECRET not set — refusing webhook");
     return NextResponse.json({ ok: false, error: "not configured" }, { status: 503 });
   }
 
-  // Validate the signature. Constructed per-request so a missing secret can never
-  // throw at module load. A bad signature throws → 401, and nothing is written.
+  // Keep production security fail-closed. The only unsigned request accepted is
+  // Whop's empty dashboard test probe, and it exits before any database writes.
+  if (await isUnsignedDashboardProbe(request)) {
+    console.info("[whop] acknowledged unsigned dashboard test probe (no side effects)");
+    return NextResponse.json({ ok: true, test: true, processed: false });
+  }
+
   let event: Awaited<ReturnType<ReturnType<typeof makeWebhookValidator>>>;
   try {
     event = await makeWebhookValidator({ webhookSecret: secret })(request);
@@ -61,41 +87,41 @@ export async function POST(request: Request) {
 
   try {
     switch (event.action) {
-      // Access granted: a payment cleared, or a membership became valid. Both
-      // are safe to treat as "grant the purchased tier" — the handler is
-      // idempotent, so receiving both for one purchase is fine.
       case "payment.succeeded": {
         const d = event.data as PaymentData;
-        await grant({
-          userId: uidFrom(d.metadata),
-          planId: d.plan_id ?? null,
-          membershipId: d.membership_id ?? null,
-        }, d.id);
+        await grant(
+          {
+            userId: uidFrom(d.metadata),
+            planId: d.plan_id ?? null,
+            membershipId: d.membership_id ?? null,
+          },
+          d.id,
+        );
         break;
       }
+
       case "membership.went_valid": {
         const d = event.data as MembershipData;
-        // A membership payload's own id IS the membership id (no membership_id).
-        await grant({
-          userId: uidFrom(d.metadata),
-          planId: d.plan_id ?? null,
-          membershipId: d.id ?? null,
-        }, d.id);
+        await grant(
+          {
+            userId: uidFrom(d.metadata),
+            planId: d.plan_id ?? null,
+            membershipId: d.id ?? null,
+          },
+          d.id,
+        );
         break;
       }
 
-      // Access ended: subscription expired or was cancelled → back to free.
       case "membership.went_invalid": {
         const d = event.data as MembershipData;
-        await revoke({ userId: uidFrom(d.metadata), membershipId: d.id ?? null }, d.id);
+        await revoke(
+          { userId: uidFrom(d.metadata), membershipId: d.id ?? null },
+          d.id,
+        );
         break;
       }
 
-      // Money reversed: a refund was issued or a chargeback opened. Downgrade and
-      // lock immediately — the same effect as a cancellation — so a refunder
-      // can't keep using paid access. revoke() is idempotent, so overlap with a
-      // later went_invalid for the same membership is harmless. (This can't claw
-      // back already-spent render cost; the per-cycle try-on cap bounds that.)
       case "refund.created":
       case "dispute.created": {
         const d = event.data as RefundOrDisputeData;
@@ -107,20 +133,14 @@ export async function POST(request: Request) {
         break;
       }
 
-      // Failed payment: keep the user on their current tier. Nothing to write;
-      // the failure is surfaced to the user in the checkout UI, not here.
       case "payment.failed":
         console.warn("[whop] payment.failed", (event.data as PaymentData).id);
         break;
 
       default:
-        // pending / refund.updated / dispute.updated / affiliate events — not
-        // acted on here (we act on refund.created / dispute.created only).
         break;
     }
   } catch (err) {
-    // A transient DB failure must not silently drop a grant — 500 so Whop
-    // retries the delivery.
     console.error("[whop] handler error for", event.action, err);
     return NextResponse.json({ ok: false, error: "handler error" }, { status: 500 });
   }
@@ -128,9 +148,6 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
-// Move the user to the purchased tier. subscription_status is also set to
-// 'active' so the EXISTING paid gate (which unlocks the hand) works immediately;
-// plan_tier records which of the four tiers they bought for per-tier limits.
 async function grant(ident: Grant, logId?: string) {
   const tier = tierForWhopPlan(ident.planId);
   if (!ident.userId) {
@@ -156,23 +173,18 @@ async function grant(ident: Grant, logId?: string) {
     .eq("id", ident.userId);
   if (error) throw new Error(`grant update failed: ${error.message}`);
 
-  // Anchor the usage window to the FIRST grant only (set-if-null), so the
-  // monthly allowance rolls on the purchase anniversary and a mid-cycle
-  // payment.succeeded can't hand out a fresh allowance. Best-effort: if the
-  // column isn't there yet (pre-migration), the window falls back to created_at.
   const { error: anchorErr } = await admin
     .from("users")
     .update({ plan_anchor_at: new Date().toISOString() })
     .eq("id", ident.userId)
     .is("plan_anchor_at", null);
-  if (anchorErr) console.error("[whop] grant: anchor set failed", anchorErr.message);
+  if (anchorErr) {
+    console.error("[whop] grant: anchor set failed", anchorErr.message);
+  }
 
   console.log("[whop] granted", tier, "to user", ident.userId);
 }
 
-// Return the user to free. Prefer the metadata link; fall back to the stored
-// membership id so a cancellation/refund still finds the account. Clears the
-// usage anchor so a later re-subscribe re-anchors to its own purchase date.
 async function revoke(ident: Revoke, logId?: string) {
   const admin = createAdminClient();
   const patch = {
@@ -184,15 +196,20 @@ async function revoke(ident: Revoke, logId?: string) {
   const query = ident.userId
     ? admin.from("users").update(patch).eq("id", ident.userId)
     : ident.membershipId
-      ? admin.from("users").update(patch).eq("whop_membership_id", ident.membershipId)
+      ? admin
+          .from("users")
+          .update(patch)
+          .eq("whop_membership_id", ident.membershipId)
       : null;
 
   if (!query) {
     console.error("[whop] revoke: cannot identify user", logId);
     return;
   }
+
   const { error } = await query;
   if (error) throw new Error(`revoke update failed: ${error.message}`);
+
   console.log(
     "[whop] revoked to free",
     ident.userId ?? `membership ${ident.membershipId}`,
