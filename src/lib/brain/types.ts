@@ -80,6 +80,10 @@ export type ShopPick = {
 // remaining are computed at the route from the input and the picks' spend, not
 // trusted from the model's arithmetic.
 export type ShoppingPlan = {
+  // The user's established aesthetic, characterized before any pick — a STEERING
+  // field that forces same-style recs. Not persisted or displayed today; the
+  // route reads picks/gaps/advice/solid. Optional so it's non-breaking.
+  style_read?: string;
   gaps: ShopGap[]; // the system audit, most-leverage first
   picks: ShopPick[]; // specific buys, most-unlocking first
   advice: string; // the closing read, first person; may say buy nothing more
