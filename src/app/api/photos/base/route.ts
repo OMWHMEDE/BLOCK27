@@ -4,6 +4,7 @@ import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
 import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
 import { getPlan } from "@/lib/plan";
+import { paymentsOpen } from "@/lib/payments";
 
 // Base photo upload — moderated before storage. The bytes are checked in memory;
 // only a passing image is ever written to the permanent bucket. A rejected image
@@ -28,7 +29,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: false,
       paywall: true,
-      reason: "Your base is a paid thing. Upgrade to unlock it.",
+      reason: paymentsOpen()
+        ? "Your base is a paid thing. Upgrade to unlock it."
+        : "Base photos open soon.",
     });
   }
 

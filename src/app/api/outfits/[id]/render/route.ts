@@ -5,6 +5,7 @@ import { renderPath } from "@/lib/photos";
 import { renderOutfit, type RenderLayer } from "@/lib/render/renderOutfit";
 import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
+import { paymentsOpen } from "@/lib/payments";
 import { ERR_RETRY } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
@@ -61,7 +62,9 @@ export async function POST(
     return NextResponse.json({
       ok: false,
       paywall: true,
-      message: "Try-on is paid. Upgrade to see it on you.",
+      message: paymentsOpen()
+        ? "Try-on is paid. Upgrade to see it on you."
+        : "Try-ons open soon.",
     });
   }
 

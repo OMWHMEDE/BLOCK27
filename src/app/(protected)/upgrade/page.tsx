@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/AppHeader";
 import { WhopCheckout } from "@/components/WhopCheckout";
 import { btnNav, btnSecondary } from "@/lib/ui";
+import { paymentsOpen } from "@/lib/payments";
 import {
   PAID_TIERS,
   TIERS,
@@ -28,7 +29,13 @@ export default async function UpgradePage({
   if (!user) redirect("/login");
 
   const { tier: raw } = await searchParams;
-  const available = PAID_TIERS.filter((t) => whopPlanId(t) !== null);
+  // Closed for business until payments are verified, or no plan is wired up yet:
+  // either way there is nothing to buy, so the whole screen is the calm coming
+  // -soon state — never a checkout that leads to a shut door.
+  const open = paymentsOpen();
+  const available = open
+    ? PAID_TIERS.filter((t) => whopPlanId(t) !== null)
+    : [];
   const selected: PaidTier | null =
     raw && isTier(raw) && raw !== "free" && available.includes(raw)
       ? raw
@@ -61,11 +68,11 @@ function NotLiveYet() {
   return (
     <div className="mt-4">
       <p className="text-ash max-w-md leading-snug mb-8">
-        Paid plans aren&rsquo;t live yet. The wardrobe and the stylist are free
-        in the meantime.
+        Try-ons open soon. The wardrobe and the stylist are free in the
+        meantime.
       </p>
       <Link href="/pricing" className={btnSecondary}>
-        See pricing
+        See the plans
       </Link>
     </div>
   );

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { recommendGaps } from "@/lib/brain/recommendGaps";
 import { searchUrl } from "@/lib/shopping/searchUrl";
 import { getPlan } from "@/lib/plan";
+import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
       // Soft, on-brand: shown as an ash note by ShopGaps.
       return NextResponse.json({
         ok: true,
-        note: `You've used all ${userPlan.shoppingPerMonth} consultations this cycle. Upgrade for more.`,
+        note: `You've used all ${userPlan.shoppingPerMonth} consultations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`,
       });
     }
   }

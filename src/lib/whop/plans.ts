@@ -22,7 +22,9 @@ export type TierLimits = {
   shoppingPerMonth: number;
 };
 
-// Matches /pricing exactly. If pricing changes, change it here and there.
+// The single source of truth for every plan number. The pricing page, the quota
+// gate, and the Whop webhook all read from here — change a limit once, here, and
+// it is correct everywhere.
 export const TIERS: Record<Tier, TierLimits> = {
   free: {
     label: "Free",

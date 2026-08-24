@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { whopServer } from "@/lib/whop/server";
 import { whopPlanId, PAID_TIERS, type PaidTier } from "@/lib/whop/plans";
+import { paymentsOpen } from "@/lib/payments";
 import { ERR_RETRY } from "@/lib/support";
 
 // Create a Whop checkout session for the signed-in user and return its id. The
@@ -21,6 +22,14 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  // The server backstop for the payments switch. Even if a stale client or a
+  // direct POST reaches this route while checkout is closed, no session is
+  // created — the paid path is shut in exactly one place that can't be bypassed
+  // from the browser.
+  if (!paymentsOpen()) {
+    return NextResponse.json({ ok: false, error: "unavailable" }, { status: 503 });
   }
 
   const body = (await request.json().catch(() => ({}))) as { tier?: unknown };

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/AppHeader";
 import { MultiGarmentUpload } from "@/components/MultiGarmentUpload";
+import { paymentsOpen } from "@/lib/payments";
 
 export default async function UploadGarmentsPage() {
   const supabase = await createClient();
@@ -21,7 +22,7 @@ export default async function UploadGarmentsPage() {
         Upload a batch. I read each one and slot it into your wardrobe.
       </p>
 
-      <MultiGarmentUpload />
+      <MultiGarmentUpload paymentsOpen={paymentsOpen()} />
     </main>
   );
 }
