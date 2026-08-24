@@ -4,6 +4,7 @@ import { USER_PHOTOS_BUCKET, garmentPhotoPath } from "@/lib/photos";
 import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
 import { getPlan } from "@/lib/plan";
+import { paymentsOpen } from "@/lib/payments";
 
 // Garment upload — moderated before storage, exactly like the base photo. Bytes
 // checked in memory; only a passing image is written and its row recorded. A
@@ -36,7 +37,9 @@ export async function POST(request: Request) {
         full: true,
         reason: plan.paid
           ? `You're at the ${plan.pieceLimit}-piece cap.`
-          : "Fifteen is the free limit. Upgrade for more.",
+          : paymentsOpen()
+            ? "Fifteen is the free limit. Upgrade for more."
+            : "Fifteen is the free limit for now.",
       });
     }
   }

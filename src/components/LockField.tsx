@@ -11,20 +11,27 @@ import { btnPrimary } from "@/lib/ui";
 // house device) marks it as intentional and invites the tap — the action, not
 // the state — distinct from the identical field a tile shows while loading.
 // Tapping never performs the action; it reveals a cold upgrade line and routes
-// toward the plan. The paid path never renders this — so the provider behind the
-// lock is never even reachable from here.
+// toward the plan (/pricing — the single place a plan is chosen). The paid path
+// never renders this — so the provider behind the lock is never even reachable
+// from here.
+//
+// `soon` gates the reveal for the payment lock while checkout is closed: instead
+// of a CTA that leads to a shut door, it shows a calm "Coming soon". Auth locks
+// (the guest "Sign in" variant) leave `soon` off — signing in is never gated.
 export function LockField({
   message,
   className = "",
-  href = "/settings",
+  href = "/pricing",
   cta = "Upgrade",
   label = "Unlock this",
+  soon = false,
 }: {
   message: string;
   className?: string;
   href?: string;
   cta?: string;
   label?: string;
+  soon?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -41,9 +48,15 @@ export function LockField({
         className={`reveal flex flex-col items-center justify-center gap-4 border border-iron bg-void p-6 text-center ${className} !aspect-auto min-w-[12rem]`}
       >
         <p className="text-sm leading-snug text-bone">{message}</p>
-        <Link href={href} className={btnPrimary}>
-          {cta}
-        </Link>
+        {soon ? (
+          <span className="text-xs uppercase tracking-[0.16em] text-ash">
+            Coming soon
+          </span>
+        ) : (
+          <Link href={href} className={btnPrimary}>
+            {cta}
+          </Link>
+        )}
         <button
           type="button"
           onClick={() => setOpen(false)}

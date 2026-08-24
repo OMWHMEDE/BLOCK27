@@ -5,6 +5,7 @@ import { getQuota } from "@/lib/quota";
 import { getPlan } from "@/lib/plan";
 import { AppHeader } from "@/components/AppHeader";
 import { LockField } from "@/components/LockField";
+import { paymentsOpen } from "@/lib/payments";
 import { logout } from "@/app/logout/actions";
 import { btnNav, btnSecondary } from "@/lib/ui";
 import { EditProfile } from "./EditProfile";
@@ -26,6 +27,7 @@ export default async function SettingsPage() {
       ])
     : [null, null, null, null];
   const paid = plan?.paid ?? false;
+  const open = paymentsOpen();
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
@@ -48,6 +50,7 @@ export default async function SettingsPage() {
             className="w-24 aspect-[3/4]"
             message="Paid feature."
             label="Base photo — locked. Upgrade to unlock."
+            soon={!open}
           />
         ) : (
           <div className="flex items-end gap-5">
@@ -112,9 +115,15 @@ export default async function SettingsPage() {
                 : "—"}
             </p>
           </div>
-          <Link href="/upgrade" className={btnNav}>
-            {quota && quota.tier !== "free" ? "Change" : "Upgrade"}
-          </Link>
+          {open ? (
+            <Link href="/pricing" className={btnNav}>
+              {quota && quota.tier !== "free" ? "Change" : "Upgrade"}
+            </Link>
+          ) : (
+            <span className="text-xs uppercase tracking-[0.08em] text-ash">
+              Coming soon
+            </span>
+          )}
         </div>
       </Section>
 

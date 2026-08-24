@@ -7,6 +7,7 @@ import { TileImage } from "@/components/TileImage";
 import { WardrobeGrid } from "@/components/WardrobeGrid";
 import { GuestWardrobe } from "@/components/GuestWardrobe";
 import { LockField } from "@/components/LockField";
+import { paymentsOpen } from "@/lib/payments";
 import { btnNav, btnSecondary } from "@/lib/ui";
 
 // The garment grid is client-side and cache-first (WardrobeGrid), so returning
@@ -55,6 +56,7 @@ export default async function WardrobePage() {
         getPlan(user.id).then((p) => p.paid),
       ])
     : [null, false];
+  const open = paymentsOpen();
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
@@ -77,6 +79,7 @@ export default async function WardrobePage() {
             className="w-32 aspect-[3/4]"
             message="Paid feature."
             label="Base photo — locked. Upgrade to unlock."
+            soon={!open}
           />
         ) : baseUrl ? (
           <div className="flex items-end gap-5">

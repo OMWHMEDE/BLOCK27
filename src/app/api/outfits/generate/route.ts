@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { composeOutfits } from "@/lib/brain/composeOutfits";
 import { getPlan } from "@/lib/plan";
+import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         count: 0,
-        gap: `You've used all ${userPlan.compositionsPerMonth} generations this cycle. Upgrade for more.`,
+        gap: `You've used all ${userPlan.compositionsPerMonth} generations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`,
       });
     }
   }

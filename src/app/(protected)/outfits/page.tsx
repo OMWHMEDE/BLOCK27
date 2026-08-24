@@ -9,6 +9,7 @@ import { RenderHero } from "@/components/RenderHero";
 import { DownloadRender } from "@/components/DownloadRender";
 import { LockField } from "@/components/LockField";
 import { AppHeader } from "@/components/AppHeader";
+import { paymentsOpen } from "@/lib/payments";
 import { isRenderable } from "@/lib/render/categories";
 
 export default async function OutfitsPage() {
@@ -37,6 +38,7 @@ export default async function OutfitsPage() {
 
   const outfits = await listOutfits(user.id);
   const paid = (await getPlan(user.id)).paid;
+  const soon = !paymentsOpen();
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
@@ -62,7 +64,7 @@ export default async function OutfitsPage() {
       ) : (
         <ul className="flex flex-col gap-12">
           {outfits.map((o) => (
-            <OutfitCard key={o.id} outfit={o} paid={paid} />
+            <OutfitCard key={o.id} outfit={o} paid={paid} soon={soon} />
           ))}
         </ul>
       )}
@@ -70,7 +72,15 @@ export default async function OutfitsPage() {
   );
 }
 
-function OutfitCard({ outfit, paid }: { outfit: OutfitView; paid: boolean }) {
+function OutfitCard({
+  outfit,
+  paid,
+  soon,
+}: {
+  outfit: OutfitView;
+  paid: boolean;
+  soon: boolean;
+}) {
   // Pieces the hand can't place on the body (shoes, accessories). Named
   // honestly on the render so their own shoes are never mistaken for the pick.
   const unplaced = outfit.items.filter((it) => !isRenderable(it.category));
@@ -122,9 +132,13 @@ function OutfitCard({ outfit, paid }: { outfit: OutfitView; paid: boolean }) {
         <div className="mt-10 flex flex-col items-center gap-4">
           {paid ? (
             <RenderOutfit outfitId={outfit.id} hasRender center />
+          ) : soon ? (
+            <span className="text-xs uppercase tracking-[0.08em] text-ash">
+              Re-render opens soon.
+            </span>
           ) : (
             <Link
-              href="/settings"
+              href="/pricing"
               className="text-xs uppercase tracking-[0.08em] text-ash underline underline-offset-4 hover:text-paper"
             >
               Re-render is paid. Upgrade.
@@ -151,8 +165,9 @@ function OutfitCard({ outfit, paid }: { outfit: OutfitView; paid: boolean }) {
       ) : (
         <LockField
           className="w-full max-w-xs aspect-[3/4]"
-          message="Seeing it on you is paid. Upgrade your plan."
+          message="Seeing it on you is paid."
           label="See it on you — locked. Upgrade to unlock."
+          soon={soon}
         />
       )}
     </li>

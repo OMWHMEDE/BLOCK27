@@ -17,7 +17,11 @@ const COACHING = [
   "Whole item in frame",
 ];
 
-export function MultiGarmentUpload() {
+export function MultiGarmentUpload({
+  paymentsOpen,
+}: {
+  paymentsOpen: boolean;
+}) {
   const router = useRouter();
   const [remaining, setRemaining] = useState<number | null>(null);
   const [paid, setPaid] = useState(false);
@@ -148,10 +152,12 @@ export function MultiGarmentUpload() {
           <p className="text-bone leading-snug max-w-md">
             {paid
               ? "You're at the cap for now."
-              : "Fifteen is the free limit. Upgrade for more."}
+              : paymentsOpen
+                ? "Fifteen is the free limit. Upgrade for more."
+                : "Fifteen is the free limit for now."}
           </p>
-          {!paid ? (
-            <Link href="/settings" className={`${btnPrimary} self-start`}>
+          {!paid && paymentsOpen ? (
+            <Link href="/pricing" className={`${btnPrimary} self-start`}>
               Upgrade
             </Link>
           ) : null}
