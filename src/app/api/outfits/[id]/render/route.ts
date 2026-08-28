@@ -6,6 +6,7 @@ import { renderOutfit, type RenderLayer } from "@/lib/render/renderOutfit";
 import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
+import { lengthInstruction } from "@/lib/render/lengthInstruction";
 import { ERR_RETRY } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
@@ -105,11 +106,20 @@ export async function POST(
         garmentPath: g.photo_path as string,
         category: spec.category,
         label: a?.descriptor || a?.category || "a piece",
+        // Tell the hand what it's placing. Length is the one FASHN gets wrong on
+        // baggy bottoms (a folded wide-leg jean reads as shorts); the brain
+        // already knows the length, so pass it. undefined for non-leg pieces.
+        prompt: a ? lengthInstruction(a) : undefined,
       };
     })
     .filter((x): x is OrderedLayer => x !== null)
     .sort((a, b) => a.order - b.order)
-    .map(({ garmentPath, category, label }) => ({ garmentPath, category, label }));
+    .map(({ garmentPath, category, label, prompt }) => ({
+      garmentPath,
+      category,
+      label,
+      prompt,
+    }));
 
   // Cap accessories at two per outfit. Each accessory is its own sequential
   // max-tier call, so this bounds worst-case cost and latency. The brain is told

@@ -35,6 +35,14 @@ real formality, pairs_with, clashes_with and read like any piece.
 
 formality is 1–5: 1 gym, 2 casual, 3 smart casual, 4 sharp, 5 formal.
 
+length matters for bottoms and one-pieces and is often the hardest thing to read
+from a folded or bunched photo — read it deliberately. Full-length trousers and
+jeans reach the ankle; call the baggy/wide streetwear cut 'wide-leg'; 'cropped'
+ends above the ankle; 'shorts' end at or above the knee. If a jean or trouser is
+folded so it looks short, judge by the waist-to-hem proportion and the cut, not
+the folded outline — a wide-leg jean folded in half still is full-length. Set
+length='none' for tops, footwear and accessories.
+
 pairs_with, clashes_with and read are the point. read is your one-line take in
 the BLOCK27 voice — certain, unsentimental, on the user's side against bad
 clothes. summary is the read-back shown in the wardrobe, format:
@@ -79,6 +87,15 @@ const TOOL = {
           "The accessory kind when category is accessory; 'none' otherwise.",
       },
       subcategory: { type: "string" },
+      length: {
+        type: "string",
+        enum: ["full-length", "wide-leg", "cropped", "shorts", "none"],
+        description:
+          "Leg length for bottoms/one-pieces. 'full-length' reaches the ankle; " +
+          "'wide-leg' is full-length AND baggy/wide (the streetwear cut); " +
+          "'cropped' ends above the ankle; 'shorts' ends at/above the knee. " +
+          "'none' for tops, footwear, accessories — anything with no leg length.",
+      },
       descriptor: { type: "string", description: "e.g. 'black slim chinos'" },
       colors: { type: "array", items: { type: "string" } },
       pattern: { type: "string" },
@@ -97,6 +114,7 @@ const TOOL = {
       "category",
       "accessory_type",
       "subcategory",
+      "length",
       "descriptor",
       "colors",
       "pattern",

@@ -15,6 +15,13 @@ export type GarmentAnalysis = {
   // four). The garments.sub_type column is populated from this.
   accessory_type: string;
   subcategory: string; // "bomber jacket", "slim chinos"
+  // Leg length for bottoms and one-pieces — the render's single most important
+  // length cue. FASHN infers length from the garment photo's visible shape, and
+  // a baggy jean shot folded reads as short-and-wide, so it renders full-length
+  // trousers as shorts. Recording length here lets the render TELL the provider
+  // what it's placing instead of letting it guess. "none" for tops, footwear and
+  // accessories (anything with no leg length).
+  length: "full-length" | "wide-leg" | "cropped" | "shorts" | "none";
   descriptor: string; // human label, e.g. "black slim chinos"
   colors: string[]; // primary first
   pattern: string; // solid | striped | check | graphic | ...

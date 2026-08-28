@@ -43,5 +43,12 @@ export interface Hand {
     out: ImageRef; // where the provider stores the result — the caller owns paths
     category: RenderCategory;
     quality: Quality;
+    // An optional, provider-agnostic instruction describing WHAT is being placed
+    // — e.g. "full-length wide-leg trousers, keep the full original length". The
+    // brain composes this from what it already knows about the garment; the hand
+    // still decides nothing, it only executes a fact the brain recorded. A
+    // provider that has no such input ignores it. Kept generic ("instructions"),
+    // never FASHN-specific, so the seam stays swappable.
+    prompt?: string;
   }): Promise<RenderResult>;
 }
