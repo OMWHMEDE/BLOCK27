@@ -50,15 +50,22 @@ function buildInputs(
   personUrl: string,
   garmentUrl: string,
   category: RenderCategory,
+  prompt?: string,
 ): Record<string, unknown> {
   if (isMaxModel) {
-    return {
+    const inputs: Record<string, unknown> = {
       model_image: personUrl,
       product_image: garmentUrl,
       resolution: RESOLUTION,
       generation_mode: "quality", // highest tier only — never fast/balanced
       output_format: "png", // lossless: chained passes don't compound artifacts
     };
+    // tryon-max's free-text `prompt` carries the brain's instruction (e.g. the
+    // garment's true length). Only set when present so an empty string never
+    // reaches the provider. v1.6 has no prompt field, so the instruction is
+    // simply unavailable there — it degrades to today's behavior.
+    if (prompt) inputs.prompt = prompt;
+    return inputs;
   }
   return {
     model_image: personUrl,
@@ -78,6 +85,7 @@ export class FashnHand implements Hand {
     out: ImageRef;
     category: RenderCategory;
     quality: "max";
+    prompt?: string;
   }): Promise<RenderResult> {
     const key = process.env.FASHN_API_KEY;
     if (!key) {
@@ -105,7 +113,7 @@ export class FashnHand implements Hand {
         },
         body: JSON.stringify({
           model_name: MODEL,
-          inputs: buildInputs(personUrl, garmentUrl, input.category),
+          inputs: buildInputs(personUrl, garmentUrl, input.category, input.prompt),
         }),
       });
       if (!res.ok) {

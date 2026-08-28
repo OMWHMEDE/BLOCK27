@@ -15,6 +15,10 @@ export type RenderLayer = {
   // that couldn't be placed — "couldn't place the steel diver's watch" — rather
   // than a bare category. Never silently drop a layer; say which one gave out.
   label?: string;
+  // Optional provider instruction for this layer — e.g. a bottom's true length.
+  // Composed by the caller from the garment's analysis; passed straight to the
+  // hand. undefined for layers with nothing to say.
+  prompt?: string;
 };
 
 // The render doctrine caps retries at two. A transient provider error or timeout
@@ -71,6 +75,7 @@ export async function renderOutfit(
         out: { bucket: USER_PHOTOS_BUCKET, path: outPath },
         category: layers[i].category,
         quality: "max",
+        prompt: layers[i].prompt,
       });
     }
 
