@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
 
   const form = await request.formData().catch(() => null);
-  const result = await gate(form?.get("file"));
+  const result = await gate(form?.get("file"), "base");
 
   if (result.status === "retry") {
     return NextResponse.json({ ok: false, reason: result.reason });
@@ -67,5 +67,7 @@ export async function POST(request: Request) {
   }
 
   await logModeration({ userId: user.id, kind: "base", decision: "pass" });
-  return NextResponse.json({ ok: true });
+  // A framing warning (legs out of frame) never blocked the store — the photo is
+  // valid — but it's returned so the capture screen can offer a retake.
+  return NextResponse.json({ ok: true, warning: result.warning ?? "" });
 }

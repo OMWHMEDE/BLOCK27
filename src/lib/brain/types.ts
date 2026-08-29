@@ -33,6 +33,13 @@ export type GarmentAnalysis = {
   clashes_with: string;
   read: string; // the taste note — where the value is
   summary: string; // one-line read-back for the wardrobe
+  // A calm, non-blocking advisory about the PHOTO (not the garment): set when the
+  // shot itself will hurt the render even though the garment reads fine. Empty
+  // string when the photo is good — distinct from usable=false, which rejects a
+  // photo that can't be read at all. Phase 1 populates it for one case only: a
+  // bottom shot folded/bunched, which FASHN renders short. Persisted so the UI
+  // can surface it and a later phase can act on it.
+  photo_warning: string;
 };
 
 // What the brain returns when it composes outfits from the wardrobe text.

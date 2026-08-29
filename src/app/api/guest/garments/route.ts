@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   }
 
   const form = await request.formData().catch(() => null);
-  const result = await gate(form?.get("file"));
+  const result = await gate(form?.get("file"), "garment");
   // A rejected or unreadable image is never persisted. Guests have no account to
   // audit against, so the decision isn't written to moderation_log — but the
   // rule that a rejected image is never stored still holds absolutely.

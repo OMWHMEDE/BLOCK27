@@ -23,15 +23,21 @@ const MIN_LOADING_MS = 2500;
 export function BaseCapture() {
   const router = useRouter();
 
+  const goToWardrobe = useCallback(() => {
+    router.replace("/wardrobe");
+    router.refresh();
+  }, [router]);
+
   const onUse = useCallback(
-    async (blob: Blob): Promise<string | null> => {
+    async (blob: Blob): Promise<string | null | { warn: string }> => {
       const started = Date.now();
 
       // Moderated server-side before storage. A rejected image is never stored;
-      // the cold reason comes back for the capture screen to show.
+      // the cold reason comes back for the capture screen to show. A stored image
+      // may still carry a framing warning (legs out of frame) — advisory only.
       const form = new FormData();
       form.append("file", blob, "base.jpg");
-      let body: { ok?: boolean; reason?: string };
+      let body: { ok?: boolean; reason?: string; warning?: string };
       try {
         const res = await fetch("/api/photos/base", {
           method: "POST",
@@ -40,22 +46,26 @@ export function BaseCapture() {
         body = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
           reason?: string;
+          warning?: string;
         };
       } catch {
         return "Couldn't reach the server. Try again.";
       }
       if (!body.ok) return body.reason || "Didn't save. Try again.";
 
+      // Saved, but the framing is off. Surface the advisory and let the user
+      // choose — no ceremony hold, since we're staying on the screen.
+      if (body.warning) return { warn: body.warning };
+
       const remaining = MIN_LOADING_MS - (Date.now() - started);
       if (remaining > 0) {
         await new Promise((resolve) => setTimeout(resolve, remaining));
       }
 
-      router.replace("/wardrobe");
-      router.refresh();
+      goToWardrobe();
       return null;
     },
-    [router],
+    [goToWardrobe],
   );
 
   return (
@@ -73,6 +83,7 @@ export function BaseCapture() {
       field
       galleryReminder="A friend can shoot it and send it over. Use a recent full-body photo — outfits render on your body as it is now, not an old one."
       onUse={onUse}
+      onProceed={goToWardrobe}
     />
   );
 }

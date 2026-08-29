@@ -372,6 +372,7 @@ function GarmentTile({
   const { id, status, url, analysis } = garment;
   const rejected = status === "rejected";
   const analyzed = status === "analyzed" && analysis;
+  const warned = !!(analyzed && analysis.photo_warning);
 
   const label = analyzed
     ? analysis.descriptor
@@ -386,7 +387,7 @@ function GarmentTile({
       <Link href={`/garments/${id}`} className="group block">
         <div
           className={
-            "aspect-[3/4] border border-iron group-hover:border-paper " +
+            "relative aspect-[3/4] border border-iron group-hover:border-paper " +
             (rejected || failed ? "opacity-40" : "")
           }
         >
@@ -395,6 +396,14 @@ function GarmentTile({
             url={url}
             alt={analyzed ? analysis.descriptor : "Garment"}
           />
+          {/* The house block: a small paper mark that flags a shot worth a
+              second look. The words live on the garment's page. */}
+          {warned ? (
+            <span
+              aria-label="Check this photo"
+              className="absolute left-0 top-0 h-3 w-3 bg-paper"
+            />
+          ) : null}
         </div>
         <p className="text-ash text-xs mt-1 truncate">{label}</p>
       </Link>
