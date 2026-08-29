@@ -52,6 +52,16 @@ If the photo can't be read — blurry, dark, occluded, two separate garments, no
 garment — set usable false and give a reject_reason the user can act on. Do not
 guess: a garment recorded wrong poisons every outfit it ever appears in.
 
+photo_warning is a SEPARATE, non-blocking advisory about the shot — it never
+rejects. Populate it in exactly one case: a bottom (trousers, jeans, or a
+one-piece with legs) photographed folded or bunched instead of laid out flat and
+full-length. That folded shape renders as shorts on the body, so warn even though
+you can still read the garment. Judge the garment normally in every other field.
+Write it calm and cold, an instruction not a scold, e.g. "Shot folded — it may
+render short. Lay it flat, full length, and reshoot." For a flat, full-length
+bottom — and for every top, shoe and accessory — leave photo_warning as an empty
+string.
+
 Record it with the record_garment tool.`;
 
 // `strict: true` guarantees tool_use.input validates against the schema. It is
@@ -107,6 +117,16 @@ const TOOL = {
       clashes_with: { type: "string" },
       read: { type: "string" },
       summary: { type: "string" },
+      photo_warning: {
+        type: "string",
+        description:
+          "A calm advisory about the PHOTO, not the garment — empty string " +
+          "unless the shot itself will hurt the render. Only populate it when a " +
+          "bottom (trousers/jeans/one-piece) is shot folded or bunched rather " +
+          "than laid out flat and full-length: that folded shape renders as " +
+          "shorts. Leave it empty for tops, footwear, accessories, and for any " +
+          "bottom laid out flat. This never rejects the garment.",
+      },
     },
     required: [
       "usable",
@@ -126,6 +146,7 @@ const TOOL = {
       "clashes_with",
       "read",
       "summary",
+      "photo_warning",
     ],
   },
 } as unknown as Anthropic.Tool;

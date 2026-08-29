@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   }
 
   const form = await request.formData().catch(() => null);
-  const result = await gate(form?.get("file"));
+  const result = await gate(form?.get("file"), "garment");
 
   if (result.status === "retry") {
     return NextResponse.json({ ok: false, reason: result.reason });

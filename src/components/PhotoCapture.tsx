@@ -38,10 +38,16 @@ export type PhotoCaptureProps = {
   // placeholder holds the space; drop the image in and it appears on next build.
   exampleSrc?: string;
   exampleLabel?: string;
-  // Persist the captured image. Return an error string to show and stay on the
-  // review step, or null on success — in which case the caller is responsible
-  // for navigating away.
-  onUse: (blob: Blob) => Promise<string | null>;
+  // Persist the captured image. Return:
+  //   - an error string  → shown as an error; stay on review to retake
+  //   - null             → success; the caller navigates away itself
+  //   - { warn }         → the photo saved, but with a calm, non-blocking
+  //                        advisory. PhotoCapture shows it with "Use anyway"
+  //                        (calls onProceed) and "Retake". Never an error.
+  onUse: (blob: Blob) => Promise<string | null | { warn: string }>;
+  // Called when the user accepts a warned photo ("Use anyway"). Required only if
+  // onUse can return a warning; usually navigates, as the success path does.
+  onProceed?: () => void;
 };
 
 // Shared capture flow: live camera with a framing guide, gallery upload,
@@ -64,6 +70,7 @@ export function PhotoCapture({
   exampleSrc,
   exampleLabel,
   onUse,
+  onProceed,
 }: PhotoCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -73,6 +80,9 @@ export function PhotoCapture({
   const [blob, setBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A calm, non-blocking advisory returned by onUse (e.g. base legs out of
+  // frame). The photo is already saved; this only offers a retake.
+  const [saveWarning, setSaveWarning] = useState<string | null>(null);
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -124,6 +134,7 @@ export function PhotoCapture({
       setBlob(b);
       setPreviewUrl(URL.createObjectURL(b));
       setError(null);
+      setSaveWarning(null);
       setStage("review");
     },
     [previewUrl],
@@ -162,12 +173,18 @@ export function PhotoCapture({
     if (!blob) return;
     setStage("saving");
     setError(null);
-    const err = await onUse(blob);
-    if (err) {
-      setError(err);
+    setSaveWarning(null);
+    const result = await onUse(blob);
+    if (typeof result === "string") {
+      setError(result);
+      setStage("review");
+    } else if (result && "warn" in result) {
+      // Saved, but with an advisory. Hold on review and let the user choose.
+      setSaveWarning(result.warn);
       setStage("review");
     }
-    // On success onUse navigates away; leave the button disabled until it does.
+    // On clean success onUse navigates away; leave the button disabled until it
+    // does.
   }, [blob, onUse]);
 
   // Base photo gets the strict REQUIRED rules; everything else the ✓/✗ guide.
@@ -315,19 +332,41 @@ export function PhotoCapture({
 
           {error && <ErrorLine>{error}</ErrorLine>}
 
+          {/* A calm advisory (not an error): the photo saved, but a retake would
+              render better. Bone on an iron hairline, never blood. */}
+          {saveWarning && (
+            <div className="border border-iron px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.16em] text-ash mb-2">
+                The shot
+              </p>
+              <p className="text-bone text-sm leading-snug">{saveWarning}</p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={save}
-              disabled={stage === "saving"}
-              className={`${btnPrimary} w-full`}
-            >
-              {stage === "saving" ? "Saving." : "Use this"}
-            </button>
+            {saveWarning ? (
+              <button
+                type="button"
+                onClick={() => onProceed?.()}
+                className={`${btnPrimary} w-full`}
+              >
+                Use anyway
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={save}
+                disabled={stage === "saving"}
+                className={`${btnPrimary} w-full`}
+              >
+                {stage === "saving" ? "Saving." : "Use this"}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
                 setError(null);
+                setSaveWarning(null);
                 setStage("prep");
               }}
               disabled={stage === "saving"}

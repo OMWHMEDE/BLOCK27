@@ -6,6 +6,7 @@ import { formalityLabel, type GarmentAnalysis } from "@/lib/brain/types";
 import { AppHeader } from "@/components/AppHeader";
 import { btnSecondary } from "@/lib/ui";
 import { DeleteGarment } from "./DeleteGarment";
+import { PhotoWarning } from "./PhotoWarning";
 
 export default async function GarmentDetailPage({
   params,
@@ -80,6 +81,8 @@ function GarmentBody({ garment }: { garment: GarmentDetail }) {
 function Analyzed({ a }: { a: GarmentAnalysis }) {
   return (
     <div className="flex flex-col gap-8">
+      {a.photo_warning ? <PhotoWarning text={a.photo_warning} /> : null}
+
       <div>
         <h1 className="text-2xl font-semibold tracking-tight leading-[0.95]">
           {a.descriptor}
