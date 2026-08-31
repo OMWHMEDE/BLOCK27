@@ -17,6 +17,7 @@ export default async function SignupPage({
       altLabel="Log in."
       error={error}
       profileFields
+      signup
     />
   );
 }
