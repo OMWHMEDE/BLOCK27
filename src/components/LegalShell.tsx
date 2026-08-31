@@ -8,12 +8,12 @@ import { SocialLinks } from "@/components/SocialIcons";
 // footer that cross-links the three. Same tokens as the rest of the app — void
 // ground, paper/bone/ash type, hairline sections, border-radius 0, no cards.
 //
-// NOTE: these pages are PLACEHOLDER legal copy — accurate to how the product
-// actually works, but pending a real lawyer's review before full public launch.
-// Do not treat as final legal advice.
+// The copy is written to be accurate to how the product actually handles data;
+// have it reviewed by counsel for your jurisdiction before relying on it, and
+// set a governing-law clause once that jurisdiction is fixed.
 
 // Bump when the substance of any legal page changes.
-export const LEGAL_UPDATED = "4 August 2026";
+export const LEGAL_UPDATED = "31 August 2026";
 
 const LEGAL_LINKS = [
   { href: "/terms", label: "Terms" },

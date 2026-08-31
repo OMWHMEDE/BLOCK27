@@ -1,7 +1,6 @@
 import { LegalShell, Clause } from "@/components/LegalShell";
+import { SUPPORT_EMAIL } from "@/lib/support";
 
-// PLACEHOLDER legal copy — accurate to how the product works, but pending a real
-// lawyer's review before full public launch. See LegalShell for the shared note.
 export const metadata = {
   title: "BLOCK27 — Terms",
 };
@@ -24,22 +23,24 @@ export default function TermsPage() {
 
       <Clause label="Eligibility and accounts">
         <p>
-          You must be at least 18 years old to use BLOCK27, because it involves
-          full-body photography. You are responsible for your account, for the
-          accuracy of the information you give us, and for keeping your login
-          secure.
+          You must be at least 16 years old to use BLOCK27, because it involves
+          full-body photography, and you confirm your age when you create an
+          account. You are responsible for your account, for the accuracy of the
+          information you give us, and for keeping your login secure.
         </p>
       </Clause>
 
       <Clause label="Subscriptions and billing">
         <p>
-          A free account includes 3 renders, once — a lifetime allowance, not a
-          monthly reset. Paid access is a subscription of $24.99 per month with a
-          fair-use allowance of roughly 25 outfits per month, billed through our
-          payment processor, Paddle, which acts as merchant of record.
+          A free account can read your wardrobe, compose outfits, and run the
+          shopping audit, with no try-ons. The try-on — rendering an outfit onto
+          your own photo — is the paid feature, on one of three monthly plans:
+          Premium at $14.99, Pro at $24.99, and Boss at $49.99 per month. Each
+          plan has its own monthly try-on allowance. Payments are billed through
+          our payment processor, Whop, which acts as merchant of record.
         </p>
         <p>
-          The subscription renews automatically each period until you cancel. You
+          A subscription renews automatically each period until you cancel. You
           can cancel at any time; access continues until the end of the period
           you have already paid for. Refunds are governed by our{" "}
           <a
@@ -54,10 +55,10 @@ export default function TermsPage() {
 
       <Clause label="Usage limits">
         <p>
-          Each plan has limits — the free render allowance and the paid fair-use
-          allowance above. A render that fails is never counted against your
-          allowance and you are never charged for it. We may adjust limits to keep
-          the service sustainable, with notice of material changes.
+          Each plan has limits — the free allowance and the paid monthly
+          allowances above. A render that fails is never counted against your
+          allowance and you are never charged for it. We may adjust limits to
+          keep the service sustainable, with notice of material changes.
         </p>
       </Clause>
 
@@ -118,7 +119,7 @@ export default function TermsPage() {
       </Clause>
 
       <Clause label="Contact">
-        <p>support@block27.app.</p>
+        <p>{SUPPORT_EMAIL}.</p>
       </Clause>
     </LegalShell>
   );
