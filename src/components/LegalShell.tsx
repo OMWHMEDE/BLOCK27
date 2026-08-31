@@ -8,9 +8,9 @@ import { SocialLinks } from "@/components/SocialIcons";
 // footer that cross-links the three. Same tokens as the rest of the app — void
 // ground, paper/bone/ash type, hairline sections, border-radius 0, no cards.
 //
-// The copy is written to be accurate to how the product actually handles data;
-// have it reviewed by counsel for your jurisdiction before relying on it, and
-// set a governing-law clause once that jurisdiction is fixed.
+// The copy is accurate to how the product actually handles data and names its
+// governing law (Terms). It is an honest draft, not a lawyer's review — have
+// counsel pass over it before scaling.
 
 // Bump when the substance of any legal page changes.
 export const LEGAL_UPDATED = "31 August 2026";
