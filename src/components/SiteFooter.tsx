@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { SUPPORT_EMAIL, SOCIAL_LINKS } from "@/lib/support";
+import { SUPPORT_EMAIL } from "@/lib/support";
+import { SocialLinks } from "@/components/SocialIcons";
 
 // The marketing footer — support + socials, on the void ground with a single
-// hairline rule and the emptiness the brand runs on. Minimal text links, no
-// icons, border-radius 0. Shown on the landing and pricing pages; the in-app
-// tool screens stay uncluttered. Legal pages carry the same links via their own
-// nav (see LegalShell).
+// hairline rule and the emptiness the brand runs on. Socials are monochrome
+// glyphs (SocialLinks), border-radius 0. Shown on the landing and pricing pages;
+// the in-app tool screens stay uncluttered. Legal pages carry the same links via
+// their own nav (see LegalShell).
 
 const LEGAL = [
   { label: "Terms", href: "/terms" },
@@ -31,20 +32,8 @@ export function SiteFooter() {
           </a>
         </div>
 
-        {/* Socials — plain text links, new tab, no referrer. */}
-        <nav aria-label="Social" className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-          {SOCIAL_LINKS.map((s) => (
-            <a
-              key={s.label}
-              href={s.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={linkClass}
-            >
-              {s.label}
-            </a>
-          ))}
-        </nav>
+        {/* Socials — monochrome glyphs, new tab, no referrer. */}
+        <SocialLinks />
 
         {/* Legal + mark. */}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-iron pt-8 text-sm">

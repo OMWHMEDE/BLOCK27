@@ -21,6 +21,7 @@ export function AuthForm({
   notice,
   profileFields = false,
   showForgot = false,
+  signup = false,
 }: {
   action: (formData: FormData) => void;
   submitLabel: string;
@@ -33,6 +34,8 @@ export function AuthForm({
   profileFields?: boolean;
   // Login only: the "Forgot password?" affordance under the password field.
   showForgot?: boolean;
+  // Signup only: the required age-16 confirmation and the terms/privacy line.
+  signup?: boolean;
 }) {
   return (
     <div className="relative isolate flex flex-1 flex-col">
@@ -125,6 +128,19 @@ export function AuthForm({
             </label>
           ) : null}
 
+          {signup ? (
+            <label className="flex items-start gap-3 text-sm text-bone">
+              <input
+                type="checkbox"
+                name="age_confirm"
+                value="yes"
+                required
+                className="mt-0.5 h-4 w-4 shrink-0 accent-paper"
+              />
+              <span>I am 16 or older.</span>
+            </label>
+          ) : null}
+
           {error ? (
             <p className="text-blood text-sm border border-blood px-3 py-2">
               {error}
@@ -134,6 +150,26 @@ export function AuthForm({
           <button type="submit" className={`${btnPrimary} w-full mt-2`}>
             {submitLabel}
           </button>
+
+          {signup ? (
+            <p className="text-ash text-xs leading-snug">
+              By creating an account you agree to our{" "}
+              <Link
+                href="/terms"
+                className="text-bone underline underline-offset-4 hover:text-paper"
+              >
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                className="text-bone underline underline-offset-4 hover:text-paper"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          ) : null}
         </form>
 
         <p className="text-ash text-sm mt-10">

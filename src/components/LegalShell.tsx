@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
-import { SUPPORT_EMAIL, SOCIAL_LINKS } from "@/lib/support";
+import { SUPPORT_EMAIL } from "@/lib/support";
+import { SocialLinks } from "@/components/SocialIcons";
 
 // Shared frame for the legal pages (/terms, /privacy, /refund): wordmark home
 // link, title, cold one-line intro, a "last updated" stamp, the clauses, and a
 // footer that cross-links the three. Same tokens as the rest of the app — void
 // ground, paper/bone/ash type, hairline sections, border-radius 0, no cards.
 //
-// NOTE: these pages are PLACEHOLDER legal copy — accurate to how the product
-// actually works, but pending a real lawyer's review before full public launch.
-// Do not treat as final legal advice.
+// The copy is accurate to how the product actually handles data and names its
+// governing law (Terms). It is an honest draft, not a lawyer's review — have
+// counsel pass over it before scaling.
 
 // Bump when the substance of any legal page changes.
-export const LEGAL_UPDATED = "4 August 2026";
+export const LEGAL_UPDATED = "31 August 2026";
 
 const LEGAL_LINKS = [
   { href: "/terms", label: "Terms" },
@@ -82,17 +83,7 @@ export function LegalShell({
         >
           {SUPPORT_EMAIL}
         </a>
-        {SOCIAL_LINKS.map((s) => (
-          <a
-            key={s.label}
-            href={s.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="uppercase tracking-[0.08em] text-bone hover:text-paper"
-          >
-            {s.label}
-          </a>
-        ))}
+        <SocialLinks />
       </div>
     </main>
   );

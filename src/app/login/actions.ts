@@ -42,6 +42,15 @@ export async function signup(formData: FormData) {
     redirect("/signup?error=Enter+your+email+and+password");
   }
 
+  // Age gate — the form checkbox is `required`, this is the server backstop so a
+  // stripped or scripted post can't skip it. BLOCK27 is 16+ (full-body imagery).
+  if (formData.get("age_confirm") !== "yes") {
+    redirect(
+      "/signup?error=" +
+        encodeURIComponent("Confirm you are 16 or older to create an account."),
+    );
+  }
+
   const displayName = String(formData.get("display_name") ?? "")
     .trim()
     .slice(0, 40);
