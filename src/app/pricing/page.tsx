@@ -182,9 +182,9 @@ function HowTryOnsWork() {
           How try-ons work
         </h2>
         <p className="mt-4 leading-relaxed text-ash">
-          A try-on renders the chosen outfit onto your own base photo. The brain
-          reviews every render before you see it — a failed one never counts
-          against your allowance and is never charged.
+          A try-on renders the chosen outfit onto your own base photo, at full
+          quality. If a render fails it is retried automatically — and a failure
+          never counts against your allowance and is never charged.
         </p>
         <Link
           href="/wardrobe"
@@ -200,11 +200,11 @@ function HowTryOnsWork() {
 const FAQ = [
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Cancel from your account whenever you want. Billing stops and your access runs to the end of the period you have already paid for.",
+    a: `Yes. Your plan is billed through Whop, our payment processor. Cancel any time through Whop or by emailing ${SUPPORT_EMAIL} — billing stops and your access runs to the end of the period you have already paid for.`,
   },
   {
     q: "What happens if a try-on fails?",
-    a: "Nothing counts against you. The brain reviews every render; a failed one is discarded and re-run, never charged, and never counted against your allowance.",
+    a: "Nothing counts against you. A failed render is retried automatically, and a failure never counts against your try-on allowance and is never charged.",
   },
   {
     q: "How do outfit generations work?",
