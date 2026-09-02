@@ -135,8 +135,8 @@ function SelectedTier({ tier }: { tier: PaidTier }) {
       <WhopCheckout tier={tier} />
 
       <div className="mt-10">
-        <Link href="/upgrade" className={btnNav}>
-          Back
+        <Link href="/wardrobe" className={btnNav}>
+          Back to wardrobe
         </Link>
       </div>
     </>
