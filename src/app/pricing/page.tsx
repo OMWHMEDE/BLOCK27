@@ -202,7 +202,7 @@ function HowTryOnsWork() {
 const FAQ = [
   {
     q: "Can I cancel anytime?",
-    a: `Yes. Your plan is billed through Whop, our payment processor. Cancel any time through Whop or by emailing ${SUPPORT_EMAIL} — billing stops and your access runs to the end of the period you have already paid for.`,
+    a: `Yes — your plan is billed through Whop, so cancel any time through Whop or by emailing ${SUPPORT_EMAIL}. Billing stops and your access runs to the end of the period you have already paid for. Cancelling does not refund that period: a refund is only possible if you haven't used a try-on yet.`,
   },
   {
     q: "Can I get a refund?",
