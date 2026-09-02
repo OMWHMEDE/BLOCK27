@@ -34,10 +34,11 @@ export default function RefundPage() {
 
       <Clause label="Cancelling">
         <p>
-          You can cancel your subscription at any time from your account.
-          Cancelling stops future renewals; your access continues until the end
-          of the period you have already paid for. Cancelling on its own does not
-          refund the current period — use the 3-day window above if it applies.
+          You can cancel your subscription at any time through Whop, our payment
+          processor, or by emailing {SUPPORT_EMAIL}. Cancelling stops future
+          renewals; your access continues until the end of the period you have
+          already paid for. Cancelling on its own does not refund the current
+          period — use the 3-day window above if it applies.
         </p>
       </Clause>
 

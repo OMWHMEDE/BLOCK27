@@ -148,7 +148,7 @@ function TrustRow() {
   const items = [
     { icon: <LockIcon />, label: "Secure payments", note: "Handled by Whop" },
     { icon: <CycleIcon />, label: "Cancel anytime", note: "Access to period end" },
-    { icon: <ShieldIcon />, label: "Failed try-ons never count", note: "Or charge" },
+    { icon: <ShieldIcon />, label: "Private by design", note: "Encrypted, yours to delete" },
     { icon: <HeadsetIcon />, label: "Support available", note: SUPPORT_EMAIL },
   ];
   return (
@@ -182,9 +182,11 @@ function HowTryOnsWork() {
           How try-ons work
         </h2>
         <p className="mt-4 leading-relaxed text-ash">
-          A try-on renders the chosen outfit onto your own base photo. The brain
-          reviews every render before you see it — a failed one never counts
-          against your allowance and is never charged.
+          A try-on renders the chosen outfit onto your own base photo, at full
+          quality — so everything rides on that base photo. Shoot it full-body,
+          plain wall, good light; we show you exactly how. It rarely goes wrong,
+          but a finished try-on counts toward your allowance, so start from a base
+          you&rsquo;re happy with.
         </p>
         <Link
           href="/wardrobe"
@@ -200,11 +202,15 @@ function HowTryOnsWork() {
 const FAQ = [
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Cancel from your account whenever you want. Billing stops and your access runs to the end of the period you have already paid for.",
+    a: `Yes — your plan is billed through Whop, so cancel any time through Whop or by emailing ${SUPPORT_EMAIL}. Billing stops and your access runs to the end of the period you have already paid for. Cancelling does not refund that period: a refund is only possible if you haven't used a try-on yet.`,
   },
   {
-    q: "What happens if a try-on fails?",
-    a: "Nothing counts against you. The brain reviews every render; a failed one is discarded and re-run, never charged, and never counted against your allowance.",
+    q: "Can I get a refund?",
+    a: "Only if you haven't used a try-on. The stylist is free to try first, so you can see BLOCK27 work before you pay. Once you've rendered an outfit on a paid plan, that's a real cost on our side and the charge isn't refundable. Full details are in the Refund policy.",
+  },
+  {
+    q: "What if a try-on comes out wrong?",
+    a: "It rarely happens, and we're sorry when it does. A try-on is built on your base photo, so a weak base is almost always the cause — shoot it full-body, plain wall, good light (we show you exactly how). A finished try-on counts toward your allowance, so start from a base you're happy with. If something genuinely breaks on our side, it's retried automatically.",
   },
   {
     q: "How do outfit generations work?",
