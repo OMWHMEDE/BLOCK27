@@ -148,7 +148,7 @@ function TrustRow() {
   const items = [
     { icon: <LockIcon />, label: "Secure payments", note: "Handled by Whop" },
     { icon: <CycleIcon />, label: "Cancel anytime", note: "Access to period end" },
-    { icon: <ShieldIcon />, label: "Failed try-ons never count", note: "Or charge" },
+    { icon: <ShieldIcon />, label: "Private by design", note: "Encrypted, yours to delete" },
     { icon: <HeadsetIcon />, label: "Support available", note: SUPPORT_EMAIL },
   ];
   return (
@@ -183,8 +183,10 @@ function HowTryOnsWork() {
         </h2>
         <p className="mt-4 leading-relaxed text-ash">
           A try-on renders the chosen outfit onto your own base photo, at full
-          quality. If a render fails it is retried automatically — and a failure
-          never counts against your allowance and is never charged.
+          quality — so everything rides on that base photo. Shoot it full-body,
+          plain wall, good light; we show you exactly how. It rarely goes wrong,
+          but a finished try-on counts toward your allowance, so start from a base
+          you&rsquo;re happy with.
         </p>
         <Link
           href="/wardrobe"
@@ -203,8 +205,12 @@ const FAQ = [
     a: `Yes. Your plan is billed through Whop, our payment processor. Cancel any time through Whop or by emailing ${SUPPORT_EMAIL} — billing stops and your access runs to the end of the period you have already paid for.`,
   },
   {
-    q: "What happens if a try-on fails?",
-    a: "Nothing counts against you. A failed render is retried automatically, and a failure never counts against your try-on allowance and is never charged.",
+    q: "Can I get a refund?",
+    a: "Only if you haven't used a try-on. The stylist is free to try first, so you can see BLOCK27 work before you pay. Once you've rendered an outfit on a paid plan, that's a real cost on our side and the charge isn't refundable. Full details are in the Refund policy.",
+  },
+  {
+    q: "What if a try-on comes out wrong?",
+    a: "It rarely happens, and we're sorry when it does. A try-on is built on your base photo, so a weak base is almost always the cause — shoot it full-body, plain wall, good light (we show you exactly how). A finished try-on counts toward your allowance, so start from a base you're happy with. If something genuinely breaks on our side, it's retried automatically.",
   },
   {
     q: "How do outfit generations work?",
