@@ -1,52 +1,21 @@
 import { NextResponse } from "next/server";
-import crypto from "node:crypto";
+import { Webhook } from "standardwebhooks";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { tierForWhopPlan } from "@/lib/whop/plans";
 
-// Whop payment webhook. Real deliveries MUST be signed, and we verify the
-// signature ourselves rather than through @whop/api's makeWebhookValidator: that
-// validator rejects any payload whose `api_version` isn't the exact string "v5",
-// and Whop's endpoints deliver `api_version: "v1"` — so every real, correctly
-// signed payment was failing its check and returning 401. We reproduce Whop's
-// HMAC scheme exactly (below) minus that version lock, keeping the v1 payload
-// shape the handler already parses.
+// Whop payment webhook. Whop signs deliveries with the Standard Webhooks scheme
+// (standardwebhooks.com): headers `webhook-id`, `webhook-timestamp`,
+// `webhook-signature` (value `v1,<base64>`), signature = HMAC-SHA256 of
+// `${id}.${timestamp}.${rawBody}`, keyed by the base64 portion of the `whsec_`
+// signing secret. We verify with the reference library rather than hand-rolling
+// crypto — an earlier attempt against the SDK's legacy `x-whop-signature`/hex
+// scheme rejected every real delivery (wrong header, wrong format), which is what
+// was 401'ing valid payments.
 export const runtime = "nodejs";
 
-// Whop signs each delivery in the `x-whop-signature` header, formatted
-//   t=<unix_seconds>,v1=<hex HMAC-SHA256 of `${t}.${rawBody}` keyed by the secret>
-// (the same scheme @whop/api uses). We verify over the RAW body — never a parsed
-// / re-serialized copy, which would change the bytes and break the HMAC.
-const SIGNATURE_HEADER = "x-whop-signature";
-const TOLERANCE_SECONDS = 300;
-
-type VerifyResult = "ok" | "no_header" | "bad_format" | "stale" | "mismatch";
-
-function verifyWhopSignature(
-  rawBody: string,
-  header: string | null,
-  secret: string,
-): VerifyResult {
-  if (!header) return "no_header";
-  const [tPart, sigPart] = header.split(",");
-  if (!tPart || !sigPart) return "bad_format";
-  const timestamp = tPart.split("=")[1];
-  const [version, sent] = sigPart.split("=");
-  if (version !== "v1" || !timestamp || !sent) return "bad_format";
-
-  const ts = Number.parseInt(timestamp, 10);
-  if (Number.isNaN(ts) || Math.abs(Math.floor(Date.now() / 1000) - ts) > TOLERANCE_SECONDS) {
-    return "stale";
-  }
-
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(`${timestamp}.${rawBody}`)
-    .digest("hex");
-  const a = Buffer.from(expected);
-  const b = Buffer.from(sent);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return "mismatch";
-  return "ok";
-}
+// The three Standard Webhooks headers, verified over the RAW body — never a
+// parsed/re-serialized copy, which would change the bytes and break the HMAC.
+const SIG_HEADERS = ["webhook-id", "webhook-timestamp", "webhook-signature"] as const;
 
 type Meta = Record<string, unknown> | null | undefined;
 type PaymentData = {
@@ -75,7 +44,7 @@ function isEmptyObject(value: unknown): boolean {
 
 // Whop's dashboard "Test" button sends an unsigned request with an empty data
 // object. We acknowledge that probe with 200 (no side effects) but NEVER process
-// it as a real event. A real delivery always carries the x-whop-signature header.
+// it as a real event. A real delivery always carries the webhook-signature header.
 function isEmptyDashboardProbe(rawBody: string): boolean {
   try {
     const body = JSON.parse(rawBody) as WebhookEvent;
@@ -102,28 +71,27 @@ export async function POST(request: Request) {
   // Read the raw body ONCE — the signature is an HMAC over these exact bytes, so
   // it must never be parsed and re-serialized before verification.
   const rawBody = await request.text();
-  const signature = request.headers.get(SIGNATURE_HEADER);
+  const headers: Record<string, string> = {};
+  for (const h of SIG_HEADERS) headers[h] = request.headers.get(h) ?? "";
 
   // Fail-closed. The only unsigned request accepted is Whop's empty dashboard
   // test probe, and it exits before any database writes.
-  if (!signature && isEmptyDashboardProbe(rawBody)) {
+  if (!headers["webhook-signature"] && isEmptyDashboardProbe(rawBody)) {
     console.info("[whop] acknowledged unsigned dashboard test probe (no side effects)");
     return NextResponse.json({ ok: true, test: true, processed: false });
   }
 
-  const verdict = verifyWhopSignature(rawBody, signature, secret);
-  if (verdict !== "ok") {
-    // Distinct reason logged (no_header / bad_format / stale / mismatch) so the
-    // cause is unambiguous in the Vercel function logs.
-    console.error("[whop] webhook signature rejected:", verdict);
-    return NextResponse.json({ ok: false, error: "bad signature" }, { status: 401 });
-  }
-
+  // Standard Webhooks verification: checks the HMAC over `${id}.${timestamp}.${body}`
+  // and the 5-minute timestamp tolerance, throwing on any failure.
   let event: WebhookEvent;
   try {
-    event = JSON.parse(rawBody) as WebhookEvent;
-  } catch {
-    return NextResponse.json({ ok: false, error: "bad body" }, { status: 400 });
+    event = new Webhook(secret).verify(rawBody, headers) as WebhookEvent;
+  } catch (err) {
+    console.error(
+      "[whop] webhook signature rejected:",
+      err instanceof Error ? err.message : err,
+    );
+    return NextResponse.json({ ok: false, error: "bad signature" }, { status: 401 });
   }
 
   try {
