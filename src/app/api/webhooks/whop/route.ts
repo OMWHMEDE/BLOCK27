@@ -55,19 +55,44 @@ function verifyWhopSignature(
 }
 
 type Meta = Record<string, unknown> | null | undefined;
+type Ref = { id?: string | null } | null | undefined;
+
+// Whop's v1 payloads nest the plan and membership as objects (data.plan.id,
+// data.membership.id) and the older v5 shape used flat data.plan_id /
+// data.membership_id — read both so we're robust to either.
 type PaymentData = {
   id?: string;
+  status?: string;
+  plan?: Ref;
   plan_id?: string | null;
+  membership?: Ref;
   membership_id?: string | null;
   metadata?: Meta;
 };
-type MembershipData = { id?: string; plan_id?: string | null; metadata?: Meta };
+type MembershipData = {
+  id?: string;
+  plan?: Ref;
+  plan_id?: string | null;
+  metadata?: Meta;
+};
 type RefundOrDisputeData = { id?: string; payment?: PaymentData };
-type WebhookEvent = { action?: string; data?: unknown };
+// The v1 envelope names the event `type`; the legacy v5 shape used `action`.
+type WebhookEvent = { type?: string; action?: string; data?: unknown };
 
 function uidFrom(meta: Meta): string | null {
   const v = meta?.["supabase_user_id"];
   return typeof v === "string" && v.length > 0 ? v : null;
+}
+
+function planIdFrom(d: { plan?: Ref; plan_id?: string | null }): string | null {
+  return d.plan?.id ?? d.plan_id ?? null;
+}
+
+function membershipIdFrom(d: {
+  membership?: Ref;
+  membership_id?: string | null;
+}): string | null {
+  return d.membership?.id ?? d.membership_id ?? null;
 }
 
 function isEmptyObject(value: unknown): boolean {
@@ -133,27 +158,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "bad body" }, { status: 400 });
   }
 
+  // v1 names the event `type`; the old v5 shape used `action`. Read both.
+  const kind = event.type ?? event.action ?? "";
+  console.log("[whop] event", kind);
+
   try {
-    switch (event.action) {
+    switch (kind) {
       case "payment.succeeded": {
         const d = event.data as PaymentData;
         await grant(
           {
             userId: uidFrom(d.metadata),
-            planId: d.plan_id ?? null,
-            membershipId: d.membership_id ?? null,
+            planId: planIdFrom(d),
+            membershipId: membershipIdFrom(d),
           },
           d.id,
         );
         break;
       }
 
+      // Grant on activation. v1 = membership.activated; keep the v5 name as an
+      // alias so a mixed/pinned endpoint still works.
+      case "membership.activated":
       case "membership.went_valid": {
         const d = event.data as MembershipData;
         await grant(
           {
             userId: uidFrom(d.metadata),
-            planId: d.plan_id ?? null,
+            planId: planIdFrom(d),
             membershipId: d.id ?? null,
           },
           d.id,
@@ -161,6 +193,8 @@ export async function POST(request: Request) {
         break;
       }
 
+      // Revoke on deactivation. v1 = membership.deactivated; v5 alias kept.
+      case "membership.deactivated":
       case "membership.went_invalid": {
         const d = event.data as MembershipData;
         await revoke(
@@ -175,7 +209,7 @@ export async function POST(request: Request) {
         const d = event.data as RefundOrDisputeData;
         const p = d.payment ?? {};
         await revoke(
-          { userId: uidFrom(p.metadata), membershipId: p.membership_id ?? null },
+          { userId: uidFrom(p.metadata), membershipId: membershipIdFrom(p) },
           d.id ?? p.id,
         );
         break;
@@ -186,10 +220,11 @@ export async function POST(request: Request) {
         break;
 
       default:
+        console.info("[whop] unhandled event", kind);
         break;
     }
   } catch (err) {
-    console.error("[whop] handler error for", event.action, err);
+    console.error("[whop] handler error for", kind, err);
     return NextResponse.json({ ok: false, error: "handler error" }, { status: 500 });
   }
 
@@ -198,6 +233,10 @@ export async function POST(request: Request) {
 
 async function grant(ident: Grant, logId?: string) {
   const tier = tierForWhopPlan(ident.planId);
+  // One line, every grant: what we resolved from the payload and what we mapped.
+  console.log(
+    `[whop] grant resolve: user=${ident.userId} plan=${ident.planId} tier=${tier} (payment ${logId})`,
+  );
   if (!ident.userId) {
     console.error(
       "[whop] grant: no supabase_user_id in metadata — cannot link payment",
@@ -206,20 +245,38 @@ async function grant(ident: Grant, logId?: string) {
     return;
   }
   if (!tier) {
-    console.error("[whop] grant: unknown plan_id, no tier mapped", ident.planId);
+    console.error(
+      "[whop] grant: plan_id did not map to a tier — check NEXT_PUBLIC_WHOP_PLAN_* in prod",
+      ident.planId,
+    );
     return;
   }
 
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data: rows, error } = await admin
     .from("users")
     .update({
       plan_tier: tier,
       subscription_status: "active",
       whop_membership_id: ident.membershipId,
     })
-    .eq("id", ident.userId);
+    .eq("id", ident.userId)
+    .select("id");
   if (error) throw new Error(`grant update failed: ${error.message}`);
+
+  const updated = rows?.length ?? 0;
+  console.log(
+    `[whop] grant update: tier=${tier} user=${ident.userId} rowsUpdated=${updated}`,
+  );
+  if (updated === 0) {
+    // Loud: a valid, signed, mapped event that matched NO row — the id in the
+    // metadata has no users row. Never silently 200 past this.
+    console.error(
+      "[whop] grant: 0 rows updated — no public.users row with id",
+      ident.userId,
+    );
+    return;
+  }
 
   const { error: anchorErr } = await admin
     .from("users")
