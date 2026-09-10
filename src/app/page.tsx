@@ -7,10 +7,10 @@ const IMG = {
   hero: "/landing/01-hero-walk-v4.jpg",
   problem: "/landing/04-editorial-concrete-v4.jpg",
   wardrobe: "/landing/03-wardrobe-selection-v4.jpg",
-  reflection: "/landing/05-reflection-v4.jpg",
-  gallery: "/landing/06-gallery-v4.jpg",
-  stairs: "/landing/07-stairs-v4.jpg",
-  result: "/landing/11-studio-editorial-v4.jpg",
+  // App screenshot for the "It builds the outfit" section — uploaded separately.
+  buildsOutfit: "/landing/builds-the-outfit.jpg",
+  // Real try-on render for the "See it on you" section — uploaded separately.
+  result: "/landing/try-on-render.jpg",
   closing: "/landing/02-story-rooftop-v4.jpg",
 };
 
@@ -75,6 +75,9 @@ export default function LandingPage() {
             <br />
             You wear them wrong.
           </h1>
+          <p className="landing-subline">
+            Photograph your wardrobe. It builds the outfits. See them on you.
+          </p>
           <TryItNow />
         </div>
       </section>
@@ -100,47 +103,30 @@ export default function LandingPage() {
         />
         <div className="landing-section__copy landing-copy-block">
           <p className="landing-kicker">The wardrobe</p>
-          <h2 id="wardrobe-title">It reads what you own.</h2>
+          <h2 id="wardrobe-title">Shoot your clothes once.</h2>
         </div>
       </section>
 
       <section className="landing-section landing-section--reflection" aria-labelledby="reflection-title">
         <div className="landing-section__copy landing-copy-block">
           <p className="landing-kicker">The reflection</p>
-          <h2 id="reflection-title">It understands proportion.</h2>
-          <p>Not trends.</p>
+          <h2 id="reflection-title">It builds the outfit.</h2>
         </div>
         <EditorialImage
-          src={IMG.reflection}
-          alt="Subject 27 reflected in a mirror, creating a quiet visual handoff in the story."
+          src={IMG.buildsOutfit}
+          alt="The BLOCK27 app building an outfit from the user's own wardrobe."
           className="landing-image--reflection"
         />
       </section>
 
-      <section className="landing-section landing-section--world" aria-labelledby="world-title">
-        <div className="landing-world-grid">
-          <EditorialImage
-            src={IMG.gallery}
-            alt="Subject 27 moving through a spare gallery-like interior."
-            className="landing-image--gallery"
-          />
-          <EditorialImage
-            src={IMG.stairs}
-            alt="Subject 27 on concrete stairs in the same restrained monochrome world."
-            className="landing-image--stairs"
-            sizes="(max-width: 768px) 72vw, 28vw"
-          />
-        </div>
-        <div className="landing-section__copy landing-copy-block">
-          <p className="landing-kicker">The world</p>
-          <h2 id="world-title">Built with intent.</h2>
-        </div>
-      </section>
+      <div className="landing-cta-block">
+        <TryItNow />
+      </div>
 
       <section className="landing-result" aria-labelledby="result-title">
         <EditorialImage
           src={IMG.result}
-          alt="Subject 27 in a studio editorial frame, styled with decisive proportion and restraint."
+          alt="A BLOCK27 try-on render — the chosen outfit on the user's own body."
           className="landing-image--result"
           sizes="100vw"
         />
