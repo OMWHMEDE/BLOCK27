@@ -252,7 +252,7 @@ body {
 
 .landing-copy-block h1 { font-size: clamp(2.85rem, 11vw, 8.5rem); }
 .landing-copy-block h2 { font-size: clamp(2.4rem, 8vw, 6.75rem); }
-.landing-copy-block p:not(.landing-kicker):not(.landing-mark) {
+.landing-copy-block p:not(.landing-kicker):not(.landing-mark):not(.landing-subline) {
   margin: 0.6rem 0 0;
   max-width: 17ch;
   color: #f2f0ec;
@@ -261,6 +261,30 @@ body {
   letter-spacing: -0.055em;
   line-height: 0.9;
   text-transform: uppercase;
+}
+
+/* Hero subline — quiet body face beneath the display headline, not the giant
+   display-paragraph treatment above. */
+.landing-subline {
+  margin: 1.1rem 0 0;
+  max-width: 30ch;
+  color: #c9c4bc;
+  font-family: var(--font-sans);
+  font-size: clamp(0.95rem, 1.7vw, 1.15rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+/* Standalone TRY IT NOW between sections — same button, centred with room. */
+.landing-cta-block {
+  display: flex;
+  justify-content: center;
+  padding: clamp(3rem, 9vw, 7rem) 1.5rem;
+}
+.landing-cta-block .landing-cta {
+  margin-top: 0;
 }
 
 .landing-kicker {
