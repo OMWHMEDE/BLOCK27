@@ -151,6 +151,54 @@ const TOOL = {
   },
 } as unknown as Anthropic.Tool;
 
+// A plain, actionable line to store when a rejected garment's reason comes back
+// empty or malformed — the user must always get something they can act on.
+const REJECT_FALLBACK =
+  "That photo won't work. Shoot it again — flat, even light, whole garment in frame.";
+
+// The model occasionally leaks markup into free-text fields: stray HTML/XML
+// tags, or fragments of the assistant's own tool-call syntax (e.g. antml
+// parameter tags). None of it is human-readable and these fields are shown to
+// users, so strip every tag-like sequence before the record is ever stored.
+function stripMarkup(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value
+    .replace(/<[^>]*>/g, " ") // well-formed tags: <tag ...>, </tag>, <tag/>
+    .replace(/<[^>]*$/g, " ") // a truncated / unclosed final tag
+    .replace(/&[a-z]+;/gi, " ") // stray HTML entities
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripMarkupList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(stripMarkup).filter((s) => s.length > 0);
+}
+
+// Clean every user-facing free-text field on the record. Enums and numbers are
+// left untouched. reject_reason is special: when the garment is being rejected,
+// an empty/markup-only reason falls back to a plain line so the user is never
+// shown a blank or broken message.
+function sanitizeAnalysis(a: GarmentAnalysis): GarmentAnalysis {
+  const reject = stripMarkup(a.reject_reason);
+  return {
+    ...a,
+    reject_reason: a.usable ? reject : reject || REJECT_FALLBACK,
+    subcategory: stripMarkup(a.subcategory),
+    descriptor: stripMarkup(a.descriptor),
+    colors: stripMarkupList(a.colors),
+    pattern: stripMarkup(a.pattern),
+    material_guess: stripMarkup(a.material_guess),
+    seasons: stripMarkupList(a.seasons),
+    fit: stripMarkup(a.fit),
+    pairs_with: stripMarkup(a.pairs_with),
+    clashes_with: stripMarkup(a.clashes_with),
+    read: stripMarkup(a.read),
+    summary: stripMarkup(a.summary),
+    photo_warning: stripMarkup(a.photo_warning),
+  };
+}
+
 export async function analyzeGarmentImage(
   base64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp" = "image/jpeg",
@@ -186,5 +234,7 @@ export async function analyzeGarmentImage(
   if (!block || block.type !== "tool_use") {
     throw new Error("Analysis did not return a garment record");
   }
-  return block.input as GarmentAnalysis;
+  // Never trust the model's free text verbatim — sanitize before it can be
+  // stored or shown.
+  return sanitizeAnalysis(block.input as GarmentAnalysis);
 }
