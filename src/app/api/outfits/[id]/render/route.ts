@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { authenticateRequest } from "@/lib/supabase/server";
 import { getBasePhotoUrl, signedUrl } from "@/lib/supabase/storage";
 import { renderPath } from "@/lib/photos";
 import { renderOutfit, type RenderLayer } from "@/lib/render/renderOutfit";
@@ -41,15 +41,12 @@ const LAYER: Record<string, { order: number; category: RenderCategory }> = {
 };
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: outfitId } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
