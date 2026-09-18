@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { authenticateRequest } from "@/lib/supabase/server";
 import { listGarmentThumbs } from "@/lib/supabase/storage";
 
 // The wardrobe as JSON, so the client can cache it and render instantly on
@@ -10,11 +10,8 @@ export const runtime = "nodejs";
 
 const SIGNED_TTL = 3600;
 
-export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function GET(request: Request) {
+  const { supabase, user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { authenticateRequest } from "@/lib/supabase/server";
 import { whopServer } from "@/lib/whop/server";
 import { whopPlanId, PAID_TIERS, type PaidTier } from "@/lib/whop/plans";
 import { paymentsOpen } from "@/lib/payments";
@@ -16,10 +16,7 @@ function isPaidTier(v: unknown): v is PaidTier {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
