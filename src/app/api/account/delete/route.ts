@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { authenticateRequest } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { USER_PHOTOS_BUCKET } from "@/lib/photos";
 
@@ -34,12 +34,10 @@ async function listAllPaths(
   return out;
 }
 
-export async function POST() {
-  // Identify the caller with their own session; never take an id from the body.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function POST(request: Request) {
+  // Identify the caller with their own session — Bearer token (native app) or
+  // cookie (browser); never take an id from the body.
+  const { user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
