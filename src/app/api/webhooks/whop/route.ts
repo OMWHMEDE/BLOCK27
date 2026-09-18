@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { setEntitlement, clearEntitlement } from "@/lib/entitlement";
 import { tierForWhopPlan } from "@/lib/whop/plans";
 
 // Whop payment webhook. Verified per Whop's own "Verify without an SDK" docs,
@@ -252,19 +252,11 @@ async function grant(ident: Grant, logId?: string) {
     return;
   }
 
-  const admin = createAdminClient();
-  const { data: rows, error } = await admin
-    .from("users")
-    .update({
-      plan_tier: tier,
-      subscription_status: "active",
-      whop_membership_id: ident.membershipId,
-    })
-    .eq("id", ident.userId)
-    .select("id");
-  if (error) throw new Error(`grant update failed: ${error.message}`);
-
-  const updated = rows?.length ?? 0;
+  const updated = await setEntitlement({
+    userId: ident.userId,
+    tier,
+    ref: { source: "whop", whopMembershipId: ident.membershipId },
+  });
   console.log(
     `[whop] grant update: tier=${tier} user=${ident.userId} rowsUpdated=${updated}`,
   );
@@ -278,42 +270,20 @@ async function grant(ident: Grant, logId?: string) {
     return;
   }
 
-  const { error: anchorErr } = await admin
-    .from("users")
-    .update({ plan_anchor_at: new Date().toISOString() })
-    .eq("id", ident.userId)
-    .is("plan_anchor_at", null);
-  if (anchorErr) {
-    console.error("[whop] grant: anchor set failed", anchorErr.message);
-  }
-
   console.log("[whop] granted", tier, "to user", ident.userId);
 }
 
 async function revoke(ident: Revoke, logId?: string) {
-  const admin = createAdminClient();
-  const patch = {
-    plan_tier: "free",
-    subscription_status: "none",
-    plan_anchor_at: null,
-  };
-
-  const query = ident.userId
-    ? admin.from("users").update(patch).eq("id", ident.userId)
-    : ident.membershipId
-      ? admin
-          .from("users")
-          .update(patch)
-          .eq("whop_membership_id", ident.membershipId)
-      : null;
-
-  if (!query) {
+  if (!ident.userId && !ident.membershipId) {
     console.error("[whop] revoke: cannot identify user", logId);
     return;
   }
 
-  const { error } = await query;
-  if (error) throw new Error(`revoke update failed: ${error.message}`);
+  await clearEntitlement({
+    source: "whop",
+    userId: ident.userId,
+    whopMembershipId: ident.membershipId,
+  });
 
   console.log(
     "[whop] revoked to free",
