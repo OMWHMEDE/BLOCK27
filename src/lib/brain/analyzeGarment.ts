@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { GarmentAnalysis } from "@/lib/brain/types";
+import { stripMarkup, stripMarkupList } from "@/lib/sanitize";
 
 // Garment analysis is a bounded perception task run once on every garment. The
 // BLOCK27 cost model budgets ~$0.005 for it (Haiku tier); ANALYSIS_MODEL keeps
@@ -155,25 +156,6 @@ const TOOL = {
 // empty or malformed — the user must always get something they can act on.
 const REJECT_FALLBACK =
   "That photo won't work. Shoot it again — flat, even light, whole garment in frame.";
-
-// The model occasionally leaks markup into free-text fields: stray HTML/XML
-// tags, or fragments of the assistant's own tool-call syntax (e.g. antml
-// parameter tags). None of it is human-readable and these fields are shown to
-// users, so strip every tag-like sequence before the record is ever stored.
-function stripMarkup(value: unknown): string {
-  if (typeof value !== "string") return "";
-  return value
-    .replace(/<[^>]*>/g, " ") // well-formed tags: <tag ...>, </tag>, <tag/>
-    .replace(/<[^>]*$/g, " ") // a truncated / unclosed final tag
-    .replace(/&[a-z]+;/gi, " ") // stray HTML entities
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function stripMarkupList(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map(stripMarkup).filter((s) => s.length > 0);
-}
 
 // Clean every user-facing free-text field on the record. Enums and numbers are
 // left untouched. reject_reason is special: when the garment is being rejected,
