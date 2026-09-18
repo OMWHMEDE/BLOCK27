@@ -1,10 +1,14 @@
 import { describe, it, expect, afterEach } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getHand } from "@/lib/hand";
 import type { ImageRef } from "@/lib/hand";
 
 const person: ImageRef = { bucket: "user-photos", path: "u/person.jpg" };
 const garment: ImageRef = { bucket: "user-photos", path: "u/garment.jpg" };
 const out: ImageRef = { bucket: "user-photos", path: "u/out.jpg" };
+
+// The stub never touches the client; a placeholder satisfies the signature.
+const client = {} as unknown as SupabaseClient;
 
 describe("the hand", () => {
   const original = process.env.HAND_PROVIDER;
@@ -15,6 +19,7 @@ describe("the hand", () => {
   it("defaults to the stub, which renders nothing and says so", async () => {
     delete process.env.HAND_PROVIDER;
     const result = await getHand().render({
+      client,
       person,
       garment,
       out,
@@ -31,6 +36,7 @@ describe("the hand", () => {
   it("falls back to the stub for an unknown provider rather than guessing", async () => {
     process.env.HAND_PROVIDER = "not-a-real-provider";
     const result = await getHand().render({
+      client,
       person,
       garment,
       out,

@@ -36,7 +36,7 @@ export default async function OutfitsPage() {
     );
   }
 
-  const outfits = await listOutfits(user.id);
+  const outfits = await listOutfits(supabase, user.id);
   const paid = (await getPlan(user.id)).paid;
   const soon = !paymentsOpen();
 

@@ -20,8 +20,8 @@ export default async function SettingsPage() {
 
   const [profile, baseUrl, quota, plan] = user
     ? await Promise.all([
-        getProfile(user.id),
-        getBasePhotoUrl(user.id),
+        getProfile(supabase, user.id),
+        getBasePhotoUrl(supabase, user.id),
         getQuota(user.id),
         getPlan(user.id),
       ])

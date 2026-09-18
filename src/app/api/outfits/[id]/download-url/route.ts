@@ -29,7 +29,7 @@ export async function GET(
     return NextResponse.json({ error: "no render" }, { status: 404 });
   }
 
-  const url = await signedUrl(path, 120);
+  const url = await signedUrl(supabase, path, 120);
   if (!url) {
     return NextResponse.json({ error: "could not sign" }, { status: 500 });
   }

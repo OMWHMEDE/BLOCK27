@@ -15,5 +15,5 @@ export async function deleteGarmentAction(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sign in again." };
 
-  return deleteGarment(user.id, id);
+  return deleteGarment(supabase, user.id, id);
 }

@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const garments = await listGarmentThumbs(user.id, SIGNED_TTL);
+  const garments = await listGarmentThumbs(supabase, user.id, SIGNED_TTL);
 
   return NextResponse.json(
     { garments, savedAt: Date.now() },

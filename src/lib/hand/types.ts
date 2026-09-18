@@ -7,6 +7,8 @@
 // Nothing outside src/lib/hand may import a concrete provider — see the ESLint
 // rule that enforces it.
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type ImageRef = { bucket: string; path: string };
 
 export type RenderResult =
@@ -38,6 +40,10 @@ export type RenderCategory =
 
 export interface Hand {
   render(input: {
+    // The caller's authenticated Supabase client, under the user's RLS. The hand
+    // signs the input images and stores the output through it — never a client
+    // of its own, which would be unauthenticated on a Bearer-token request.
+    client: SupabaseClient;
     person: ImageRef; // who to dress (base photo, or the previous layer)
     garment: ImageRef; // the single garment to put on
     out: ImageRef; // where the provider stores the result — the caller owns paths

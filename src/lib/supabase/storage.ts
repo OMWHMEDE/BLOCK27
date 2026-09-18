@@ -1,6 +1,14 @@
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { USER_PHOTOS_BUCKET, basePhotoPath, avatarPath } from "@/lib/photos";
 import type { GarmentAnalysis } from "@/lib/brain/types";
+
+// Every helper here takes the CALLER'S authenticated Supabase client and runs
+// under its RLS. It never creates its own client: a self-made cookie client is
+// unauthenticated on a Bearer-token request (the native app), so its storage
+// signing and reads would silently fail. The caller — a server component with
+// the cookie client, or a route with the client from authenticateRequest —
+// passes the one client that carries the real user. The service-role client is
+// never used on this path; RLS is the guard.
 
 export { USER_PHOTOS_BUCKET };
 
@@ -14,8 +22,10 @@ export type Profile = {
  * an account with neither reads back {null, null}, which the UI renders as no
  * name and a plain block. The signed URL doubles as the avatar existence check.
  */
-export async function getProfile(userId: string): Promise<Profile> {
-  const supabase = await createClient();
+export async function getProfile(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<Profile> {
   const { data } = await supabase
     .from("users")
     .select("display_name")
@@ -24,7 +34,7 @@ export async function getProfile(userId: string): Promise<Profile> {
 
   return {
     displayName: (data?.display_name as string | null) ?? null,
-    avatarUrl: await signedUrl(avatarPath(userId)),
+    avatarUrl: await signedUrl(supabase, avatarPath(userId)),
   };
 }
 
@@ -36,15 +46,15 @@ export async function getProfile(userId: string): Promise<Profile> {
  * that expires. Default 300 seconds: long enough to load an image, short
  * enough that a leaked link is worthless minutes later.
  *
- * Runs as the logged-in user (anon key + their cookies), so RLS on the
- * bucket still applies — a user can only sign URLs for their own objects.
- * Returns null when the object does not exist or the user cannot read it.
+ * Runs as the caller's authenticated user (their client, under RLS), so a user
+ * can only sign URLs for their own objects. Returns null when the object does
+ * not exist or the user cannot read it.
  */
 export async function signedUrl(
+  supabase: SupabaseClient,
   path: string,
   seconds = 300,
 ): Promise<string | null> {
-  const supabase = await createClient();
   const { data, error } = await supabase.storage
     .from(USER_PHOTOS_BUCKET)
     .createSignedUrl(path, seconds);
@@ -59,10 +69,11 @@ export async function signedUrl(
  * so a null return means "no base captured".
  */
 export async function getBasePhotoUrl(
+  supabase: SupabaseClient,
   userId: string,
   seconds = 300,
 ): Promise<string | null> {
-  return signedUrl(basePhotoPath(userId), seconds);
+  return signedUrl(supabase, basePhotoPath(userId), seconds);
 }
 
 /**
@@ -71,11 +82,11 @@ export async function getBasePhotoUrl(
  * overwrites the previous image.
  */
 export async function uploadToUserPhotos(
+  supabase: SupabaseClient,
   path: string,
   bytes: Buffer,
   contentType = "image/jpeg",
 ): Promise<boolean> {
-  const supabase = await createClient();
   const { error } = await supabase.storage
     .from(USER_PHOTOS_BUCKET)
     .upload(path, bytes, { upsert: true, contentType });
@@ -83,9 +94,11 @@ export async function uploadToUserPhotos(
 }
 
 /** Best-effort delete of temporary render layers. */
-export async function removeFromUserPhotos(paths: string[]): Promise<void> {
+export async function removeFromUserPhotos(
+  supabase: SupabaseClient,
+  paths: string[],
+): Promise<void> {
   if (paths.length === 0) return;
-  const supabase = await createClient();
   await supabase.storage.from(USER_PHOTOS_BUCKET).remove(paths);
 }
 
@@ -103,10 +116,10 @@ export type GarmentThumb = {
  * the whole batch is signed in one call.
  */
 export async function listGarmentThumbs(
+  supabase: SupabaseClient,
   userId: string,
   seconds = 300,
 ): Promise<GarmentThumb[]> {
-  const supabase = await createClient();
   const { data: rows, error } = await supabase
     .from("garments")
     .select("id, photo_path, status, analysis, reject_reason")
@@ -149,11 +162,11 @@ export type GarmentDetail = {
  * owner by RLS. Null when the id isn't the user's or doesn't exist.
  */
 export async function getGarmentDetail(
+  supabase: SupabaseClient,
   userId: string,
   id: string,
   seconds = 300,
 ): Promise<GarmentDetail | null> {
-  const supabase = await createClient();
   const { data: row, error } = await supabase
     .from("garments")
     .select("id, photo_path, status, analysis, reject_reason, created_at")
@@ -166,7 +179,7 @@ export async function getGarmentDetail(
   return {
     id: row.id as string,
     status: row.status as string,
-    url: await signedUrl(row.photo_path as string, seconds),
+    url: await signedUrl(supabase, row.photo_path as string, seconds),
     analysis: (row.analysis as GarmentAnalysis | null) ?? null,
     reject_reason: (row.reject_reason as string | null) ?? null,
     created_at: row.created_at as string,
@@ -179,11 +192,10 @@ export async function getGarmentDetail(
  * would be a lie. Returns the error rather than throwing so the UI can speak it.
  */
 export async function deleteGarment(
+  supabase: SupabaseClient,
   userId: string,
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createClient();
-
   const { data: row, error: selErr } = await supabase
     .from("garments")
     .select("photo_path")
@@ -229,9 +241,9 @@ export type RecommendationView = {
  * search URL written into affiliate_url; `spend` is the budget allocation.
  */
 export async function listRecommendations(
+  supabase: SupabaseClient,
   userId: string,
 ): Promise<RecommendationView[]> {
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("recommendations")
     .select(
@@ -270,9 +282,9 @@ export type ShoppingSessionView = {
  * RLS scopes it to the owner.
  */
 export async function getShoppingSession(
+  supabase: SupabaseClient,
   userId: string,
 ): Promise<ShoppingSessionView | null> {
-  const supabase = await createClient();
   const { data } = await supabase
     .from("shopping_sessions")
     .select("budget, spent, remaining, solid, advice, gaps")
@@ -309,10 +321,10 @@ export type OutfitView = {
  * (300s signed) and descriptors. Garments that were since deleted are dropped.
  */
 export async function listOutfits(
+  supabase: SupabaseClient,
   userId: string,
   seconds = 300,
 ): Promise<OutfitView[]> {
-  const supabase = await createClient();
   const { data: outfits, error } = await supabase
     .from("outfits")
     .select("id, item_ids, reasoning, render_path")

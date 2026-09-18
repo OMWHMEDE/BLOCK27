@@ -16,8 +16,8 @@ export default async function ShoppingPage() {
 
   const [recs, session] = user
     ? await Promise.all([
-        listRecommendations(user.id),
-        getShoppingSession(user.id),
+        listRecommendations(supabase, user.id),
+        getShoppingSession(supabase, user.id),
       ])
     : [[], null];
 
