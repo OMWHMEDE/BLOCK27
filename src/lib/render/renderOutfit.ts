@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getHand, type ImageRef, type RenderCategory } from "@/lib/hand";
 import {
   USER_PHOTOS_BUCKET,
@@ -32,6 +33,7 @@ const MAX_ATTEMPTS = 3; // one try + two retries
 //   r0   + layer1 -> r1
 //   ...            -> {user_id}/renders/{outfit_id}.jpg
 export async function renderOutfit(
+  supabase: SupabaseClient,
   userId: string,
   outfitId: string,
   layers: RenderLayer[],
@@ -52,6 +54,7 @@ export async function renderOutfit(
 
     // Try the layer, retrying only transient failures, capped at two retries.
     let result = await hand.render({
+      client: supabase,
       person,
       garment: { bucket: USER_PHOTOS_BUCKET, path: layers[i].garmentPath },
       out: { bucket: USER_PHOTOS_BUCKET, path: outPath },
@@ -70,6 +73,7 @@ export async function renderOutfit(
         result.detail,
       );
       result = await hand.render({
+        client: supabase,
         person,
         garment: { bucket: USER_PHOTOS_BUCKET, path: layers[i].garmentPath },
         out: { bucket: USER_PHOTOS_BUCKET, path: outPath },
@@ -80,7 +84,7 @@ export async function renderOutfit(
     }
 
     if (!result.ok) {
-      await removeFromUserPhotos(tmp).catch(() => {});
+      await removeFromUserPhotos(supabase, tmp).catch(() => {});
       // Name the piece that gave out, so the caller can be honest about it
       // instead of showing a broken or silently-missing layer.
       const piece = layers[i].label ?? layers[i].category;
@@ -89,6 +93,6 @@ export async function renderOutfit(
     person = result.image;
   }
 
-  await removeFromUserPhotos(tmp).catch(() => {});
+  await removeFromUserPhotos(supabase, tmp).catch(() => {});
   return { ok: true, path: finalPath };
 }

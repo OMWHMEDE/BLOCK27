@@ -67,7 +67,7 @@ export async function POST(
   }
 
   // Need a base photo to dress.
-  if (!(await getBasePhotoUrl(user.id))) {
+  if (!(await getBasePhotoUrl(supabase, user.id))) {
     return NextResponse.json({
       ok: false,
       error: "No base photo yet. Capture one first.",
@@ -204,7 +204,7 @@ export async function POST(
   };
 
   // Execute.
-  const result = await renderOutfit(user.id, outfitId, layers);
+  const result = await renderOutfit(supabase, user.id, outfitId, layers);
   if (!result.ok) {
     // The real reason (provider error, timeout, out-of-credits, rejected input)
     // is logged for debugging and NEVER shown to the user — no billing, credit,
@@ -233,6 +233,6 @@ export async function POST(
   }
   await supabase.from("renders").insert({ user_id: user.id, outfit_id: outfitId });
 
-  const url = await signedUrl(renderPath(user.id, outfitId));
+  const url = await signedUrl(supabase, renderPath(user.id, outfitId));
   return NextResponse.json({ ok: true, url });
 }

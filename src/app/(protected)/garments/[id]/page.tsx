@@ -20,7 +20,7 @@ export default async function GarmentDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const garment = user ? await getGarmentDetail(user.id, id) : null;
+  const garment = user ? await getGarmentDetail(supabase, user.id, id) : null;
   if (!garment) notFound();
 
   return (

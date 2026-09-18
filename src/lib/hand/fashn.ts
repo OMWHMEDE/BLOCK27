@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Hand,
   ImageRef,
@@ -80,6 +81,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export class FashnHand implements Hand {
   async render(input: {
+    client: SupabaseClient;
     person: ImageRef;
     garment: ImageRef;
     out: ImageRef;
@@ -95,8 +97,8 @@ export class FashnHand implements Hand {
     const started = Date.now();
 
     const [personUrl, garmentUrl] = await Promise.all([
-      signedUrl(input.person.path, SIGN_SECONDS),
-      signedUrl(input.garment.path, SIGN_SECONDS),
+      signedUrl(input.client, input.person.path, SIGN_SECONDS),
+      signedUrl(input.client, input.garment.path, SIGN_SECONDS),
     ]);
     if (!personUrl || !garmentUrl) {
       return { ok: false, reason: "rejected_input", detail: "could not sign input images" };
@@ -194,7 +196,12 @@ export class FashnHand implements Hand {
       };
     }
 
-    const stored = await uploadToUserPhotos(input.out.path, bytes, contentType);
+    const stored = await uploadToUserPhotos(
+      input.client,
+      input.out.path,
+      bytes,
+      contentType,
+    );
     if (!stored) {
       return { ok: false, reason: "provider_error", detail: "could not store render" };
     }

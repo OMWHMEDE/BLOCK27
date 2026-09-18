@@ -52,7 +52,7 @@ export default async function WardrobePage() {
 
   const [baseUrl, paid] = user
     ? await Promise.all([
-        getBasePhotoUrl(user.id),
+        getBasePhotoUrl(supabase, user.id),
         getPlan(user.id).then((p) => p.paid),
       ])
     : [null, false];
