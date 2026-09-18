@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { stripMarkup } from "@/lib/sanitize";
 import type {
   Moderator,
   ModerationResult,
@@ -115,16 +116,18 @@ export class AnthropicModerator implements Moderator {
       warning?: string;
     };
 
+    // reason and warning are free text the model wrote — never trust it
+    // verbatim. Strip any leaked markup before it can be stored or shown.
     if (out.allowed === true) {
       // Framing is advisory only, and only bases produce one. A blank/whitespace
       // warning collapses to no warning.
-      const warning = kind === "base" ? out.warning?.trim() : "";
+      const warning = kind === "base" ? stripMarkup(out.warning) : "";
       return warning ? { allowed: true, warning } : { allowed: true };
     }
     return {
       allowed: false,
       reason:
-        out.reason?.trim() || "This can't be used. Upload a photo in clothing.",
+        stripMarkup(out.reason) || "This can't be used. Upload a photo in clothing.",
     };
   }
 }
