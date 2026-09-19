@@ -74,12 +74,14 @@ export async function setEntitlement(params: {
 
 // Revoke to free. Guarded by source: a provider may only clear an entitlement it
 // owns, so a stray event from one provider can't wipe the other's. Identify by
-// user id (preferred) or, for Whop, the membership id when a revoke arrives with
-// no user metadata. Callers must confirm at least one identifier before calling.
+// user id (preferred), or by the provider's own reference when a revoke arrives
+// with no user metadata — the Whop membership id, or the Apple original
+// transaction id. Callers must supply at least one identifier.
 export async function clearEntitlement(params: {
   source: EntitlementSource;
   userId?: string | null;
   whopMembershipId?: string | null;
+  appleOriginalTransactionId?: string | null;
 }): Promise<void> {
   const admin = createAdminClient();
   const patch = {
@@ -89,20 +91,27 @@ export async function clearEntitlement(params: {
     plan_anchor_at: null,
   };
 
-  const query = params.userId
-    ? admin
-        .from("users")
-        .update(patch)
-        .eq("id", params.userId)
-        .eq("entitlement_source", params.source)
-    : params.source === "whop" && params.whopMembershipId
-      ? admin
-          .from("users")
-          .update(patch)
-          .eq("whop_membership_id", params.whopMembershipId)
-      : null;
-
-  if (!query) throw new Error("clearEntitlement: cannot identify user");
+  let query;
+  if (params.userId) {
+    // The id path still checks source, so a Whop event can't clear an Apple row.
+    query = admin
+      .from("users")
+      .update(patch)
+      .eq("id", params.userId)
+      .eq("entitlement_source", params.source);
+  } else if (params.source === "whop" && params.whopMembershipId) {
+    query = admin
+      .from("users")
+      .update(patch)
+      .eq("whop_membership_id", params.whopMembershipId);
+  } else if (params.source === "apple" && params.appleOriginalTransactionId) {
+    query = admin
+      .from("users")
+      .update(patch)
+      .eq("apple_original_transaction_id", params.appleOriginalTransactionId);
+  } else {
+    throw new Error("clearEntitlement: cannot identify user");
+  }
 
   const { error } = await query;
   if (error) throw new Error(`clearEntitlement: ${error.message}`);
