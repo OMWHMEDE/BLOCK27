@@ -106,6 +106,17 @@ export async function POST(request: Request) {
       (valid.length === 0
         ? "Nothing here holds together yet. Add pieces that pair."
         : "");
+
+    // Persist the latest gap so a client can show it without regenerating. This
+    // reflects a real composition only (an empty string means "nothing missing",
+    // distinct from null = "never generated"). Best-effort: a persist failure must
+    // not fail a generation that already succeeded.
+    const { error: gapErr } = await supabase
+      .from("users")
+      .update({ latest_gap: gap, latest_gap_at: new Date().toISOString() })
+      .eq("id", user.id);
+    if (gapErr) console.error("[outfits] latest_gap persist failed", gapErr.message);
+
     return NextResponse.json({ ok: true, count: valid.length, gap });
   } catch (err) {
     // A failed generation must not burn the reserved composition slot.
