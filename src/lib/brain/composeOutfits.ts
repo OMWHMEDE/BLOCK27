@@ -69,7 +69,7 @@ Where they're headed:
 - If the user says where they're headed, that is the occasion. Read it
   generously — "cold and I want to look expensive" is intent, not a keyword
   match — and let it steer the picks. If the wardrobe can't serve that occasion,
-  say so plainly in gap.
+  say so plainly in gap_points.
 
 How you write the reason:
 - First person. "I put the bomber over the tee so everything under it stays
@@ -81,9 +81,12 @@ How you write the reason:
 Honesty about a thin wardrobe:
 - Make only the outfits the wardrobe genuinely supports. Fewer is fine. None is
   fine. Never pad the list with weak combinations.
-- If the wardrobe can't serve a real outfit, say so plainly in gap and name what
-  is missing: "You've got tops and no bottoms. Add trousers." Leave gap an empty
-  string when the wardrobe served the request well.
+- If the wardrobe can't serve a real outfit, say so plainly in gap_points: a list
+  of up to FOUR distinct, specific things it can't do, most important first, each
+  its own short point — e.g. "You've got tops and no bottoms. Add trousers.",
+  "No footwear — nothing renders on the feet." Separate gaps, never one idea split
+  across lines. Leave gap_points an empty array when the wardrobe served the
+  request well.
 
 Record everything with the compose_outfits tool.`;
 
@@ -121,12 +124,15 @@ const TOOL = {
           required: ["item_ids", "hero", "angle", "reasoning"],
         },
       },
-      gap: {
-        type: "string",
-        description: "What the wardrobe can't do; empty string when it served.",
+      gap_points: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "Up to 4 distinct things the wardrobe can't do, most important first, " +
+          "each its own short point; empty array when it served the request.",
       },
     },
-    required: ["outfits", "gap"],
+    required: ["outfits", "gap_points"],
   },
 } as unknown as Anthropic.Tool;
 
@@ -170,5 +176,14 @@ export async function composeOutfits(
   if (!block || block.type !== "tool_use") {
     throw new Error("Composition did not return a plan");
   }
-  return block.input as OutfitPlan;
+  const raw = block.input as Omit<OutfitPlan, "gap">;
+
+  // Normalize the points (trim, drop blanks, cap at four) and derive the single
+  // line the existing consumers still read.
+  const gap_points = (Array.isArray(raw.gap_points) ? raw.gap_points : [])
+    .map((p) => (typeof p === "string" ? p.trim() : ""))
+    .filter((p) => p.length > 0)
+    .slice(0, 4);
+
+  return { outfits: raw.outfits, gap_points, gap: gap_points.join(" ") };
 }

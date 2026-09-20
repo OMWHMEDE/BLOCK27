@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from("users")
-    .select("latest_gap, latest_gap_at")
+    .select("latest_gap, latest_gap_points, latest_gap_at")
     .eq("id", user.id)
     .maybeSingle();
   if (error) {
@@ -23,8 +23,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "could not read gap" }, { status: 500 });
   }
 
+  const points = data?.latest_gap_points;
   return NextResponse.json({
     gap: (data?.latest_gap as string | null) ?? null,
+    // The distinct points for revealing one at a time; [] when there is no gap,
+    // stays null only when nothing has ever been generated.
+    gapPoints: Array.isArray(points) ? (points as string[]) : null,
     gapAt: (data?.latest_gap_at as string | null) ?? null,
   });
 }
