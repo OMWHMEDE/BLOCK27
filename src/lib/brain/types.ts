@@ -58,6 +58,13 @@ export type OutfitPlan = {
     hero?: string;
     angle?: string;
   }[];
+  // The wardrobe's gaps as distinct points, most important first — up to four
+  // separate things it can't do; empty when it served the request. This is what
+  // the model produces (gap_points) so a client can reveal them one at a time.
+  gap_points: string[];
+  // A single-line join of gap_points, derived in composeOutfits. Kept for the
+  // existing consumers (the web outfits view and the guest flow) that show one
+  // line; empty string when there is no gap.
   gap: string;
 };
 

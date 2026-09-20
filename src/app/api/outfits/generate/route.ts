@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       ok: true,
       count: 0,
       gap: "One analyzed piece isn't an outfit. Add a few more.",
+      gapPoints: ["One analyzed piece isn't an outfit. Add a few more."],
     });
   }
 
@@ -64,11 +65,8 @@ export async function POST(request: Request) {
     }
     if (!reserved) {
       // Soft, on-brand: shown as an ash note (via gap), existing outfits kept.
-      return NextResponse.json({
-        ok: true,
-        count: 0,
-        gap: `You've used all ${userPlan.compositionsPerMonth} generations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`,
-      });
+      const line = `You've used all ${userPlan.compositionsPerMonth} generations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`;
+      return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
     }
   }
 
@@ -101,23 +99,30 @@ export async function POST(request: Request) {
       if (insErr) throw new Error(`store failed: ${insErr.message}`);
     }
 
-    const gap =
-      plan.gap ||
-      (valid.length === 0
-        ? "Nothing here holds together yet. Add pieces that pair."
-        : "");
+    // Distinct gap points from the brain; fall back to a single point only when a
+    // composition genuinely produced nothing.
+    let gapPoints = plan.gap_points ?? [];
+    if (valid.length === 0 && gapPoints.length === 0) {
+      gapPoints = ["Nothing here holds together yet. Add pieces that pair."];
+    }
+    // The single line kept for existing consumers; "" when there is no gap.
+    const gap = gapPoints.join(" ");
 
-    // Persist the latest gap so a client can show it without regenerating. This
-    // reflects a real composition only (an empty string means "nothing missing",
-    // distinct from null = "never generated"). Best-effort: a persist failure must
-    // not fail a generation that already succeeded.
+    // Persist the latest gap (single line + points) so a client can show it
+    // without regenerating. This reflects a real composition only (empty means
+    // "nothing missing", distinct from null = "never generated"). Best-effort: a
+    // persist failure must not fail a generation that already succeeded.
     const { error: gapErr } = await supabase
       .from("users")
-      .update({ latest_gap: gap, latest_gap_at: new Date().toISOString() })
+      .update({
+        latest_gap: gap,
+        latest_gap_points: gapPoints,
+        latest_gap_at: new Date().toISOString(),
+      })
       .eq("id", user.id);
     if (gapErr) console.error("[outfits] latest_gap persist failed", gapErr.message);
 
-    return NextResponse.json({ ok: true, count: valid.length, gap });
+    return NextResponse.json({ ok: true, count: valid.length, gap, gapPoints });
   } catch (err) {
     // A failed generation must not burn the reserved composition slot.
     if (!userPlan.exempt) {
