@@ -19,7 +19,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
-  const guestId = await readGuestId();
+  const guestId = await readGuestId(request);
   if (!guestId) {
     return NextResponse.json({
       ok: false,

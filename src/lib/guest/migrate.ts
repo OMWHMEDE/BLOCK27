@@ -12,16 +12,21 @@ import { FREE_PIECE_LIMIT } from "@/lib/plan";
 // It NEVER throws. Migration is a nicety, not a guarantee: if anything fails,
 // the account is still fine and the visitor re-pulls at most three pieces. A
 // failed conversion must never break signup.
-export async function migrateGuestToUser(userId: string): Promise<void> {
+export async function migrateGuestToUser(
+  userId: string,
+  guestId?: string,
+): Promise<void> {
   try {
-    const guestId = await readGuestId();
-    if (!guestId) return;
+    // The native app passes its guest id explicitly (from the header); the web
+    // signup path omits it and we read the httpOnly cookie.
+    const gid = guestId ?? (await readGuestId());
+    if (!gid) return;
 
     const admin = createAdminClient();
     const { data: rows } = await admin
       .from("guest_garments")
       .select("id, photo_path, media_type, analysis")
-      .eq("guest_id", guestId)
+      .eq("guest_id", gid)
       .order("created_at", { ascending: true })
       .limit(FREE_PIECE_LIMIT);
 
@@ -59,8 +64,8 @@ export async function migrateGuestToUser(userId: string): Promise<void> {
     if (paths.length > 0) {
       await admin.storage.from(USER_PHOTOS_BUCKET).remove(paths);
     }
-    await admin.from("guest_garments").delete().eq("guest_id", guestId);
-    await admin.from("guest_generations").delete().eq("guest_id", guestId);
+    await admin.from("guest_garments").delete().eq("guest_id", gid);
+    await admin.from("guest_generations").delete().eq("guest_id", gid);
     await clearGuestId();
   } catch (e) {
     console.warn(
