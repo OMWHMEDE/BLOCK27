@@ -26,7 +26,7 @@ export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const ip = ipFrom(request);
-  const guestId = await ensureGuestId();
+  const guestId = await ensureGuestId(request);
 
   // Per-guest cap first — cheap, and it avoids a vision call we'd discard.
   if ((await countGuestGarments(guestId)) >= GUEST_PIECE_LIMIT) {
@@ -104,8 +104,8 @@ export async function POST(request: Request) {
 // The guest's current state — pieces (with signed thumbnails) and, once they've
 // used their single generation, the composed outfits. Drives the guest wardrobe
 // and outfits screens on load and after each action.
-export async function GET() {
-  const guestId = await readGuestId();
+export async function GET(request: Request) {
+  const guestId = await readGuestId(request);
   if (!guestId) {
     return NextResponse.json({
       items: [],
