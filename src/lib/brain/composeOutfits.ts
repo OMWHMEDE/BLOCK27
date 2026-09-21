@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { GarmentAnalysis, OutfitPlan } from "@/lib/brain/types";
+import { languageInstruction, type Language } from "@/lib/lang";
 
 // Composition is where taste lives. The BLOCK27 cost model budgets ~$0.01–0.02
 // per compose (Sonnet tier); OUTFIT_MODEL keeps it a one-line change to Opus for
@@ -151,6 +152,7 @@ function wardrobeLine(id: string, a: GarmentAnalysis): string {
 export async function composeOutfits(
   garments: { id: string; analysis: GarmentAnalysis }[],
   occasion?: string,
+  language: Language = "en",
 ): Promise<OutfitPlan> {
   const client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
 
@@ -165,7 +167,7 @@ export async function composeOutfits(
     // Two extra fields per outfit (hero, angle) — room so a full set never
     // truncates mid-tool-call.
     max_tokens: 3072,
-    system: SYSTEM,
+    system: SYSTEM + languageInstruction(language),
     thinking: { type: "disabled" },
     tools: [TOOL],
     tool_choice: { type: "tool", name: "compose_outfits" },

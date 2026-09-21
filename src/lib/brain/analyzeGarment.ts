@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { GarmentAnalysis } from "@/lib/brain/types";
+import { languageInstruction, type Language } from "@/lib/lang";
 import { stripMarkup, stripMarkupList } from "@/lib/sanitize";
 
 // Garment analysis is a bounded perception task run once on every garment. The
@@ -184,6 +185,7 @@ function sanitizeAnalysis(a: GarmentAnalysis): GarmentAnalysis {
 export async function analyzeGarmentImage(
   base64: string,
   mediaType: "image/jpeg" | "image/png" | "image/webp" = "image/jpeg",
+  language: Language = "en",
 ): Promise<GarmentAnalysis> {
   // reads ANTHROPIC_API_KEY from env, server-side. timeout (ms) keeps a hung
   // call under the function's 60s budget so it throws instead of being killed.
@@ -192,7 +194,7 @@ export async function analyzeGarmentImage(
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 1024,
-    system: SYSTEM,
+    system: SYSTEM + languageInstruction(language),
     tools: [TOOL],
     tool_choice: { type: "tool", name: "record_garment" },
     messages: [

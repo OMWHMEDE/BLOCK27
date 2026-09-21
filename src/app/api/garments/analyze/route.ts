@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET } from "@/lib/photos";
 import { analyzeGarmentImage } from "@/lib/brain/analyzeGarment";
+import { getUserLanguage } from "@/lib/lang";
 import { ERR_GENERIC } from "@/lib/support";
 
 // Node runtime (the Anthropic SDK + Buffer need it), and a duration long enough
@@ -71,7 +72,8 @@ export async function POST(request: Request) {
     if (dlErr || !file) throw new Error("could not read garment photo");
 
     const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
-    const analysis = await analyzeGarmentImage(base64, "image/jpeg");
+    const language = await getUserLanguage(supabase, user.id);
+    const analysis = await analyzeGarmentImage(base64, "image/jpeg", language);
 
     if (!analysis.usable) {
       const { error: rejErr } = await supabase

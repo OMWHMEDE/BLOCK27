@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import type { GarmentAnalysis, ShoppingPlan } from "@/lib/brain/types";
+import { languageInstruction, type Language } from "@/lib/lang";
 
 // The shopping consultation. The BLOCK27 cost model budgets ~$0.03–0.05 here
 // (Sonnet tier); OUTFIT_MODEL keeps the taste model a one-line change. Reason
@@ -175,6 +176,7 @@ function wardrobeSummary(analyses: GarmentAnalysis[]): string {
 export async function recommendGaps(
   garments: { analysis: GarmentAnalysis }[],
   budget: number | null,
+  language: Language = "en",
 ): Promise<ShoppingPlan> {
   const client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
 
@@ -192,7 +194,7 @@ export async function recommendGaps(
     model: MODEL,
     // Room for a style_read plus a fuller same-style pick list (up to ~8).
     max_tokens: 3072,
-    system: SYSTEM,
+    system: SYSTEM + languageInstruction(language),
     thinking: { type: "disabled" },
     tools: [TOOL],
     tool_choice: { type: "tool", name: "plan_shopping" },

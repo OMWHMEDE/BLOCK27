@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
 import { composeOutfits } from "@/lib/brain/composeOutfits";
+import { getUserLanguage } from "@/lib/lang";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
@@ -71,7 +72,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const plan = await composeOutfits(garments, occasion);
+    const language = await getUserLanguage(supabase, user.id);
+    const plan = await composeOutfits(garments, occasion, language);
 
     // Keep only outfits that reference real garments and are actually outfits.
     const validIds = new Set(garments.map((g) => g.id));

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
 import { recommendGaps } from "@/lib/brain/recommendGaps";
+import { getUserLanguage } from "@/lib/lang";
 import { searchUrl } from "@/lib/shopping/searchUrl";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
@@ -77,7 +78,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const plan = await recommendGaps(garments, budget);
+    const language = await getUserLanguage(supabase, user.id);
+    const plan = await recommendGaps(garments, budget, language);
 
     // Recompute the money server-side — never trust the model's arithmetic.
     const picks = plan.picks ?? [];
