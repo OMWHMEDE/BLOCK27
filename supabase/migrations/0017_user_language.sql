@@ -10,4 +10,5 @@ alter table public.users
 alter table public.users
   drop constraint if exists users_language_check;
 alter table public.users
-  add constraint users_language_check check (language in ('en', 'fr', 'ar'));
+  add constraint users_language_check
+  check (language in ('en', 'fr', 'ar', 'es', 'pt', 'de', 'ja', 'ko'));

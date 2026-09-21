@@ -4,9 +4,26 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // brain call so the model answers in the user's language. Plain module (no
 // server-only) so a settings UI can import the constants too.
 
-export type Language = "en" | "fr" | "ar";
+export type Language =
+  | "en"
+  | "fr"
+  | "ar"
+  | "es"
+  | "pt"
+  | "de"
+  | "ja"
+  | "ko";
 
-export const LANGUAGES: Language[] = ["en", "fr", "ar"];
+export const LANGUAGES: Language[] = [
+  "en",
+  "fr",
+  "ar",
+  "es",
+  "pt",
+  "de",
+  "ja",
+  "ko",
+];
 export const DEFAULT_LANGUAGE: Language = "en";
 
 export function isLanguage(v: unknown): v is Language {
@@ -22,6 +39,11 @@ const LANGUAGE_NAMES: Record<Language, string> = {
   en: "English",
   fr: "French",
   ar: "Arabic",
+  es: "Spanish",
+  pt: "Portuguese",
+  de: "German",
+  ja: "Japanese",
+  ko: "Korean",
 };
 
 // Appended to a brain's system prompt so the model answers in the user's

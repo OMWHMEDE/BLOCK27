@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
-import { getUserLanguage, isLanguage } from "@/lib/lang";
+import { getUserLanguage, isLanguage, LANGUAGES } from "@/lib/lang";
 
 // The user's AI-output language preference (en | fr | ar). GET reads it, POST
 // sets it. Every brain call reads users.language and answers in it; this is the
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { language?: unknown };
   if (!isLanguage(body.language)) {
     return NextResponse.json(
-      { error: "language must be one of: en, fr, ar" },
+      { error: `language must be one of: ${LANGUAGES.join(", ")}` },
       { status: 400 },
     );
   }
