@@ -121,6 +121,8 @@ export async function GET(request: Request) {
     id: r.id,
     url: signed.get(r.photo_path) ?? null,
     descriptor: r.descriptor ?? r.analysis?.descriptor ?? "",
+    // The full analysis record, so a guest can tap a piece and see its read.
+    analysis: r.analysis ?? null,
   }));
 
   const generation = await getGeneration(guestId);
