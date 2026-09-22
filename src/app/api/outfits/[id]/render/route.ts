@@ -7,6 +7,11 @@ import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
 import { lengthInstruction } from "@/lib/render/lengthInstruction";
+import {
+  CONSENT_VERSION,
+  hasBiometricConsent,
+  touchLastActive,
+} from "@/lib/biometric";
 import { ERR_RETRY } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
@@ -65,6 +70,15 @@ export async function POST(
         : "Try-ons open soon.",
     });
   }
+
+  // Rendering produces biometric data — no render without current, adult consent.
+  if (!(await hasBiometricConsent(supabase, user.id))) {
+    return NextResponse.json(
+      { ok: false, consentRequired: true, version: CONSENT_VERSION },
+      { status: 403 },
+    );
+  }
+  await touchLastActive(supabase, user.id);
 
   // Need a base photo to dress.
   if (!(await getBasePhotoUrl(supabase, user.id))) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
 import { composeOutfits } from "@/lib/brain/composeOutfits";
 import { getUserLanguage } from "@/lib/lang";
+import { touchLastActive } from "@/lib/biometric";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  await touchLastActive(supabase, user.id);
 
   // Optional context in the user's own words. Empty/absent → default behaviour.
   const body = (await request.json().catch(() => ({}))) as { occasion?: unknown };
