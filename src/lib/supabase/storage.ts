@@ -316,20 +316,64 @@ export type OutfitView = {
   }[];
 };
 
+// The user's PUBLISHED outfit generation (users.outfits_generation). Rows at this
+// generation are the visible set; rows above it are an in-progress draft. Defaults
+// to 0, which is where every existing row and every existing user already sit.
+async function publishedGeneration(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<number> {
+  const { data } = await supabase
+    .from("users")
+    .select("outfits_generation")
+    .eq("id", userId)
+    .maybeSingle();
+  return Number(data?.outfits_generation ?? 0);
+}
+
 /**
- * The user's outfits, newest first, each resolved to its garments' thumbnails
- * (300s signed) and descriptors. Garments that were since deleted are dropped.
+ * The user's PUBLISHED outfits, newest first, each resolved to its garments'
+ * thumbnails (300s signed) and descriptors. A half-written draft generation is
+ * excluded, so a run in progress never replaces the visible set early.
  */
 export async function listOutfits(
   supabase: SupabaseClient,
   userId: string,
   seconds = 300,
 ): Promise<OutfitView[]> {
-  const { data: outfits, error } = await supabase
+  const gen = await publishedGeneration(supabase, userId);
+  return outfitsAtGeneration(supabase, userId, gen, "eq", seconds);
+}
+
+/**
+ * The user's in-progress DRAFT outfits — the generation above the published one,
+ * appearing one at a time as the background worker writes them. Empty when no run
+ * is in progress. Same shape as listOutfits.
+ */
+export async function listDraftOutfits(
+  supabase: SupabaseClient,
+  userId: string,
+  seconds = 300,
+): Promise<OutfitView[]> {
+  const gen = await publishedGeneration(supabase, userId);
+  return outfitsAtGeneration(supabase, userId, gen, "gt", seconds);
+}
+
+async function outfitsAtGeneration(
+  supabase: SupabaseClient,
+  userId: string,
+  gen: number,
+  op: "eq" | "gt",
+  seconds: number,
+): Promise<OutfitView[]> {
+  const base = supabase
     .from("outfits")
     .select("id, item_ids, reasoning, render_path")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .eq("user_id", userId);
+  const filtered = op === "eq" ? base.eq("generation", gen) : base.gt("generation", gen);
+  const { data: outfits, error } = await filtered.order("created_at", {
+    ascending: false,
+  });
 
   if (error || !outfits || outfits.length === 0) return [];
 

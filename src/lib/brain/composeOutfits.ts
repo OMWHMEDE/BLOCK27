@@ -39,7 +39,7 @@ export function capReasoning(text: string): string {
   return (lastSpace >= MIN_KEEP ? cut.slice(0, lastSpace) : cut).trim();
 }
 
-const SYSTEM = `You are the BLOCK27 brain.
+const SYSTEM_CORE = `You are the BLOCK27 brain.
 
 You have the user's wardrobe as text — every garment already analyzed from its
 photo. Compose coherent menswear outfits from THESE garments only. You reason
@@ -119,7 +119,11 @@ Honesty about a thin wardrobe:
   its own short point — e.g. "You've got tops and no bottoms. Add trousers.",
   "No footwear — nothing renders on the feet." Separate gaps, never one idea split
   across lines. Leave gap_points an empty array when the wardrobe served the
-  request well.
+  request well.`;
+
+// The batch tool's closing instruction. The streaming path (composeNextOutfit)
+// appends its own, so the shared doctrine above stays tool-agnostic.
+const SYSTEM = `${SYSTEM_CORE}
 
 Record everything with the compose_outfits tool.`;
 
@@ -234,4 +238,152 @@ export async function composeOutfits(
     .slice(0, 4);
 
   return { outfits, gap_points, gap: gap_points.join(" ") };
+}
+
+// ── Streaming composition ──────────────────────────────────────────────────────
+// One outfit per call, so the background worker can write and stream each outfit
+// the moment it's decided instead of waiting for the whole set. Each call sees the
+// outfits already chosen (their ids and angles) and produces the NEXT distinct
+// one, or signals it's done. Keeping it to a single outfit means the strict tool
+// schema still validates every field — per-outfit validation, not lost to
+// streaming. Small output → each call is quick and the worker stays well under
+// its function cap.
+
+// One produced outfit. hero/angle steer the model (variety); only item_ids and
+// reasoning are persisted, same as the batch path.
+export type NextOutfit = {
+  item_ids: string[];
+  reasoning: string;
+  hero: string;
+  angle: string;
+};
+
+// The result of asking for one more outfit: an outfit and keep going, or done
+// (no further distinct outfit) with the wardrobe's gap points.
+export type ComposeStep = {
+  outfit: NextOutfit | null;
+  gap_points: string[];
+  done: boolean;
+};
+
+// Prior picks passed back each call so the model varies the angle and never
+// repeats a set.
+export type PriorOutfit = { item_ids: string[]; angle: string };
+
+const STEP_TIMEOUT_MS = 15_000;
+const STEP_MAX_TOKENS = 512;
+
+const NEXT_TOOL = {
+  name: "next_outfit",
+  description: "Produce the next distinct outfit, or signal there are no more.",
+  strict: true,
+  input_schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      more: {
+        type: "boolean",
+        description:
+          "true if you are giving another distinct outfit now; false if the wardrobe has no further strong, DISTINCT outfit worth showing.",
+      },
+      item_ids: {
+        type: "array",
+        items: { type: "string" },
+        description: "The pieces for THIS outfit, 2 or more. Empty array when more is false.",
+      },
+      hero: {
+        type: "string",
+        description:
+          "The one id doing the work, or 'layered:idA+idB'. Empty string when more is false.",
+      },
+      angle: {
+        type: "string",
+        description:
+          "This outfit's distinct idea in 2–5 words, different from every prior angle. Empty when more is false.",
+      },
+      reasoning: {
+        type: "string",
+        description:
+          "One sentence, ~140 characters max: the hero and why the rest goes quiet. Empty when more is false.",
+      },
+      gap_points: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "Only when more is false: up to 4 distinct things the wardrobe can't do, most important first. Empty otherwise.",
+      },
+    },
+    required: ["more", "item_ids", "hero", "angle", "reasoning", "gap_points"],
+  },
+} as unknown as Anthropic.Tool;
+
+export async function composeNextOutfit(
+  garments: { id: string; analysis: GarmentAnalysis }[],
+  occasion: string | undefined,
+  language: Language,
+  prior: PriorOutfit[],
+): Promise<ComposeStep> {
+  const client = new Anthropic({ timeout: STEP_TIMEOUT_MS, maxRetries: 0 });
+
+  const wardrobe = garments.map((g) => wardrobeLine(g.id, g.analysis)).join("\n");
+  const headed = occasion?.trim()
+    ? `\n\nWhere they're headed: "${occasion.trim()}". Read it generously and let it steer the pick.`
+    : "";
+  const already =
+    prior.length > 0
+      ? `\n\nAlready composed this run (do not repeat these, and take a different angle):\n${prior
+          .map((p, i) => `  ${i + 1}. angle "${p.angle}" — [${p.item_ids.join(", ")}]`)
+          .join("\n")}`
+      : "\n\nThis is the first outfit of the run.";
+  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}${headed}${already}\n\nGive the NEXT single distinct outfit with a real hero and a fresh angle. If the wardrobe has no further strong, distinct outfit worth showing, set more=false and put what it can't do in gap_points. Never pad with a weak or near-duplicate outfit.`;
+
+  const system = `${SYSTEM_CORE}
+
+Produce exactly ONE outfit per call with the next_outfit tool. Set more=true and fill the outfit fields, or more=false with gap_points when there is nothing further worth showing.`;
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: STEP_MAX_TOKENS,
+    system: system + languageInstruction(language),
+    thinking: { type: "disabled" },
+    tools: [NEXT_TOOL],
+    tool_choice: { type: "tool", name: "next_outfit" },
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const block = response.content.find((b) => b.type === "tool_use");
+  if (!block || block.type !== "tool_use") {
+    throw new Error("Composition step did not return a result");
+  }
+  const raw = block.input as {
+    more?: boolean;
+    item_ids?: unknown;
+    hero?: unknown;
+    angle?: unknown;
+    reasoning?: unknown;
+    gap_points?: unknown;
+  };
+
+  const gap_points = (Array.isArray(raw.gap_points) ? raw.gap_points : [])
+    .map((p) => (typeof p === "string" ? p.trim() : ""))
+    .filter((p) => p.length > 0)
+    .slice(0, 4);
+
+  if (!raw.more) {
+    return { outfit: null, gap_points, done: true };
+  }
+
+  const item_ids = (Array.isArray(raw.item_ids) ? raw.item_ids : []).filter(
+    (id): id is string => typeof id === "string" && id.length > 0,
+  );
+  return {
+    outfit: {
+      item_ids,
+      hero: typeof raw.hero === "string" ? raw.hero : "",
+      angle: typeof raw.angle === "string" ? raw.angle : "",
+      reasoning: capReasoning(typeof raw.reasoning === "string" ? raw.reasoning : ""),
+    },
+    gap_points,
+    done: false,
+  };
 }
