@@ -8,6 +8,37 @@ import { languageInstruction, type Language } from "@/lib/lang";
 // maximum taste.
 const MODEL = process.env.OUTFIT_MODEL ?? "claude-sonnet-5";
 
+// Latency budget. The generate route runs under a 60s function cap (Vercel), and
+// this call is nearly all of it. Output length is the dominant cost, so bound it
+// hard: at most a few outfits, one short sentence of reasoning each, a low
+// max_tokens ceiling. The SDK is given a sub-cap timeout and NO retries, so a
+// slow call throws cleanly (caught → quota refunded → clean error) well before
+// the function is killed with a 504.
+const MAX_OUTFITS = 3;
+const MAX_REASONING_CHARS = 160;
+const CALL_TIMEOUT_MS = 40_000;
+const MAX_TOKENS = 1536;
+
+// Cap one reasoning string without an ugly mid-word cut. Prefer the last sentence
+// end within the limit, else the last space; no ellipsis — the voice is terse and
+// "…" isn't in it. The model is already told to keep it to one short sentence;
+// this is the backstop that guarantees the length regardless.
+// Keep at least this much, so a stray early period can't cut the reason to a stub.
+const MIN_KEEP = 40;
+export function capReasoning(text: string): string {
+  const s = (text ?? "").trim();
+  if (s.length <= MAX_REASONING_CHARS) return s;
+  const cut = s.slice(0, MAX_REASONING_CHARS);
+  const sentenceEnd = Math.max(
+    cut.lastIndexOf(". "),
+    cut.lastIndexOf("! "),
+    cut.lastIndexOf("? "),
+  );
+  if (sentenceEnd >= MIN_KEEP) return cut.slice(0, sentenceEnd + 1).trim();
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace >= MIN_KEEP ? cut.slice(0, lastSpace) : cut).trim();
+}
+
 const SYSTEM = `You are the BLOCK27 brain.
 
 You have the user's wardrobe as text — every garment already analyzed from its
@@ -77,7 +108,8 @@ How you write the reason:
   flat." Never "we", never "you might like". Name the hero and why the rest goes
   quiet.
 - Cold, direct, opinionated. No hedging, no flattery, no exclamation marks, no
-  emoji. One or two sentences.
+  emoji. Exactly ONE sentence, about 140 characters — no more. Say the hero and
+  why the rest goes quiet, nothing else.
 
 Honesty about a thin wardrobe:
 - Make only the outfits the wardrobe genuinely supports. Fewer is fine. None is
@@ -120,7 +152,11 @@ const TOOL = {
               description:
                 "The distinct idea in 2–5 words: 'monochrome tonal', 'one red accent', 'oversized-over-slim', 'tailoring dressed down'. No two outfits may share an angle.",
             },
-            reasoning: { type: "string" },
+            reasoning: {
+              type: "string",
+              description:
+                "One sentence, ~140 characters max: the hero and why the rest goes quiet. No more.",
+            },
           },
           required: ["item_ids", "hero", "angle", "reasoning"],
         },
@@ -154,19 +190,21 @@ export async function composeOutfits(
   occasion?: string,
   language: Language = "en",
 ): Promise<OutfitPlan> {
-  const client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
+  // No retries: a retry could double the wait past the 60s function cap and turn
+  // a clean timeout into a 504. One attempt, bounded well under the cap.
+  const client = new Anthropic({ timeout: CALL_TIMEOUT_MS, maxRetries: 0 });
 
   const wardrobe = garments.map((g) => wardrobeLine(g.id, g.analysis)).join("\n");
   const headed = occasion?.trim()
     ? `\n\nWhere they're headed: "${occasion.trim()}". Read it generously and let it steer the picks.`
     : "";
-  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}\n\nCompose the strongest DISTINCT outfits this wardrobe genuinely supports — each a different idea, each with a real hero. Quality and difference over count: a few outfits that each say something beat eight that blur together. Fewer or none is fine if the pieces aren't there.${headed}`;
+  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}\n\nCompose AT MOST ${MAX_OUTFITS} of the strongest DISTINCT outfits this wardrobe genuinely supports — each a different idea, each with a real hero. Quality and difference over count: ${MAX_OUTFITS} outfits that each say something beat a longer list that blurs together. Fewer or none is fine if the pieces aren't there.${headed}`;
 
   const response = await client.messages.create({
     model: MODEL,
-    // Two extra fields per outfit (hero, angle) — room so a full set never
-    // truncates mid-tool-call.
-    max_tokens: 3072,
+    // Bounded output is the main latency lever. A few short outfits fit
+    // comfortably; this ceiling caps worst-case generation time.
+    max_tokens: MAX_TOKENS,
     system: SYSTEM + languageInstruction(language),
     thinking: { type: "disabled" },
     tools: [TOOL],
@@ -180,6 +218,14 @@ export async function composeOutfits(
   }
   const raw = block.input as Omit<OutfitPlan, "gap">;
 
+  // Enforce the caps server-side — never trust the model to have held the count
+  // or the length. Keep at most MAX_OUTFITS, and cap each reasoning string so a
+  // long one can't bloat what's stored or shown (the model is already asked to
+  // keep it to one short sentence; this guarantees it).
+  const outfits = (Array.isArray(raw.outfits) ? raw.outfits : [])
+    .slice(0, MAX_OUTFITS)
+    .map((o) => ({ ...o, reasoning: capReasoning(o.reasoning) }));
+
   // Normalize the points (trim, drop blanks, cap at four) and derive the single
   // line the existing consumers still read.
   const gap_points = (Array.isArray(raw.gap_points) ? raw.gap_points : [])
@@ -187,5 +233,5 @@ export async function composeOutfits(
     .filter((p) => p.length > 0)
     .slice(0, 4);
 
-  return { outfits: raw.outfits, gap_points, gap: gap_points.join(" ") };
+  return { outfits, gap_points, gap: gap_points.join(" ") };
 }
