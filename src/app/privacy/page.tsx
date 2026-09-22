@@ -125,6 +125,59 @@ export default function PrivacyPage() {
         </p>
       </Clause>
 
+      <Clause label="Biometric data — retention and destruction (DRAFT — pending legal review)">
+        <p>
+          <strong>
+            DRAFT. This section has not yet been reviewed by counsel and is not
+            legal advice. Do not rely on it until it has been reviewed and
+            approved.
+          </strong>
+        </p>
+        <p>
+          <strong>What we collect and why.</strong> To provide the virtual
+          try-on, we collect a full-body photograph of you (your &ldquo;base
+          photo&rdquo;) and generate images of you wearing garments from your
+          wardrobe (&ldquo;renders&rdquo;). Your base photo and the renders made
+          from it are biometric information. We collect and process them only to
+          generate and show you these try-on images, and for no other purpose.
+        </p>
+        <p>
+          <strong>Consent and age.</strong> We do not collect a base photo or
+          generate any render until you have given explicit consent to this
+          processing and confirmed that you are 18 years of age or older. If we
+          change what you are consenting to, we ask for your consent again before
+          continuing. You can withdraw consent at any time by removing your base
+          photo or deleting your account.
+        </p>
+        <p>
+          <strong>Who processes the images.</strong> To generate a render, your
+          base photo and the relevant garment image are sent to our rendering
+          provider, FASHN, which performs the image generation on our behalf as a
+          processor. Your images are <strong>never sold</strong> and are{" "}
+          <strong>never used to train AI models</strong> — ours or anyone
+          else&rsquo;s. FASHN states that it does not use customer content to
+          train or fine-tune AI models, and that generated API outputs are
+          scheduled for deletion on its systems within a short retention window
+          (currently three days for delivered outputs). We link to FASHN&rsquo;s
+          data-retention policy and keep this description current.
+        </p>
+        <p>
+          <strong>How long we keep them, and when they are destroyed.</strong> We
+          keep your base photo and renders only while you have an active base
+          photo. We destroy them — the base photo and every render derived from
+          it — in each of these cases:
+        </p>
+        <p>
+          (a) immediately when you remove your base photo; (b) immediately when
+          you delete your account, along with the rest of your data; and (c)
+          automatically after 12 months of inactivity, even if you take no action.
+          Destruction means the image files are deleted from our storage, not
+          merely hidden. Records that prove you consented (the consent version,
+          timestamp, and related metadata — never the images) may be retained as
+          required to evidence compliance.
+        </p>
+      </Clause>
+
       <Clause label="Your rights and choices">
         <p>You can:</p>
         <ul className="list-disc space-y-1 pl-5">

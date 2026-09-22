@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { USER_PHOTOS_BUCKET, basePhotoPath } from "@/lib/photos";
 import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
+import {
+  CONSENT_VERSION,
+  hasBiometricConsent,
+  purgeBiometricArtifacts,
+  touchLastActive,
+} from "@/lib/biometric";
 
 // Base photo upload — moderated before storage. The bytes are checked in memory;
 // only a passing image is ever written to the permanent bucket. A rejected image
@@ -30,6 +37,14 @@ export async function POST(request: Request) {
         ? "Your base is a paid thing. Upgrade to unlock it."
         : "Base photos open soon.",
     });
+  }
+
+  // The base photo is biometric data — no storage without current, adult consent.
+  if (!(await hasBiometricConsent(supabase, user.id))) {
+    return NextResponse.json(
+      { ok: false, consentRequired: true, version: CONSENT_VERSION },
+      { status: 403 },
+    );
   }
 
   const form = await request.formData().catch(() => null);
@@ -64,7 +79,20 @@ export async function POST(request: Request) {
   }
 
   await logModeration({ userId: user.id, kind: "base", decision: "pass" });
+  await touchLastActive(supabase, user.id);
   // A framing warning (legs out of frame) never blocked the store — the photo is
   // valid — but it's returned so the capture screen can offer a retake.
   return NextResponse.json({ ok: true, warning: result.warning ?? "" });
+}
+
+// Remove the base photo and, with it, every render derived from it — the user's
+// biometric data, destroyed immediately on request. Idempotent.
+export async function DELETE(request: Request) {
+  const { user } = await authenticateRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  const admin = createAdminClient();
+  const result = await purgeBiometricArtifacts(admin, user.id);
+  return NextResponse.json({ ok: true, ...result });
 }
