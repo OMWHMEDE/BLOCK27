@@ -122,27 +122,24 @@ export async function listGarmentThumbs(
 ): Promise<GarmentThumb[]> {
   const { data: rows, error } = await supabase
     .from("garments")
-    .select("id, photo_path, status, analysis, reject_reason")
+    .select("id, photo_path, thumb_path, status, analysis, reject_reason")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (error || !rows || rows.length === 0) return [];
 
+  // Serve the small thumbnail where one exists; older garments (thumb_path null)
+  // fall back to the full-size original. Signed in one batch, mapped by index so
+  // a mix of thumb and full paths resolves correctly.
+  const signPaths = rows.map((r) => (r.thumb_path as string | null) ?? r.photo_path);
   const { data: signed } = await supabase.storage
     .from(USER_PHOTOS_BUCKET)
-    .createSignedUrls(
-      rows.map((r) => r.photo_path),
-      seconds,
-    );
+    .createSignedUrls(signPaths, seconds);
 
-  const urlByPath = new Map(
-    (signed ?? []).map((s) => [s.path, s.signedUrl] as const),
-  );
-
-  return rows.map((r) => ({
+  return rows.map((r, i) => ({
     id: r.id,
     status: r.status,
-    url: urlByPath.get(r.photo_path) ?? null,
+    url: signed?.[i]?.signedUrl ?? null,
     analysis: (r.analysis as GarmentAnalysis | null) ?? null,
     reject_reason: (r.reject_reason as string | null) ?? null,
   }));
@@ -198,7 +195,7 @@ export async function deleteGarment(
 ): Promise<{ ok: boolean; error?: string }> {
   const { data: row, error: selErr } = await supabase
     .from("garments")
-    .select("photo_path")
+    .select("photo_path, thumb_path")
     .eq("user_id", userId)
     .eq("id", id)
     .maybeSingle();
@@ -206,10 +203,13 @@ export async function deleteGarment(
   if (!row) return { ok: false, error: "That piece is already gone." };
 
   // File first: if the row went first and this failed, we'd orphan the photo —
-  // the one outcome this promise can't allow.
+  // the one outcome this promise can't allow. Remove the thumbnail alongside it
+  // so it isn't orphaned either.
+  const paths = [row.photo_path as string];
+  if (row.thumb_path) paths.push(row.thumb_path as string);
   const { error: rmErr } = await supabase.storage
     .from(USER_PHOTOS_BUCKET)
-    .remove([row.photo_path as string]);
+    .remove(paths);
   if (rmErr) return { ok: false, error: rmErr.message };
 
   const { error: delErr } = await supabase

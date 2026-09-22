@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
-import { USER_PHOTOS_BUCKET, garmentPhotoPath } from "@/lib/photos";
+import {
+  USER_PHOTOS_BUCKET,
+  garmentPhotoPath,
+  garmentThumbPath,
+} from "@/lib/photos";
+import { makeThumbnail } from "@/lib/images";
 import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
 import { getPlan } from "@/lib/plan";
@@ -78,14 +83,33 @@ export async function POST(request: Request) {
     });
   }
 
+  // Grid thumbnail — best-effort. If it can't be made or stored, the garment is
+  // fine; the grid falls back to the full-size original for a null thumb_path.
+  let thumbPath: string | null = null;
+  const thumbBytes = await makeThumbnail(result.bytes);
+  if (thumbBytes) {
+    const tp = garmentThumbPath(user.id, garmentId);
+    const { error: thumbErr } = await supabase.storage
+      .from(USER_PHOTOS_BUCKET)
+      .upload(tp, thumbBytes, {
+        upsert: false,
+        contentType: "image/jpeg",
+        cacheControl: "3600",
+      });
+    if (!thumbErr) thumbPath = tp;
+    else console.error("[garments] thumbnail upload failed", thumbErr.message);
+  }
+
   const { error: insErr } = await supabase.from("garments").insert({
     id: garmentId,
     user_id: user.id,
     photo_path: path,
+    thumb_path: thumbPath,
     status: "pending",
   });
   if (insErr) {
-    await supabase.storage.from(USER_PHOTOS_BUCKET).remove([path]);
+    const toRemove = thumbPath ? [path, thumbPath] : [path];
+    await supabase.storage.from(USER_PHOTOS_BUCKET).remove(toRemove);
     return NextResponse.json({
       ok: false,
       reason: "Didn't save. Check your connection.",
