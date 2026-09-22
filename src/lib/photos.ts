@@ -25,6 +25,12 @@ export function garmentPhotoPath(userId: string, garmentId: string) {
   return `${userId}/garments/${garmentId}.jpg`;
 }
 
+// The grid-sized thumbnail for a garment, stored beside the full-size original.
+// First path segment is still the user id, so the BUILD-01 storage RLS holds.
+export function garmentThumbPath(userId: string, garmentId: string) {
+  return `${userId}/garments/${garmentId}_thumb.jpg`;
+}
+
 // The final render for an outfit. First segment is the user id — RLS holds.
 export function renderPath(userId: string, outfitId: string) {
   return `${userId}/renders/${outfitId}.jpg`;

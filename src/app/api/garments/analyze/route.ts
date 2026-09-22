@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
 import { USER_PHOTOS_BUCKET } from "@/lib/photos";
 import { analyzeGarmentImage } from "@/lib/brain/analyzeGarment";
+import { downscaleForVision } from "@/lib/images";
 import { getUserLanguage } from "@/lib/lang";
 import { ERR_GENERIC } from "@/lib/support";
 
@@ -71,9 +72,15 @@ export async function POST(request: Request) {
       .download(claimed.photo_path);
     if (dlErr || !file) throw new Error("could not read garment photo");
 
-    const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+    // Downscale before the vision call — the model down-samples large images
+    // anyway, so full-size only costs upload time and image tokens. Best-effort:
+    // on a resize failure this returns the original bytes as JPEG, exactly the
+    // behavior before this step.
+    const original = Buffer.from(await file.arrayBuffer());
+    const { bytes, mediaType } = await downscaleForVision(original);
+    const base64 = bytes.toString("base64");
     const language = await getUserLanguage(supabase, user.id);
-    const analysis = await analyzeGarmentImage(base64, "image/jpeg", language);
+    const analysis = await analyzeGarmentImage(base64, mediaType, language);
 
     if (!analysis.usable) {
       const { error: rejErr } = await supabase
