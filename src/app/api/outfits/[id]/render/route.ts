@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getBasePhotoUrl, signedUrl } from "@/lib/supabase/storage";
 import { renderPath } from "@/lib/photos";
-import { renderOutfit, type RenderLayer } from "@/lib/render/renderOutfit";
+import type { RenderLayer } from "@/lib/render/layer";
 import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
@@ -12,30 +13,23 @@ import {
   hasBiometricConsent,
   touchLastActive,
 } from "@/lib/biometric";
+import { enqueueJob } from "@/lib/jobs";
+import { runRenderStep } from "@/lib/jobs/handlers/render";
 import { ERR_RETRY } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
 
-// Rendering runs several ~max-tier provider calls; give it room. NOTE: a
-// multi-garment outfit can exceed a 60s platform cap — needs a plan that allows
-// this duration (Vercel Pro / 300s). One garment fits comfortably.
+// Rendering runs as a background job — one garment layer per invocation, so the
+// chain is resumable (a died invocation resumes from the last completed layer).
+// POST validates, reserves the try-on, builds the layer plan, enqueues, and kicks
+// the first layer. GET reports progress, drives the next layer, and returns the
+// final image when done. Each invocation may run one max-tier provider call, so
+// the duration is generous.
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// The try-on allowance is per-tier (Premium 5, Pro 10, Boss 20; Free 0) over a
-// billing-anchored monthly window from the user's plan (@/lib/plan). It's
-// reserved atomically before the provider call so concurrent requests can't
-// exceed it, and refunded on failure. No daily cap.
-
-// The brain decides which garments; the hand only executes. This maps a
-// garment's category to a layer ORDER — one-piece/bottoms/tops/outerwear, then
-// footwear, then accessories LAST (they sit outermost: glasses on the face, a
-// watch/bracelet on the wrist, a chain over the shirt) — and to the provider's
-// render category. tryon-max auto-detects the product, so footwear and
-// accessories render as trailing layers. Multiple accessories in one outfit are
-// simply multiple order-5 layers: FASHN takes one product per call, so they
-// chain sequentially, exactly like the clothing layers. The keys here must match
-// RENDERABLE_CATEGORIES.
+// Maps a garment's category to a layer ORDER (one-piece/bottoms/tops/outerwear,
+// then footwear, then accessories last) and to the provider's render category.
 const LAYER: Record<string, { order: number; category: RenderCategory }> = {
   "one-piece": { order: 0, category: "one-piece" },
   bottoms: { order: 1, category: "bottoms" },
@@ -44,6 +38,8 @@ const LAYER: Record<string, { order: number; category: RenderCategory }> = {
   footwear: { order: 4, category: "footwear" },
   accessory: { order: 5, category: "accessory" },
 };
+
+const ACCESSORY_CAP = 2;
 
 export async function POST(
   request: Request,
@@ -56,10 +52,7 @@ export async function POST(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // THE HARD RULE: the hand is paid-only. A free (or guest) account never
-  // reaches the provider. This gate is first — before the base photo, the
-  // outfit, the layers, the quota — so there is exactly one line between a
-  // request and a render, and it is closed for everyone who hasn't paid.
+  // The hand is paid-only — first gate, before anything else.
   const plan = await getPlan(user.id);
   if (!plan.paid) {
     return NextResponse.json({
@@ -80,7 +73,6 @@ export async function POST(
   }
   await touchLastActive(supabase, user.id);
 
-  // Need a base photo to dress.
   if (!(await getBasePhotoUrl(supabase, user.id))) {
     return NextResponse.json({
       ok: false,
@@ -88,7 +80,6 @@ export async function POST(
     });
   }
 
-  // The outfit and its garments (own, analyzed).
   const { data: outfit } = await supabase
     .from("outfits")
     .select("id, item_ids")
@@ -117,9 +108,6 @@ export async function POST(
         garmentPath: g.photo_path as string,
         category: spec.category,
         label: a?.descriptor || a?.category || "a piece",
-        // Tell the hand what it's placing. Length is the one FASHN gets wrong on
-        // baggy bottoms (a folded wide-leg jean reads as shorts); the brain
-        // already knows the length, so pass it. undefined for non-leg pieces.
         prompt: a ? lengthInstruction(a) : undefined,
       };
     })
@@ -132,40 +120,21 @@ export async function POST(
       prompt,
     }));
 
-  // Cap accessories at two per outfit. Each accessory is its own sequential
-  // max-tier call, so this bounds worst-case cost and latency. The brain is told
-  // the same limit; this is the hard backstop. Accessories are the trailing
-  // (order 5) layers, so the clothes and shoes are never what gets dropped — the
-  // brain's first two accessories (item_ids order) are kept.
-  const ACCESSORY_CAP = 2;
+  // Cap accessories at two — each is its own sequential max-tier call.
   let accessoryCount = 0;
-  const dropped: string[] = [];
   const layers = ranked.filter((l) => {
     if (l.category !== "accessory") return true;
     accessoryCount += 1;
-    if (accessoryCount <= ACCESSORY_CAP) return true;
-    dropped.push(l.label ?? "an accessory");
-    return false;
+    return accessoryCount <= ACCESSORY_CAP;
   });
 
-  // Anything the hand can't place on the body. With footwear and accessories now
-  // wired, every category the eye assigns is renderable — this stays as a guard
-  // so a future unhandled category is surfaced honestly, never silently dropped.
   const unplaceable = (garments ?? [])
     .map((g) => g.analysis as GarmentAnalysis | null)
     .filter((a): a is GarmentAnalysis => !!a && !isRenderable(a.category))
     .map((a) => a.descriptor || a.category);
-
-  console.log(
-    "[render] outfit",
-    outfitId,
-    "| placing:",
-    layers.map((l) => l.category),
-    "| accessories dropped over cap:",
-    dropped,
-    "| not placeable on body:",
-    unplaceable,
-  );
+  if (unplaceable.length > 0) {
+    console.log("[render] not placeable on body:", unplaceable);
+  }
 
   if (layers.length === 0) {
     return NextResponse.json({
@@ -174,28 +143,34 @@ export async function POST(
     });
   }
 
-  // Try-on allowance — RESERVED ATOMICALLY before the paid provider is called,
-  // so concurrent requests can never exceed the tier's cap (the old read-then-
-  // FASHN-then-insert pattern let a burst of requests all pass the check). The
-  // window is the user's billing-anchored one (plan.windowStart), not the
-  // calendar month, so there is no fresh allowance at the month boundary. A
-  // failed render releases the slot below, so a failure never burns quota.
-  // Skipped for a test-exempt account (PAID_OVERRIDE_UIDS). A Free account never
-  // reaches here — it's stopped by the paywall above (tryOnsPerMonth 0, paid
-  // false).
+  // Already rendering this outfit? Return the in-flight job, don't reserve twice.
+  const { data: active } = await supabase
+    .from("jobs")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("kind", "render")
+    .eq("payload->>outfitId", outfitId)
+    .in("status", ["queued", "processing"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (active?.id) {
+    const activeId = active.id as string;
+    after(() => runRenderStep(createAdminClient(), activeId));
+    return NextResponse.json({ ok: true, jobId: activeId, already: true });
+  }
+
+  // Reserve a try-on up front (fail closed). Refunded on terminal job failure.
   const periodStart = plan.windowStart.toISOString();
   if (!plan.exempt) {
-    const { data: reserved, error: reserveErr } = await supabase.rpc(
-      "reserve_usage",
-      { p_kind: "render", p_period_start: periodStart, p_cap: plan.tryOnsPerMonth },
-    );
+    const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_usage", {
+      p_kind: "render",
+      p_period_start: periodStart,
+      p_cap: plan.tryOnsPerMonth,
+    });
     if (reserveErr) {
-      // Fail CLOSED: if the cap can't be checked, never call the paid provider.
       console.error("[render] reserve_usage failed", reserveErr.message);
-      return NextResponse.json(
-        { ok: false, error: ERR_RETRY },
-        { status: 500 },
-      );
+      return NextResponse.json({ ok: false, error: ERR_RETRY }, { status: 500 });
     }
     if (!reserved) {
       return NextResponse.json({
@@ -206,47 +181,80 @@ export async function POST(
     }
   }
 
-  // Refund the reserved slot on any failure the user sees, so a failed render
-  // never counts against the allowance. Exempt accounts never reserved one.
-  const releaseReservation = async () => {
-    if (plan.exempt) return;
-    const { error } = await supabase.rpc("release_usage", {
-      p_kind: "render",
-      p_period_start: periodStart,
-    });
-    if (error) console.error("[render] release_usage failed", error.message);
-  };
-
-  // Execute.
-  const result = await renderOutfit(supabase, user.id, outfitId, layers);
-  if (!result.ok) {
-    // The real reason (provider error, timeout, out-of-credits, rejected input)
-    // is logged for debugging and NEVER shown to the user — no billing, credit,
-    // or provider detail ever leaks to the screen. The user sees one cold,
-    // generic line regardless of cause.
-    await releaseReservation();
-    console.error("[render] failed for outfit", outfitId, result.detail);
-    return NextResponse.json(
-      { ok: false, error: ERR_RETRY },
-      { status: 500 },
-    );
-  }
-
-  // Persist: render_path on the outfit, and a quota log row (success only).
-  const { error: upErr } = await supabase
-    .from("outfits")
-    .update({ render_path: result.path })
-    .eq("id", outfitId)
-    .eq("user_id", user.id);
-  if (upErr) {
-    // The render succeeded but we can't record it — the user sees an error, so
-    // don't charge them for it either. Log the real reason; show a generic line.
-    await releaseReservation();
-    console.error("[render] store failed", upErr.message);
+  const jobId = await enqueueJob(supabase, {
+    kind: "render",
+    payload: { outfitId, layers },
+    reservedKind: plan.exempt ? undefined : "render",
+    reservedPeriod: plan.exempt ? undefined : periodStart,
+  });
+  if (!jobId) {
+    if (!plan.exempt) {
+      await supabase.rpc("release_usage", { p_kind: "render", p_period_start: periodStart });
+    }
     return NextResponse.json({ ok: false, error: ERR_RETRY }, { status: 500 });
   }
-  await supabase.from("renders").insert({ user_id: user.id, outfit_id: outfitId });
 
-  const url = await signedUrl(supabase, renderPath(user.id, outfitId));
-  return NextResponse.json({ ok: true, url });
+  after(() => runRenderStep(createAdminClient(), jobId));
+  return NextResponse.json({ ok: true, jobId });
+}
+
+// Poll: report the render's status and progress, drive the next layer when the
+// job is idle between layers (or its worker died), and return the final image
+// when done. claim_job_step keeps overlapping drives a safe no-op.
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id: outfitId } = await params;
+
+  const { supabase, user } = await authenticateRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id, status, result, payload, lease_until")
+    .eq("user_id", user.id)
+    .eq("kind", "render")
+    .eq("payload->>outfitId", outfitId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!job) {
+    // No render job: the outfit may already carry a finished render.
+    const url = await signedUrl(supabase, renderPath(user.id, outfitId));
+    return NextResponse.json({ status: "none", url: url ?? null });
+  }
+
+  const status = job.status as string;
+  const payloadLayers = (job.payload as { layers?: unknown[] } | null)?.layers;
+  const totalLayers = Array.isArray(payloadLayers) ? payloadLayers.length : 0;
+  const progress = (job.result as { layerIndex?: number } | null) ?? null;
+  const layerIndex = typeof progress?.layerIndex === "number" ? progress.layerIndex : 0;
+
+  // Drive the next layer when the job is idle between steps or its lease lapsed.
+  if (status === "queued" || status === "processing") {
+    const leaseUntil = job.lease_until
+      ? new Date(job.lease_until as string).getTime()
+      : 0;
+    const stalled = status === "queued" || leaseUntil < Date.now();
+    if (stalled) {
+      const jobId = job.id as string;
+      after(() => runRenderStep(createAdminClient(), jobId));
+    }
+  }
+
+  const url =
+    status === "done"
+      ? await signedUrl(supabase, renderPath(user.id, outfitId))
+      : null;
+
+  return NextResponse.json({
+    status,
+    layer: Math.min(layerIndex + 1, totalLayers || layerIndex + 1),
+    totalLayers,
+    url: url ?? null,
+  });
 }
