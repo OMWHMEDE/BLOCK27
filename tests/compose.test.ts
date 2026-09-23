@@ -1,32 +1,34 @@
 import { describe, it, expect } from "vitest";
 import { capReasoning } from "@/lib/brain/composeOutfits";
 
-// The reasoning cap is the backstop that keeps a stored/shown reason short even
-// if the model overruns its one-sentence instruction. 160 chars, clean cut, no
-// ellipsis.
-const LIMIT = 160;
+// The reasoning cap is only a runaway backstop now (one or two sentences is the
+// intent); it trims cleanly, no ellipsis. Keep in sync with MAX_REASONING_CHARS.
+const LIMIT = 320;
 
 describe("capReasoning", () => {
-  it("leaves a short reason untouched (trimmed)", () => {
-    const s = "The bomber's the hero; everything under it stays flat.";
+  it("leaves a one-or-two-sentence reason untouched (trimmed)", () => {
+    const s =
+      "The bomber's the hero. Everything under it stays flat so it reads as a decision, not an accident.";
+    expect(s.length).toBeLessThanOrEqual(LIMIT);
     expect(capReasoning("  " + s + "  ")).toBe(s);
   });
 
-  it("cuts a long reason at a sentence boundary when there is one", () => {
+  it("cuts a runaway at a sentence boundary when there is one", () => {
     const first = "The bomber carries it and the rest goes quiet.";
-    const s = first + " " + "A second sentence that pushes well past the one-hundred-and-sixty character limit so the cap has to drop it entirely from the output.";
-    const out = capReasoning(s);
+    // A long tail with no sentence-ending punctuation, pushing well past LIMIT.
+    const tail = "quiet neutral layers ".repeat(30);
+    const out = capReasoning(first + " " + tail);
     expect(out).toBe(first);
     expect(out.length).toBeLessThanOrEqual(LIMIT);
   });
 
   it("cuts at a word boundary when there is no sentence end", () => {
-    const s = "charcoal overshirt over the tee with wide black trousers and the chunky boots anchoring a heavy monochrome column that just keeps going and going and going past the limit";
+    const s = "charcoal ".repeat(60); // ~540 chars, no sentence punctuation
     const out = capReasoning(s);
     expect(out.length).toBeLessThanOrEqual(LIMIT);
+    expect(out.length).toBeGreaterThan(LIMIT - 20); // used most of the budget
     expect(out.endsWith(" ")).toBe(false);
-    // No mid-word cut: the truncated text is a prefix ending on a whole word.
-    expect(s.startsWith(out)).toBe(true);
+    expect(s.startsWith(out)).toBe(true); // whole words only, a real prefix
     expect(out).not.toMatch(/…$/);
   });
 

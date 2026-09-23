@@ -8,21 +8,23 @@ import { languageInstruction, type Language } from "@/lib/lang";
 // maximum taste.
 const MODEL = process.env.OUTFIT_MODEL ?? "claude-sonnet-5";
 
-// Latency budget. The generate route runs under a 60s function cap (Vercel), and
-// this call is nearly all of it. Output length is the dominant cost, so bound it
-// hard: at most a few outfits, one short sentence of reasoning each, a low
-// max_tokens ceiling. The SDK is given a sub-cap timeout and NO retries, so a
-// slow call throws cleanly (caught → quota refunded → clean error) well before
-// the function is killed with a 504.
+// Latency budget for the BATCH composer below (used by the synchronous guest
+// flow, which still runs under a 60s function cap). Output length is the dominant
+// cost, so it's bounded: a few outfits, a low max_tokens ceiling, a sub-cap
+// timeout and NO retries so a slow call throws cleanly rather than 504. The
+// authenticated generation now runs in the background worker (composeNextOutfit),
+// where the count and reasoning length are free to be fuller.
 const MAX_OUTFITS = 3;
-const MAX_REASONING_CHARS = 160;
+// Reasoning length backstop, shared by both paths. Generous enough for the one or
+// two sentences the voice calls for; it only trims a genuine runaway.
+const MAX_REASONING_CHARS = 320;
 const CALL_TIMEOUT_MS = 40_000;
 const MAX_TOKENS = 1536;
 
 // Cap one reasoning string without an ugly mid-word cut. Prefer the last sentence
 // end within the limit, else the last space; no ellipsis — the voice is terse and
-// "…" isn't in it. The model is already told to keep it to one short sentence;
-// this is the backstop that guarantees the length regardless.
+// "…" isn't in it. The model is told to keep it to one or two sentences; this is
+// only the backstop that guarantees a sane maximum.
 // Keep at least this much, so a stray early period can't cut the reason to a stub.
 const MIN_KEEP = 40;
 export function capReasoning(text: string): string {
@@ -108,8 +110,7 @@ How you write the reason:
   flat." Never "we", never "you might like". Name the hero and why the rest goes
   quiet.
 - Cold, direct, opinionated. No hedging, no flattery, no exclamation marks, no
-  emoji. Exactly ONE sentence, about 140 characters — no more. Say the hero and
-  why the rest goes quiet, nothing else.
+  emoji. One or two sentences. Name the hero and why the rest goes quiet.
 
 Honesty about a thin wardrobe:
 - Make only the outfits the wardrobe genuinely supports. Fewer is fine. None is
@@ -159,7 +160,7 @@ const TOOL = {
             reasoning: {
               type: "string",
               description:
-                "One sentence, ~140 characters max: the hero and why the rest goes quiet. No more.",
+                "One or two sentences, first person: the hero and why the rest goes quiet.",
             },
           },
           required: ["item_ids", "hero", "angle", "reasoning"],
@@ -304,7 +305,7 @@ const NEXT_TOOL = {
       reasoning: {
         type: "string",
         description:
-          "One sentence, ~140 characters max: the hero and why the rest goes quiet. Empty when more is false.",
+          "One or two sentences: the hero and why the rest goes quiet. Empty string when more is false.",
       },
       gap_points: {
         type: "array",

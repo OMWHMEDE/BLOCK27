@@ -12,10 +12,13 @@ import { toLanguage, type Language } from "@/lib/lang";
 // empty. Each inserted outfit is visible to the user's status poll immediately —
 // that's the streaming.
 
-const MAX_OUTFITS = 3;
-// Stop starting new outfit calls past this. A call started at the budget can add
-// its 15s timeout, so 40s keeps the worst case (~55s) under the 60s function cap.
-// Whatever's already produced still swaps in.
+const MAX_OUTFITS = 5;
+// Stop starting new outfit calls past this. Each call is one short outfit (~5s
+// typically, 15s hard timeout), so five finish well inside the budget in the
+// common case; a call started at the budget can add its 15s timeout, so 40s
+// keeps the worst case (~55s) under the worker's 60s cap. Whatever's already
+// produced still swaps in — so a slow run degrades to fewer outfits, never a
+// mid-run kill.
 const TIME_BUDGET_MS = 40_000;
 
 export async function handleComposition(
