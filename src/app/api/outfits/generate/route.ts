@@ -1,17 +1,20 @@
 import { after, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserLanguage } from "@/lib/lang";
 import { touchLastActive } from "@/lib/biometric";
 import { enqueueJob } from "@/lib/jobs";
-import { kickWorker } from "@/lib/jobs/kick";
+import { runJob } from "@/lib/jobs/run";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
 
-// Enqueue a composition job and return immediately. The worker composes in the
-// background, streaming outfits into a new generation; the client polls
-// /api/outfits/generation for status and the streaming drafts. This route no
-// longer runs the reasoning call, so it never approaches the function cap.
+// Enqueue a composition job and return immediately, then run it IN-PROCESS in an
+// `after` hook — same invocation, after the response is sent. No self-HTTP-fetch
+// to a separate worker and no CRON_SECRET on the app's path: those made a
+// dropped/misconfigured kick leave jobs queued forever. The response still
+// returns at once (the reasoning happens after it), so the client never waits;
+// claim_job keeps a duplicate run (a stalled-poll retry) a safe no-op.
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
@@ -49,9 +52,8 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle();
   if (active?.id) {
-    const origin = new URL(request.url).origin;
     const activeId = active.id as string;
-    after(() => kickWorker(origin, activeId));
+    after(() => runJob(createAdminClient(), activeId));
     return NextResponse.json({ ok: true, jobId: activeId, already: true });
   }
 
@@ -96,7 +98,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: ERR_GENERIC }, { status: 500 });
   }
 
-  const origin = new URL(request.url).origin;
-  after(() => kickWorker(origin, jobId));
+  after(() => runJob(createAdminClient(), jobId));
   return NextResponse.json({ ok: true, jobId });
 }
