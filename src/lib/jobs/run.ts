@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { claimJob, completeJob, failJob, type Job } from "@/lib/jobs";
 import { handleComposition } from "@/lib/jobs/handlers/composition";
+import { handleShopping } from "@/lib/jobs/handlers/shopping";
 
 // One place that turns a queued job into work. Claim (atomic, leased), dispatch
 // by kind, then complete or fail. Idempotent: a job already done, or held under a
@@ -20,6 +21,8 @@ async function dispatch(admin: SupabaseClient, job: Job): Promise<HandlerResult>
   switch (job.kind) {
     case "composition":
       return handleComposition(admin, job);
+    case "shopping":
+      return handleShopping(admin, job);
     default:
       throw new Error(`no handler for job kind ${job.kind}`);
   }

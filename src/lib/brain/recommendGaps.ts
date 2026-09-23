@@ -178,7 +178,9 @@ export async function recommendGaps(
   budget: number | null,
   language: Language = "en",
 ): Promise<ShoppingPlan> {
-  const client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
+  // No retry: a retry could stack two 45s waits (~90s) past the worker's
+  // function budget. One bounded attempt; a failure requeues the whole job.
+  const client = new Anthropic({ timeout: 45_000, maxRetries: 0 });
 
   const analyses = garments.map((g) => g.analysis);
   const wardrobe = analyses.map(wardrobeLine).join("\n");

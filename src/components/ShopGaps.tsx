@@ -1,20 +1,84 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
 import { ERR_GENERIC } from "@/lib/support";
 
 // The consultation control. It asks the one cold question — what are you working
-// with — then runs the audit. Skipping is allowed: the brain then advises without
-// allocating a budget. Never a silent spinner; a real error surfaces with the
-// wording the user can act on.
+// with — then runs the audit as a background job: enqueue, then poll for
+// completion (nudged by Realtime, polling as the fallback) and refresh when the
+// picks are stored. Skipping is allowed: the brain advises without a budget.
+const POLL_MS = 2000;
+
+type ShopStatus = "queued" | "processing" | "done" | "failed";
+
 export function ShopGaps({ hasSession }: { hasSession: boolean }) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
+
+  const stopWatching = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    if (channelRef.current) {
+      channelRef.current.unsubscribe();
+      channelRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => stopWatching, [stopWatching]);
+
+  const poll = useCallback(
+    async (jobId: string) => {
+      try {
+        const res = await fetch(`/api/shopping?job=${encodeURIComponent(jobId)}`);
+        if (!res.ok) return;
+        const b = (await res.json().catch(() => ({}))) as { status?: ShopStatus };
+        if (b.status === "done") {
+          stopWatching();
+          setBusy(false);
+          router.refresh();
+        } else if (b.status === "failed") {
+          stopWatching();
+          setBusy(false);
+          setError(ERR_GENERIC);
+        }
+      } catch {
+        // Network blip — the interval retries.
+      }
+    },
+    [router, stopWatching],
+  );
+
+  const watch = useCallback(
+    (jobId: string) => {
+      void poll(jobId);
+      pollRef.current = setInterval(() => void poll(jobId), POLL_MS);
+      try {
+        const supabase = createClient();
+        channelRef.current = supabase
+          .channel(`shopping-${jobId}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "jobs", filter: `id=eq.${jobId}` },
+            () => void poll(jobId),
+          )
+          .subscribe();
+      } catch {
+        // Realtime unavailable — polling covers it.
+      }
+    },
+    [poll],
+  );
 
   const run = useCallback(
     async (withBudget: boolean) => {
@@ -30,24 +94,35 @@ export function ShopGaps({ hasSession }: { hasSession: boolean }) {
         });
         const b = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
+          jobId?: string;
           error?: string;
           note?: string;
+          advice?: string;
+          count?: number;
         };
         if (!res.ok || !b.ok) {
           setError(b.error || ERR_GENERIC);
+          setBusy(false);
+        } else if (b.jobId) {
+          watch(b.jobId); // stays busy until the watcher finishes
         } else if (b.note) {
           // Allowance reached — a plain, on-brand note, not an emergency.
           setNote(b.note);
+          setBusy(false);
+        } else if (b.advice) {
+          // Empty wardrobe — advise plainly, nothing stored to refresh into.
+          setNote(b.advice);
+          setBusy(false);
         } else {
+          setBusy(false);
           router.refresh();
         }
       } catch {
         setError(ERR_GENERIC);
-      } finally {
         setBusy(false);
       }
     },
-    [amount, router],
+    [amount, router, watch],
   );
 
   const validAmount = Number(amount) > 0;
