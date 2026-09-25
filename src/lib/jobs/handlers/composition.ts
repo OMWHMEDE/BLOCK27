@@ -1,7 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Job } from "@/lib/jobs";
-import { composeNextOutfit, type PriorOutfit } from "@/lib/brain/composeOutfits";
+import {
+  composeGaps,
+  composeNextOutfit,
+  type PriorOutfit,
+} from "@/lib/brain/composeOutfits";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import { acceptOutfit } from "@/lib/jobs/handlers/validate";
 import { toLanguage, type Language } from "@/lib/lang";
@@ -65,13 +69,11 @@ export async function handleComposition(
   const validIds = new Set(garments.map((g) => g.id));
   const started = Date.now();
   const prior: PriorOutfit[] = [];
-  let gapPoints: string[] = [];
 
   try {
     for (let i = 0; i < MAX_OUTFITS; i++) {
       if (Date.now() - started > TIME_BUDGET_MS) break;
       const step = await composeNextOutfit(garments, occasion, language, prior);
-      gapPoints = step.gap_points;
       if (step.done || !step.outfit) break;
 
       // Per-outfit validation: real ids, at least two, no repeat set or angle.
@@ -104,7 +106,21 @@ export async function handleComposition(
     throw new Error(`swap failed: ${swapErr.message}`);
   }
 
-  // Persist the gap for the outfits/settings view, same as the sync path did.
+  // Reliable gap: a dedicated pass, because the streaming composer only emits
+  // gap_points on a terminal 'done' step, which never fires when the outfit cap is
+  // hit — so the gap came back empty after every full generation. Best-effort: a
+  // gap-read failure must not fail a generation whose outfits already swapped in.
+  let gapPoints: string[] = [];
+  try {
+    gapPoints = await composeGaps(garments, occasion, language, prior);
+  } catch (e) {
+    console.error(
+      "[composition] gap assessment failed",
+      e instanceof Error ? e.message : "",
+    );
+  }
+
+  // Persist the gap for the outfits/settings view.
   const points =
     prior.length === 0 && gapPoints.length === 0
       ? ["Nothing here holds together yet. Add pieces that pair."]

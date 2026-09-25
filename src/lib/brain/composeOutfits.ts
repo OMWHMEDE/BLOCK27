@@ -388,3 +388,82 @@ Produce exactly ONE outfit per call with the next_outfit tool. Set more=true and
     done: false,
   };
 }
+
+// ── Gap assessment ──────────────────────────────────────────────────────────────
+// The streaming composer only surfaces gap_points on a `more=false` step, which
+// never happens when the outfit cap is reached — so the gap was coming back empty
+// after every full generation. This is a dedicated, reliable pass: given the
+// wardrobe and the outfits already built this run, name what the wardrobe genuinely
+// can't do. It restores the honest "you don't own shoes for this" that the old
+// batch composer produced as a first-class field. Best-effort at the call site: a
+// generation must not fail because the gap read did.
+
+const GAPS_TIMEOUT_MS = 15_000;
+const GAPS_MAX_TOKENS = 512;
+
+const GAPS_TOOL = {
+  name: "wardrobe_gaps",
+  description: "Record the wardrobe's structural gaps.",
+  strict: true,
+  input_schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      gap_points: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "Up to 4 distinct, specific things this wardrobe can't do, most important " +
+          "first, each its own short point — e.g. 'No footwear — nothing renders on " +
+          "the feet.', 'All tops, no bottoms. Add trousers.' Empty array when the " +
+          "wardrobe genuinely serves most needs.",
+      },
+    },
+    required: ["gap_points"],
+  },
+} as unknown as Anthropic.Tool;
+
+export async function composeGaps(
+  garments: { id: string; analysis: GarmentAnalysis }[],
+  occasion: string | undefined,
+  language: Language,
+  prior: PriorOutfit[],
+): Promise<string[]> {
+  const client = new Anthropic({ timeout: GAPS_TIMEOUT_MS, maxRetries: 0 });
+
+  const wardrobe = garments.map((g) => wardrobeLine(g.id, g.analysis)).join("\n");
+  const headed = occasion?.trim()
+    ? `\n\nThey were dressing for: "${occasion.trim()}".`
+    : "";
+  const built =
+    prior.length > 0
+      ? `\n\nOutfits already built this run:\n${prior
+          .map((p, i) => `  ${i + 1}. angle "${p.angle}" — [${p.item_ids.join(", ")}]`)
+          .join("\n")}`
+      : "\n\nNo outfits could be built from this wardrobe.";
+  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}${headed}${built}\n\nNow assess the GAPS only. What can this wardrobe genuinely not do? Up to 4 distinct, specific points, most important first. Don't restate what the built outfits already cover. Empty array if it genuinely serves most needs — never invent a gap to fill the list.`;
+
+  const system = `${SYSTEM_CORE}
+
+You are assessing wardrobe gaps only — do not compose outfits. Record them with the wardrobe_gaps tool, in the BLOCK27 voice: cold, specific, on the user's side against a thin wardrobe.`;
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: GAPS_MAX_TOKENS,
+    system: system + languageInstruction(language),
+    thinking: { type: "disabled" },
+    tools: [GAPS_TOOL],
+    tool_choice: { type: "tool", name: "wardrobe_gaps" },
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const block = response.content.find((b) => b.type === "tool_use");
+  if (!block || block.type !== "tool_use") {
+    throw new Error("Gap assessment did not return a result");
+  }
+  const raw = block.input as { gap_points?: unknown };
+  return (Array.isArray(raw.gap_points) ? raw.gap_points : [])
+    .map((p) => (typeof p === "string" ? p.trim() : ""))
+    .filter((p) => p.length > 0)
+    .slice(0, 4);
+}
