@@ -2,6 +2,7 @@ import { after, NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserLanguage } from "@/lib/lang";
+import { thinWardrobeGap, generationsUsed } from "@/lib/uiStrings";
 import { touchLastActive } from "@/lib/biometric";
 import { enqueueJob } from "@/lib/jobs";
 import { runJob } from "@/lib/jobs/run";
@@ -25,6 +26,11 @@ export async function POST(request: Request) {
   }
   await touchLastActive(supabase, user.id);
 
+  // The user's language, used for every gap/quota line below (these are produced
+  // without a model call, so they don't get localized by the brain — translate
+  // them here) and passed into the job.
+  const language = await getUserLanguage(supabase, user.id);
+
   const body = (await request.json().catch(() => ({}))) as { occasion?: unknown };
   const occasion =
     typeof body.occasion === "string" ? body.occasion.trim().slice(0, 200) : "";
@@ -36,7 +42,7 @@ export async function POST(request: Request) {
     .eq("user_id", user.id)
     .eq("status", "analyzed");
   if ((count ?? 0) < 2) {
-    const line = "One analyzed piece isn't an outfit. Add a few more.";
+    const line = thinWardrobeGap(language);
     return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
   }
 
@@ -75,12 +81,11 @@ export async function POST(request: Request) {
       );
     }
     if (!reserved) {
-      const line = `You've used all ${plan.compositionsPerMonth} generations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`;
+      const line = generationsUsed(language, plan.compositionsPerMonth, paymentsOpen());
       return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
     }
   }
 
-  const language = await getUserLanguage(supabase, user.id);
   const jobId = await enqueueJob(supabase, {
     kind: "composition",
     payload: { occasion, language },

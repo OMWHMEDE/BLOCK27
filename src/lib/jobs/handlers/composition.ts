@@ -9,6 +9,7 @@ import {
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import { acceptOutfit } from "@/lib/jobs/handlers/validate";
 import { toLanguage, type Language } from "@/lib/lang";
+import { nothingCoheresGap } from "@/lib/uiStrings";
 
 // Compose outfits in the background, one at a time, into a NEW generation, then
 // swap it in. The old generation stays published and visible the whole time; only
@@ -123,7 +124,7 @@ export async function handleComposition(
   // Persist the gap for the outfits/settings view.
   const points =
     prior.length === 0 && gapPoints.length === 0
-      ? ["Nothing here holds together yet. Add pieces that pair."]
+      ? [nothingCoheresGap(language)]
       : gapPoints;
   const gap = points.join(" ");
   await admin
