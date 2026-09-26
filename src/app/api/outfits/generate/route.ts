@@ -71,8 +71,9 @@ export async function POST(request: Request) {
 
   if (!plan.exempt) {
     // Hard cap, independent of reserve_usage: read the tier straight from the row
-    // and count completed composition jobs this cycle. If the user is already at or
-    // over the cap, refuse outright — the backstop for any reserve_usage drift.
+    // and count real generations this cycle (non-failed composition jobs). If the
+    // user is already at or over the cap, refuse outright — the backstop for any
+    // reserve_usage drift. The worker re-checks this too, so a re-kick can't slip.
     const { over, cap } = await atOrOverCap(supabase, user.id, "composition", periodStart);
     if (over) {
       const line = generationsUsed(language, cap, paymentsOpen());
@@ -97,9 +98,20 @@ export async function POST(request: Request) {
     }
   }
 
+  // Pin the target generation into the job now, so re-running the SAME job (a
+  // stalled-run recovery) rebuilds that one generation instead of minting a new
+  // one each time. The active-job guard above guarantees no other composition job
+  // is in flight, so published+1 is stable for this job.
+  const { data: genRow } = await supabase
+    .from("users")
+    .select("outfits_generation")
+    .eq("id", user.id)
+    .maybeSingle();
+  const targetGen = Number(genRow?.outfits_generation ?? 0) + 1;
+
   const jobId = await enqueueJob(supabase, {
     kind: "composition",
-    payload: { occasion, language },
+    payload: { occasion, language, targetGen },
     reservedKind: plan.exempt ? undefined : "composition",
     reservedPeriod: plan.exempt ? undefined : periodStart,
   });
