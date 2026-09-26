@@ -10,6 +10,7 @@ import {
 } from "@/lib/photos";
 import { removeFromUserPhotos } from "@/lib/supabase/storage";
 import { completeJob, failJob, type Job } from "@/lib/jobs";
+import { atOrOverCap } from "@/lib/limits";
 
 // Render runs ONE garment layer per worker invocation, so the chain is resumable:
 // if an invocation dies, the next one resumes from the last completed layer. The
@@ -90,6 +91,27 @@ export async function runRenderStep(
   }
 
   const p = progressFrom(job, userId);
+
+  // Cap gate — on the worker itself, so no path (enqueue or a re-kick) can render
+  // past the cap. Checked ONLY at the very first step (no progress yet): once a
+  // render is under way we let it finish rather than burn the layers already
+  // produced. Exempt jobs carry no reserved_kind and are uncapped. A delivered
+  // try-on writes one `renders` row, so the count is the real number of try-ons;
+  // the in-flight one isn't counted yet, so the cap-th render still completes.
+  if (
+    job.reserved_kind === "render" &&
+    job.reserved_period &&
+    p.layerIndex === 0 &&
+    p.layerAttempt === 0
+  ) {
+    const { over } = await atOrOverCap(admin, userId, "render", job.reserved_period);
+    if (over) {
+      console.warn(`[render] job ${jobId} refused: over plan cap`);
+      await failJob(admin, jobId, "over plan cap", false);
+      return { claimed: true, action: "fail" };
+    }
+  }
+
   const isLast = p.layerIndex >= layers.length - 1;
   const outPath = isLast
     ? renderPath(userId, outfitId)
