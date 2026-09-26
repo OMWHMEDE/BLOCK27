@@ -25,6 +25,11 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // TEMP DEPLOY MARKER — proves which build is serving this route. If this line
+  // does not appear in the Vercel logs for POST /api/outfits/generate when you
+  // generate, prod is running a stale build and no code fix here can take effect.
+  // Remove once the deploy is confirmed.
+  console.log("[gen-marker BUILD-126-hardcap] POST /api/outfits/generate user=%s", user.id);
   await touchLastActive(supabase, user.id);
 
   // The user's language, used for every gap/quota line below (these are produced
