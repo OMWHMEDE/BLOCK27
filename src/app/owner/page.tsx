@@ -144,7 +144,23 @@ export default async function OwnerPage() {
   const supabase = await createClient();
   const {
     data: { user },
+    error: authErr,
   } = await supabase.auth.getUser();
+
+  // TEMPORARY DEBUG — remove once the /owner 404 is diagnosed. Prints both sides
+  // of the gate so it's clear which check fails. Look for "[owner-debug]" in the
+  // Vercel logs for the /owner route. Logs an id and env values, no secrets.
+  console.log("[owner-debug] session user id:", user?.id ?? null);
+  console.log("[owner-debug] getUser error:", authErr?.message ?? null);
+  console.log(
+    "[owner-debug] OWNER_UID raw:",
+    JSON.stringify(process.env.OWNER_UID ?? null),
+  );
+  console.log(
+    "[owner-debug] PAID_OVERRIDE_UIDS raw:",
+    JSON.stringify(process.env.PAID_OVERRIDE_UIDS ?? null),
+  );
+  console.log("[owner-debug] isOwner result:", isOwner(user?.id));
 
   // Not the owner → 404. Same response for signed-out, signed-in-but-not-owner,
   // and a non-existent page, so this URL never reveals it exists.
