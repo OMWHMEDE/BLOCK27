@@ -7,6 +7,7 @@ import { touchLastActive } from "@/lib/biometric";
 import { enqueueJob } from "@/lib/jobs";
 import { runJob } from "@/lib/jobs/run";
 import { getPlan } from "@/lib/plan";
+import { atOrOverCap } from "@/lib/limits";
 import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
 
@@ -68,33 +69,21 @@ export async function POST(request: Request) {
   const plan = await getPlan(user.id);
   const periodStart = plan.windowStart.toISOString();
 
-  // TEMPORARY DEBUG — remove once the composition cap is diagnosed. Prints the
-  // resolved plan so we can see whether the account is exempt or on a higher tier
-  // (a bigger cap being passed), the exact cap sent to reserve_usage, and what it
-  // returns. Look for "[limit-debug]" in the Vercel logs for /api/outfits/generate.
-  console.log(
-    "[limit-debug] user=%s tier=%s paid=%s exempt=%s status=%s compositionsPerMonth=%s windowStart=%s",
-    user.id,
-    plan.tier,
-    plan.paid,
-    plan.exempt,
-    plan.status,
-    plan.compositionsPerMonth,
-    periodStart,
-  );
-
   if (!plan.exempt) {
+    // Hard cap, independent of reserve_usage: read the tier straight from the row
+    // and count completed composition jobs this cycle. If the user is already at or
+    // over the cap, refuse outright — the backstop for any reserve_usage drift.
+    const { over, cap } = await atOrOverCap(supabase, user.id, "composition", periodStart);
+    if (over) {
+      const line = generationsUsed(language, cap, paymentsOpen());
+      return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
+    }
+
     const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_usage", {
       p_kind: "composition",
       p_period_start: periodStart,
       p_cap: plan.compositionsPerMonth,
     });
-    console.log(
-      "[limit-debug] reserve_usage p_cap=%s -> reserved=%s error=%s",
-      plan.compositionsPerMonth,
-      reserved,
-      reserveErr?.message ?? null,
-    );
     if (reserveErr) {
       console.error("[outfits] reserve_usage failed", reserveErr.message);
       return NextResponse.json(
@@ -106,8 +95,6 @@ export async function POST(request: Request) {
       const line = generationsUsed(language, plan.compositionsPerMonth, paymentsOpen());
       return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
     }
-  } else {
-    console.log("[limit-debug] EXEMPT — reservation skipped, generation uncapped");
   }
 
   const jobId = await enqueueJob(supabase, {
