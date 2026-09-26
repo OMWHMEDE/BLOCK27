@@ -6,6 +6,7 @@ import { renderPath } from "@/lib/photos";
 import type { RenderLayer } from "@/lib/render/layer";
 import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
+import { atOrOverCap } from "@/lib/limits";
 import { paymentsOpen } from "@/lib/payments";
 import { lengthInstruction } from "@/lib/render/lengthInstruction";
 import {
@@ -163,6 +164,17 @@ export async function POST(
   // Reserve a try-on up front (fail closed). Refunded on terminal job failure.
   const periodStart = plan.windowStart.toISOString();
   if (!plan.exempt) {
+    // Hard cap, independent of reserve_usage: count delivered renders this cycle
+    // against the tier's try-on cap and refuse outright if already at or over it.
+    const { over, cap } = await atOrOverCap(supabase, user.id, "render", periodStart);
+    if (over) {
+      return NextResponse.json({
+        ok: false,
+        quota: true,
+        message: `You've used all ${cap} try-ons this cycle.`,
+      });
+    }
+
     const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_usage", {
       p_kind: "render",
       p_period_start: periodStart,

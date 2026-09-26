@@ -5,6 +5,7 @@ import { getUserLanguage } from "@/lib/lang";
 import { enqueueJob } from "@/lib/jobs";
 import { runJob } from "@/lib/jobs/run";
 import { getPlan } from "@/lib/plan";
+import { atOrOverCap } from "@/lib/limits";
 import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
 
@@ -64,6 +65,16 @@ export async function POST(request: Request) {
   const plan = await getPlan(user.id);
   const periodStart = plan.windowStart.toISOString();
   if (!plan.exempt) {
+    // Hard cap, independent of reserve_usage: count completed shopping jobs this
+    // cycle against the tier's cap and refuse outright if already at or over it.
+    const { over, cap } = await atOrOverCap(supabase, user.id, "shopping", periodStart);
+    if (over) {
+      return NextResponse.json({
+        ok: true,
+        note: `You've used all ${cap} consultations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`,
+      });
+    }
+
     const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_usage", {
       p_kind: "shopping",
       p_period_start: periodStart,
