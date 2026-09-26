@@ -67,12 +67,34 @@ export async function POST(request: Request) {
   // failure via the job's reserved coordinates.
   const plan = await getPlan(user.id);
   const periodStart = plan.windowStart.toISOString();
+
+  // TEMPORARY DEBUG — remove once the composition cap is diagnosed. Prints the
+  // resolved plan so we can see whether the account is exempt or on a higher tier
+  // (a bigger cap being passed), the exact cap sent to reserve_usage, and what it
+  // returns. Look for "[limit-debug]" in the Vercel logs for /api/outfits/generate.
+  console.log(
+    "[limit-debug] user=%s tier=%s paid=%s exempt=%s status=%s compositionsPerMonth=%s windowStart=%s",
+    user.id,
+    plan.tier,
+    plan.paid,
+    plan.exempt,
+    plan.status,
+    plan.compositionsPerMonth,
+    periodStart,
+  );
+
   if (!plan.exempt) {
     const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_usage", {
       p_kind: "composition",
       p_period_start: periodStart,
       p_cap: plan.compositionsPerMonth,
     });
+    console.log(
+      "[limit-debug] reserve_usage p_cap=%s -> reserved=%s error=%s",
+      plan.compositionsPerMonth,
+      reserved,
+      reserveErr?.message ?? null,
+    );
     if (reserveErr) {
       console.error("[outfits] reserve_usage failed", reserveErr.message);
       return NextResponse.json(
@@ -84,6 +106,8 @@ export async function POST(request: Request) {
       const line = generationsUsed(language, plan.compositionsPerMonth, paymentsOpen());
       return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
     }
+  } else {
+    console.log("[limit-debug] EXEMPT — reservation skipped, generation uncapped");
   }
 
   const jobId = await enqueueJob(supabase, {
