@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { claimJob, completeJob, failJob, type Job } from "@/lib/jobs";
 import { handleComposition } from "@/lib/jobs/handlers/composition";
 import { handleShopping } from "@/lib/jobs/handlers/shopping";
+import { atOrOverCap, type MeteredOp } from "@/lib/limits";
 
 // One place that turns a queued job into work. Claim (atomic, leased), dispatch
 // by kind, then complete or fail. Idempotent: a job already done, or held under a
@@ -34,6 +35,26 @@ export async function runJob(
 ): Promise<{ claimed: boolean; status?: string }> {
   const job = await claimJob(admin, jobId, CLAIM_LEASE_SECONDS);
   if (!job) return { claimed: false };
+
+  // Cap gate — defense in depth, on the one path every worker run funnels
+  // through, so a re-kick (the generate "active job" path, the status-poll
+  // recovery) can never run the worker past the cap. A job carries no
+  // reserved_kind only when the user was exempt at enqueue, in which case it is
+  // uncapped. We exclude THIS job from the count so the in-cap job it belongs to
+  // can still finish; a job beyond the cap is failed terminally, which refunds
+  // its reserved slot.
+  if (job.reserved_kind && job.reserved_period) {
+    const op = job.reserved_kind as MeteredOp;
+    const { over } = await atOrOverCap(admin, job.user_id, op, job.reserved_period, {
+      excludeJobId: job.id,
+    });
+    if (over) {
+      console.warn(`[jobs] ${op} job ${jobId} refused: over plan cap`);
+      await failJob(admin, jobId, "over plan cap", false);
+      return { claimed: true, status: "capped" };
+    }
+  }
+
   try {
     const { result, timings } = await dispatch(admin, job);
     await completeJob(admin, jobId, result ?? {}, timings ?? {});

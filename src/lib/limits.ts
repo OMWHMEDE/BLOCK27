@@ -3,14 +3,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 
 // A HARD, independent cap check — the backstop for when reserve_usage doesn't
-// enforce. It does NOT trust reserve_usage's counter or return, and it does NOT
-// use getPlan's tier resolution (whose status fallback can inflate the cap for an
-// account that is actually free). Instead it:
+// enforce, and the single gate every path that produces metered work runs
+// through (both the enqueue routes and the worker itself). It does NOT trust
+// reserve_usage's counter or return, and it does NOT use getPlan's tier
+// resolution (whose status fallback can inflate the cap for an account that is
+// actually free). Instead it:
 //   1. reads the user's stored tier straight from the row (null/unknown -> free,
 //      the safe floor) and looks up that tier's cap, and
-//   2. counts what has ACTUALLY been produced this cycle from the real work
-//      tables — completed jobs for generation/shopping, delivered rows for
-//      renders — never usage_counters.
+//   2. counts what has ACTUALLY been produced this cycle from durable artifacts:
+//        - render: one row per delivered try-on in `renders`.
+//        - composition / shopping: jobs that reserved a slot and were not
+//          terminally failed+refunded (status <> 'failed'). Because the handlers
+//          now RESUME a job rather than mint a new generation on re-run, one job
+//          is exactly one generation / consultation — so counting the jobs is the
+//          real count, and a stuck (never-'done') job is no longer invisible the
+//          way counting only 'done' jobs made it. A refunded failure drops out of
+//          the count, so a failure is still never charged.
 // If the count is at or over the cap, the operation is refused outright.
 
 export type MeteredOp = "composition" | "render" | "shopping";
@@ -23,43 +31,53 @@ const CAP: Record<MeteredOp, (t: Tier) => number> = {
 
 export type CapState = { over: boolean; cap: number; used: number; tier: Tier };
 
-export async function atOrOverCap(
-  supabase: SupabaseClient,
-  userId: string,
-  op: MeteredOp,
-  windowStartIso: string,
-): Promise<CapState> {
-  // Tier straight from the row — the safe floor is free.
+async function tierOf(supabase: SupabaseClient, userId: string): Promise<Tier> {
   const { data: u } = await supabase
     .from("users")
     .select("plan_tier")
     .eq("id", userId)
     .maybeSingle();
-  const tier: Tier = u?.plan_tier ? toTier(u.plan_tier as string) : "free";
-  const cap = CAP[op](tier);
+  return u?.plan_tier ? toTier(u.plan_tier as string) : "free";
+}
 
-  // What was actually used this cycle, from the source-of-truth work tables.
-  let used = 0;
+async function usedThisCycle(
+  supabase: SupabaseClient,
+  userId: string,
+  op: MeteredOp,
+  windowStartIso: string,
+  excludeJobId?: string,
+): Promise<number> {
   if (op === "render") {
-    // One row per delivered try-on.
     const { count } = await supabase
       .from("renders")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .gte("created_at", windowStartIso);
-    used = count ?? 0;
-  } else {
-    // One completed job per successful generation / consultation. A failed job
-    // never reaches 'done', so it never counts — a failure is never charged.
-    const { count } = await supabase
-      .from("jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("kind", op)
-      .eq("status", "done")
-      .gte("created_at", windowStartIso);
-    used = count ?? 0;
+    return count ?? 0;
   }
+  // Non-failed composition/shopping jobs this cycle. A job being RUN excludes
+  // itself (excludeJobId), so it can finish without counting against its own cap.
+  let q = supabase
+    .from("jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("kind", op)
+    .neq("status", "failed")
+    .gte("created_at", windowStartIso);
+  if (excludeJobId) q = q.neq("id", excludeJobId);
+  const { count } = await q;
+  return count ?? 0;
+}
 
+export async function atOrOverCap(
+  supabase: SupabaseClient,
+  userId: string,
+  op: MeteredOp,
+  windowStartIso: string,
+  opts?: { excludeJobId?: string },
+): Promise<CapState> {
+  const tier = await tierOf(supabase, userId);
+  const cap = CAP[op](tier);
+  const used = await usedThisCycle(supabase, userId, op, windowStartIso, opts?.excludeJobId);
   return { over: used >= cap, cap, used, tier };
 }

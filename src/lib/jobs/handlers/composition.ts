@@ -31,7 +31,11 @@ export async function handleComposition(
   job: Job,
 ): Promise<{ result: Record<string, unknown> }> {
   const userId = job.user_id;
-  const payload = (job.payload ?? {}) as { occasion?: string; language?: string };
+  const payload = (job.payload ?? {}) as {
+    occasion?: string;
+    language?: string;
+    targetGen?: number;
+  };
   const occasion = typeof payload.occasion === "string" ? payload.occasion : "";
   const language: Language = toLanguage(payload.language);
 
@@ -42,14 +46,43 @@ export async function handleComposition(
     .eq("id", userId)
     .maybeSingle();
   const publishedGen = Number(u?.outfits_generation ?? 0);
-  const newGen = publishedGen + 1;
 
-  // Clear any stale drafts (a prior aborted run) so this generation starts clean.
+  // The generation THIS job owns. Pinned at enqueue so a re-run rebuilds the same
+  // one rather than minting a fresh generation each time (older jobs without a
+  // pin fall back to published+1, their original behavior).
+  const newGen =
+    typeof payload.targetGen === "number" ? payload.targetGen : publishedGen + 1;
+
+  // Already published by an earlier (partial) run of this same job — the swap
+  // happened but the job never got marked done (e.g. the post-response worker was
+  // cut off). Re-running must NOT compose a second time; finish idempotently.
+  if (publishedGen >= newGen) {
+    const { count } = await admin
+      .from("outfits")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("generation", newGen);
+    const { data: gen } = await admin
+      .from("users")
+      .select("latest_gap, latest_gap_points")
+      .eq("id", userId)
+      .maybeSingle();
+    return {
+      result: {
+        count: count ?? 0,
+        gap: (gen?.latest_gap as string) ?? "",
+        gapPoints: (gen?.latest_gap_points as string[]) ?? [],
+      },
+    };
+  }
+
+  // Clear any partial drafts for THIS generation (a prior aborted run of this job)
+  // so it starts clean, without touching the still-published set below it.
   await admin
     .from("outfits")
     .delete()
     .eq("user_id", userId)
-    .gt("generation", publishedGen);
+    .eq("generation", newGen);
 
   // The wardrobe as text — analyzed garments only. Photos are never re-read.
   const { data: rows } = await admin
