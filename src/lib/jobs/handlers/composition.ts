@@ -9,7 +9,17 @@ import {
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import { acceptOutfit } from "@/lib/jobs/handlers/validate";
 import { toLanguage, type Language } from "@/lib/lang";
-import { nothingCoheresGap } from "@/lib/uiStrings";
+import { nothingCoheresGap, generationsUsed } from "@/lib/uiStrings";
+import { parseCapError } from "@/lib/limits";
+import { paymentsOpen } from "@/lib/payments";
+
+// Thrown when the database generation-cap trigger refuses the first outfit insert
+// — carries the cap so the handler can show the exact limit line.
+class GenerationCapReached extends Error {
+  constructor(public cap: number) {
+    super("generation cap reached");
+  }
+}
 
 // Compose outfits in the background, one at a time, into a NEW generation, then
 // swap it in. The old generation stays published and visible the whole time; only
@@ -121,12 +131,41 @@ export async function handleComposition(
         reasoning: step.outfit.reasoning,
         generation: newGen,
       });
-      if (insErr) throw new Error(`store failed: ${insErr.message}`);
+      if (insErr) {
+        // The database generation-cap trigger refused this insert — the hard,
+        // unbypassable gate. It can only fire on the first row of a generation
+        // (once the ledger records it, later rows pass), so nothing was produced.
+        const cap = parseCapError(insErr);
+        if (cap) throw new GenerationCapReached(cap.cap);
+        throw new Error(`store failed: ${insErr.message}`);
+      }
       prior.push({ item_ids: uniqueIds, angle: step.outfit.angle });
     }
   } catch (e) {
     // Roll back this run's draft so a retry (or the next run) starts clean.
     await admin.from("outfits").delete().eq("user_id", userId).eq("generation", newGen);
+
+    // Cap reached: not a failure. Refund the reserved slot, show the limit line
+    // as the gap, and leave the currently published set untouched (no swap).
+    if (e instanceof GenerationCapReached) {
+      if (job.reserved_kind && job.reserved_period) {
+        await admin.rpc("release_usage_admin", {
+          p_user_id: userId,
+          p_kind: job.reserved_kind,
+          p_period_start: job.reserved_period,
+        });
+      }
+      const line = generationsUsed(language, e.cap, paymentsOpen());
+      await admin
+        .from("users")
+        .update({
+          latest_gap: line,
+          latest_gap_points: [line],
+          latest_gap_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+      return { result: { count: 0, gap: line, gapPoints: [line] } };
+    }
     throw e;
   }
 

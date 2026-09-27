@@ -23,6 +23,19 @@ import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 
 export type MeteredOp = "composition" | "render" | "shopping";
 
+// The database cap triggers (migration 0026) raise "BLOCK27_CAP:<kind>:<cap>".
+// This parses that out of a Supabase error so the caller can show the localized
+// limit line instead of a raw database error. Returns null for any other error.
+export type CapRefusal = { kind: "composition" | "shopping" | "pieces"; cap: number };
+export function parseCapError(
+  err: { message?: string | null } | null | undefined,
+): CapRefusal | null {
+  const m = err?.message ?? "";
+  const match = m.match(/BLOCK27_CAP:(composition|shopping|pieces):(\d+)/);
+  if (!match) return null;
+  return { kind: match[1] as CapRefusal["kind"], cap: Number(match[2]) };
+}
+
 const CAP: Record<MeteredOp, (t: Tier) => number> = {
   composition: (t) => TIERS[t].compositionsPerMonth,
   render: (t) => TIERS[t].tryOnsPerMonth,

@@ -8,6 +8,7 @@ import { isRenderable } from "@/lib/render/categories";
 import { getPlan } from "@/lib/plan";
 import { atOrOverCap } from "@/lib/limits";
 import { paymentsOpen } from "@/lib/payments";
+import { tryOnOpen } from "@/lib/tryon";
 import { lengthInstruction } from "@/lib/render/lengthInstruction";
 import {
   CONSENT_VERSION,
@@ -51,6 +52,13 @@ export async function POST(
   const { supabase, user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Try-on is switched off for launch (TRYON_OPEN). Refuse for everyone — paid,
+  // exempt, whoever — before any plan/consent/render work. Flip the env to bring
+  // it back with no code change.
+  if (!tryOnOpen()) {
+    return NextResponse.json({ ok: false, unavailable: true, message: "Try-on opens soon." });
   }
 
   // The hand is paid-only — first gate, before anything else.

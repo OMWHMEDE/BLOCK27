@@ -5,6 +5,7 @@ import {
   CONSENT_VERSION,
   hasBiometricConsent,
 } from "@/lib/biometric";
+import { tryOnOpen } from "@/lib/tryon";
 
 // Biometric consent (BIPA / GDPR). GET returns the current consent text, its
 // version, and whether this user has already consented to it. POST records the
@@ -35,6 +36,12 @@ export async function POST(request: Request) {
   const { supabase, user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Try-on is switched off for launch (TRYON_OPEN). Consent only exists to gate
+  // the hand, so the consent flow is unreachable while it's closed.
+  if (!tryOnOpen()) {
+    return NextResponse.json({ ok: false, unavailable: true }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => ({}))) as { isAdult?: unknown };

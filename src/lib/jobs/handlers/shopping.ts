@@ -5,6 +5,8 @@ import { recommendGaps } from "@/lib/brain/recommendGaps";
 import { searchUrl } from "@/lib/shopping/searchUrl";
 import { toLanguage, type Language } from "@/lib/lang";
 import type { GarmentAnalysis } from "@/lib/brain/types";
+import { parseCapError } from "@/lib/limits";
+import { paymentsOpen } from "@/lib/payments";
 
 // Run a shopping consultation in the background. The reasoning call happens
 // first; the previous recommendations and session are replaced only afterward, so
@@ -93,7 +95,25 @@ export async function handleShopping(
     advice: plan.advice ?? "",
     gaps: plan.gaps ?? [],
   });
-  if (sessErr) throw new Error(`store failed: ${sessErr.message}`);
+  if (sessErr) {
+    // The database consultation-cap trigger refused this — the hard gate. Not a
+    // failure: refund the reserved slot and return the limit line as advice.
+    const cap = parseCapError(sessErr);
+    if (cap) {
+      if (job.reserved_kind && job.reserved_period) {
+        await admin.rpc("release_usage_admin", {
+          p_user_id: userId,
+          p_kind: job.reserved_kind,
+          p_period_start: job.reserved_period,
+        });
+      }
+      const note = `You've used all ${cap.cap} consultations this cycle.${
+        paymentsOpen() ? " Upgrade for more." : ""
+      }`;
+      return { result: { count: 0, solid: false, advice: note } };
+    }
+    throw new Error(`store failed: ${sessErr.message}`);
+  }
 
   return { result: { count: picks.length, solid: plan.solid, advice: plan.advice ?? "" } };
 }
