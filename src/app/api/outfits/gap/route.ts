@@ -15,7 +15,9 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from("users")
-    .select("latest_gap, latest_gap_points, latest_gap_at")
+    .select(
+      "latest_gap, latest_gap_points, latest_gap_details, latest_blocked_outfits, latest_gap_at",
+    )
     .eq("id", user.id)
     .maybeSingle();
   if (error) {
@@ -24,11 +26,21 @@ export async function GET(request: Request) {
   }
 
   const points = data?.latest_gap_points;
+  const gapDetails = data?.latest_gap_details;
+  const blocked = data?.latest_blocked_outfits;
   return NextResponse.json({
     gap: (data?.latest_gap as string | null) ?? null,
     // The distinct points for revealing one at a time; [] when there is no gap,
     // stays null only when nothing has ever been generated.
     gapPoints: Array.isArray(points) ? (points as string[]) : null,
+    // Each gap point with its leverage: how many more outfits one piece would unlock.
+    gapDetails: Array.isArray(gapDetails)
+      ? (gapDetails as { text: string; unlocks: number }[])
+      : null,
+    // The near-miss outfits: real ids present, one piece missing.
+    blocked: Array.isArray(blocked)
+      ? (blocked as { item_ids: string[]; missing: string }[])
+      : null,
     gapAt: (data?.latest_gap_at as string | null) ?? null,
   });
 }

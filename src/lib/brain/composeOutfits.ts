@@ -389,7 +389,7 @@ Produce exactly ONE outfit per call with the next_outfit tool. Set more=true and
   };
 }
 
-// ── Gap assessment ──────────────────────────────────────────────────────────────
+// ── Gap analysis ──────────────────────────────────────────────────────────────
 // The streaming composer only surfaces gap_points on a `more=false` step, which
 // never happens when the outfit cap is reached — so the gap was coming back empty
 // after every full generation. This is a dedicated, reliable pass: given the
@@ -397,38 +397,103 @@ Produce exactly ONE outfit per call with the next_outfit tool. Set more=true and
 // can't do. It restores the honest "you don't own shoes for this" that the old
 // batch composer produced as a first-class field. Best-effort at the call site: a
 // generation must not fail because the gap read did.
+//
+// It now produces two stronger, concrete outputs alongside each gap:
+//   * unlocks — how many ADDITIONAL coherent outfits one piece filling that gap
+//     would make possible, counted against THIS wardrobe (the same leverage number
+//     the shopping assistant computes). A real number, not a vibe.
+//   * blocked — the near-miss outfits: compositions where every piece exists in the
+//     wardrobe except ONE. Each returns the real ids it would use and a description
+//     of the single missing piece. Ids are validated against the wardrobe here, so a
+//     hallucinated id never reaches the client.
 
-const GAPS_TIMEOUT_MS = 15_000;
-const GAPS_MAX_TOKENS = 512;
+// One gap, with its leverage.
+export type GapDetail = { text: string; unlocks: number };
+// A composition the wardrobe almost makes — every piece present but one.
+export type BlockedOutfit = { item_ids: string[]; missing: string };
+// The full gap read for a generation.
+export type GapAnalysis = { details: GapDetail[]; blocked: BlockedOutfit[] };
+
+const GAPS_TIMEOUT_MS = 18_000;
+const GAPS_MAX_TOKENS = 1024;
+const MAX_BLOCKED = 6;
 
 const GAPS_TOOL = {
-  name: "wardrobe_gaps",
-  description: "Record the wardrobe's structural gaps.",
+  name: "wardrobe_gap_analysis",
+  description:
+    "Record the wardrobe's structural gaps (each with its leverage) and the " +
+    "near-miss outfits it almost makes.",
   strict: true,
   input_schema: {
     type: "object",
     additionalProperties: false,
     properties: {
-      gap_points: {
+      gaps: {
         type: "array",
-        items: { type: "string" },
         description:
           "Up to 4 distinct, specific things this wardrobe can't do, most important " +
-          "first, each its own short point — e.g. 'No footwear — nothing renders on " +
-          "the feet.', 'All tops, no bottoms. Add trousers.' Empty array when the " +
-          "wardrobe genuinely serves most needs.",
+          "(highest leverage) first. Empty array when it genuinely serves most needs.",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            point: {
+              type: "string",
+              description:
+                "The gap as one short point in the BLOCK27 voice — cold, specific — " +
+                "e.g. 'No footwear — nothing renders on the feet.', 'All tops, no " +
+                "bottoms. Add trousers.'",
+            },
+            unlocks: {
+              type: "integer",
+              description:
+                "How many ADDITIONAL coherent outfits ONE piece filling this gap " +
+                "would make possible, counted against THIS wardrobe's actual pieces. " +
+                "Reason over the real garments, not a guess. 0 if it truly adds none.",
+            },
+          },
+          required: ["point", "unlocks"],
+        },
+      },
+      blocked: {
+        type: "array",
+        description:
+          "The outfits this wardrobe ALMOST makes: coherent compositions where every " +
+          "piece is present except exactly ONE. Most compelling first. Empty when " +
+          "there are none. Never include an outfit that's already buildable.",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            item_ids: {
+              type: "array",
+              items: { type: "string" },
+              description:
+                "The real wardrobe ids this outfit WOULD use — the pieces that already " +
+                "exist. Every id must be from the wardrobe I gave you. One or more.",
+            },
+            missing: {
+              type: "string",
+              description:
+                "The single missing piece, described concretely enough to picture or " +
+                "shop for — cut, colour, formality — e.g. 'dark wide-leg trousers', " +
+                "'black leather derbies'.",
+            },
+          },
+          required: ["item_ids", "missing"],
+        },
       },
     },
-    required: ["gap_points"],
+    required: ["gaps", "blocked"],
   },
 } as unknown as Anthropic.Tool;
 
-export async function composeGaps(
+export async function composeGapAnalysis(
   garments: { id: string; analysis: GarmentAnalysis }[],
   occasion: string | undefined,
   language: Language,
   prior: PriorOutfit[],
-): Promise<string[]> {
+): Promise<GapAnalysis> {
   const client = new Anthropic({ timeout: GAPS_TIMEOUT_MS, maxRetries: 0 });
 
   const wardrobe = garments.map((g) => wardrobeLine(g.id, g.analysis)).join("\n");
@@ -441,11 +506,11 @@ export async function composeGaps(
           .map((p, i) => `  ${i + 1}. angle "${p.angle}" — [${p.item_ids.join(", ")}]`)
           .join("\n")}`
       : "\n\nNo outfits could be built from this wardrobe.";
-  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}${headed}${built}\n\nNow assess the GAPS only. What can this wardrobe genuinely not do? Up to 4 distinct, specific points, most important first. Don't restate what the built outfits already cover. Empty array if it genuinely serves most needs — never invent a gap to fill the list.`;
+  const prompt = `Wardrobe (${garments.length} pieces):\n${wardrobe}${headed}${built}\n\nAssess this wardrobe as a SYSTEM. Two things:\n1. GAPS: up to 4 distinct, specific things it genuinely can't do, most important first. For each, count how many ADDITIONAL coherent outfits one piece filling that gap would unlock across the actual pieces above — a real number. Don't restate what the built outfits cover. Empty if it serves most needs; never invent a gap.\n2. BLOCKED: the outfits it ALMOST makes — coherent looks where every piece is present except exactly ONE. Give the real ids of the pieces it would use and describe the one missing piece. Only true near-misses; never an outfit that's already buildable, never more than one piece missing.`;
 
   const system = `${SYSTEM_CORE}
 
-You are assessing wardrobe gaps only — do not compose outfits. Record them with the wardrobe_gaps tool, in the BLOCK27 voice: cold, specific, on the user's side against a thin wardrobe.`;
+You are assessing the wardrobe as a system — do not compose finished outfits. Record the gaps and near-misses with the wardrobe_gap_analysis tool, in the BLOCK27 voice: cold, specific, on the user's side against a thin wardrobe. Every id you cite must be a real id from the wardrobe.`;
 
   const response = await client.messages.create({
     model: MODEL,
@@ -453,17 +518,48 @@ You are assessing wardrobe gaps only — do not compose outfits. Record them wit
     system: system + languageInstruction(language),
     thinking: { type: "disabled" },
     tools: [GAPS_TOOL],
-    tool_choice: { type: "tool", name: "wardrobe_gaps" },
+    tool_choice: { type: "tool", name: "wardrobe_gap_analysis" },
     messages: [{ role: "user", content: prompt }],
   });
 
   const block = response.content.find((b) => b.type === "tool_use");
   if (!block || block.type !== "tool_use") {
-    throw new Error("Gap assessment did not return a result");
+    throw new Error("Gap analysis did not return a result");
   }
-  const raw = block.input as { gap_points?: unknown };
-  return (Array.isArray(raw.gap_points) ? raw.gap_points : [])
-    .map((p) => (typeof p === "string" ? p.trim() : ""))
-    .filter((p) => p.length > 0)
+  const raw = block.input as { gaps?: unknown; blocked?: unknown };
+
+  const details: GapDetail[] = (Array.isArray(raw.gaps) ? raw.gaps : [])
+    .map((g): GapDetail | null => {
+      const o = (g ?? {}) as { point?: unknown; unlocks?: unknown };
+      const text = typeof o.point === "string" ? o.point.trim() : "";
+      if (!text) return null;
+      const n = Number(o.unlocks);
+      const unlocks = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+      return { text, unlocks };
+    })
+    .filter((d): d is GapDetail => d !== null)
     .slice(0, 4);
+
+  // Validate every blocked outfit's ids against the real wardrobe — a hallucinated
+  // id never reaches the client. Drop entries with no real pieces or no missing
+  // piece named.
+  const validIds = new Set(garments.map((g) => g.id));
+  const blocked: BlockedOutfit[] = (Array.isArray(raw.blocked) ? raw.blocked : [])
+    .map((b): BlockedOutfit | null => {
+      const o = (b ?? {}) as { item_ids?: unknown; missing?: unknown };
+      const ids = Array.from(
+        new Set(
+          (Array.isArray(o.item_ids) ? o.item_ids : []).filter(
+            (id): id is string => typeof id === "string" && validIds.has(id),
+          ),
+        ),
+      );
+      const missing = typeof o.missing === "string" ? o.missing.trim() : "";
+      if (ids.length === 0 || !missing) return null;
+      return { item_ids: ids, missing };
+    })
+    .filter((b): b is BlockedOutfit => b !== null)
+    .slice(0, MAX_BLOCKED);
+
+  return { details, blocked };
 }
