@@ -38,7 +38,10 @@ export function parseCapError(
 
 const CAP: Record<MeteredOp, (t: Tier) => number> = {
   composition: (t) => TIERS[t].compositionsPerMonth,
-  render: (t) => TIERS[t].tryOnsPerMonth,
+  // Try-on is off for launch and no longer in the tier config — 0 allowance for
+  // everyone. The render route short-circuits before this while TRYON_OPEN is
+  // off; restore the per-tier number here when the hand returns.
+  render: () => 0,
   shopping: (t) => TIERS[t].shoppingPerMonth,
 };
 

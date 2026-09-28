@@ -233,9 +233,9 @@ Run **Query E** with their email to see their plan.
      env var is wrong or missing. Fix it (env list at bottom), then have them
      re-trigger (in Whop you can resend the webhook event).
 3. **As a manual last resort** (only if you've confirmed real payment): you can
-   set their plan by hand in Supabase — run **Query F**, replacing the email and
-   the tier (`premium`, `pro`, or `boss`). This is editing live user data, so
-   double-check the email first.
+   set their plan by hand in Supabase — run **Query F**, replacing the email (the
+   paid tier is `block27`). This is editing live user data, so double-check the
+   email first.
 4. **Just to test on your own account** without paying: add your user id to the
    **`PAID_OVERRIDE_UIDS`** env var (comma-separated). That gives *only* those
    accounts full access. Remove yourself when done. Never put a real customer
@@ -373,9 +373,7 @@ see *why* renders/outfits/shopping are failing.
 select
   count(*) as total_users,
   count(*) filter (where plan_tier is not null and plan_tier <> 'free') as paying_users,
-  count(*) filter (where plan_tier = 'premium') as premium,
-  count(*) filter (where plan_tier = 'pro') as pro,
-  count(*) filter (where plan_tier = 'boss') as boss
+  count(*) filter (where plan_tier = 'block27') as block27
 from users;
 ```
 
@@ -409,7 +407,7 @@ used this billing cycle.
 real payment — Section 4c). Replace the email and the tier.
 ```sql
 update public.users
-set plan_tier = 'pro',            -- 'premium' | 'pro' | 'boss'
+set plan_tier = 'block27',        -- the single paid tier
     subscription_status = 'active'
 where id = (select id from auth.users where email = 'someone@example.com');
 ```
