@@ -2,9 +2,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Job } from "@/lib/jobs";
 import {
-  composeGaps,
+  composeGapAnalysis,
   composeNextOutfit,
   type PriorOutfit,
+  type GapDetail,
+  type BlockedOutfit,
 } from "@/lib/brain/composeOutfits";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import { acceptOutfit } from "@/lib/jobs/handlers/validate";
@@ -74,7 +76,7 @@ export async function handleComposition(
       .eq("generation", newGen);
     const { data: gen } = await admin
       .from("users")
-      .select("latest_gap, latest_gap_points")
+      .select("latest_gap, latest_gap_points, latest_gap_details, latest_blocked_outfits")
       .eq("id", userId)
       .maybeSingle();
     return {
@@ -82,6 +84,8 @@ export async function handleComposition(
         count: count ?? 0,
         gap: (gen?.latest_gap as string) ?? "",
         gapPoints: (gen?.latest_gap_points as string[]) ?? [],
+        gapDetails: (gen?.latest_gap_details as GapDetail[]) ?? [],
+        blocked: (gen?.latest_blocked_outfits as BlockedOutfit[]) ?? [],
       },
     };
   }
@@ -161,10 +165,21 @@ export async function handleComposition(
         .update({
           latest_gap: line,
           latest_gap_points: [line],
+          latest_gap_details: [{ text: line, unlocks: 0 }],
+          latest_blocked_outfits: [],
           latest_gap_at: new Date().toISOString(),
         })
         .eq("id", userId);
-      return { result: { capped: true, count: 0, gap: line, gapPoints: [line] } };
+      return {
+        result: {
+          capped: true,
+          count: 0,
+          gap: line,
+          gapPoints: [line],
+          gapDetails: [{ text: line, unlocks: 0 }],
+          blocked: [],
+        },
+      };
     }
     throw e;
   }
@@ -181,32 +196,44 @@ export async function handleComposition(
 
   // Reliable gap: a dedicated pass, because the streaming composer only emits
   // gap_points on a terminal 'done' step, which never fires when the outfit cap is
-  // hit — so the gap came back empty after every full generation. Best-effort: a
-  // gap-read failure must not fail a generation whose outfits already swapped in.
-  let gapPoints: string[] = [];
+  // hit — so the gap came back empty after every full generation. Now it also
+  // returns per-gap leverage (unlocks) and the near-miss "blocked" outfits.
+  // Best-effort: a gap-read failure must not fail a generation whose outfits
+  // already swapped in.
+  let details: GapDetail[] = [];
+  let blocked: BlockedOutfit[] = [];
   try {
-    gapPoints = await composeGaps(garments, occasion, language, prior);
+    const analysis = await composeGapAnalysis(garments, occasion, language, prior);
+    details = analysis.details;
+    blocked = analysis.blocked;
   } catch (e) {
     console.error(
-      "[composition] gap assessment failed",
+      "[composition] gap analysis failed",
       e instanceof Error ? e.message : "",
     );
   }
 
-  // Persist the gap for the outfits/settings view.
-  const points =
-    prior.length === 0 && gapPoints.length === 0
-      ? [nothingCoheresGap(language)]
-      : gapPoints;
+  // Persist the gap for the outfits/settings view. gap_points stays the plain
+  // string list (backward compatible); gap_details carries the same points plus
+  // their unlock counts; blocked_outfits are the near-misses.
+  const gapDetails: GapDetail[] =
+    prior.length === 0 && details.length === 0
+      ? [{ text: nothingCoheresGap(language), unlocks: 0 }]
+      : details;
+  const points = gapDetails.map((d) => d.text);
   const gap = points.join(" ");
   await admin
     .from("users")
     .update({
       latest_gap: gap,
       latest_gap_points: points,
+      latest_gap_details: gapDetails,
+      latest_blocked_outfits: blocked,
       latest_gap_at: new Date().toISOString(),
     })
     .eq("id", userId);
 
-  return { result: { count: prior.length, gap, gapPoints: points } };
+  return {
+    result: { count: prior.length, gap, gapPoints: points, gapDetails, blocked },
+  };
 }

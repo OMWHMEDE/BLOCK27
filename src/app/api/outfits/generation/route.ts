@@ -54,13 +54,21 @@ export async function GET(request: Request) {
   // has published them, so the client refreshes to the normal outfits list).
   const outfits = status === "done" ? [] : await listDraftOutfits(supabase, user.id);
   const result =
-    (job.result as { gap?: string; gapPoints?: string[]; capped?: boolean } | null) ?? null;
+    (job.result as {
+      gap?: string;
+      gapPoints?: string[];
+      gapDetails?: { text: string; unlocks: number }[];
+      blocked?: { item_ids: string[]; missing: string }[];
+      capped?: boolean;
+    } | null) ?? null;
 
   return NextResponse.json({
     status,
     outfits,
     gap: result?.gap ?? null,
     gapPoints: result?.gapPoints ?? null,
+    gapDetails: result?.gapDetails ?? null,
+    blocked: result?.blocked ?? null,
     capped: result?.capped === true,
   });
 }
