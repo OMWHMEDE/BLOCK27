@@ -6,6 +6,7 @@ import { enqueueJob } from "@/lib/jobs";
 import { runJob } from "@/lib/jobs/run";
 import { getPlan } from "@/lib/plan";
 import { atOrOverCap } from "@/lib/limits";
+import { shoppingUsed } from "@/lib/uiStrings";
 import { paymentsOpen } from "@/lib/payments";
 import { ERR_GENERIC } from "@/lib/support";
 
@@ -62,6 +63,11 @@ export async function POST(request: Request) {
 
   // Reserve a consultation slot up front (fail closed). Refunded on terminal job
   // failure via the job's reserved coordinates.
+  // The user's language, used for the localized cap note below and passed into
+  // the job (the note is produced without a model call, so it isn't localized by
+  // the brain — translate it here, the same way the generate gap is).
+  const language = await getUserLanguage(supabase, user.id);
+
   const plan = await getPlan(user.id);
   const periodStart = plan.windowStart.toISOString();
   if (!plan.exempt) {
@@ -71,7 +77,8 @@ export async function POST(request: Request) {
     if (over) {
       return NextResponse.json({
         ok: true,
-        note: `You've used all ${cap} consultations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`,
+        capped: true,
+        note: shoppingUsed(language, cap, paymentsOpen()),
       });
     }
 
@@ -90,12 +97,12 @@ export async function POST(request: Request) {
     if (!reserved) {
       return NextResponse.json({
         ok: true,
-        note: `You've used all ${plan.shoppingPerMonth} consultations this cycle.${paymentsOpen() ? " Upgrade for more." : ""}`,
+        capped: true,
+        note: shoppingUsed(language, plan.shoppingPerMonth, paymentsOpen()),
       });
     }
   }
 
-  const language = await getUserLanguage(supabase, user.id);
   const jobId = await enqueueJob(supabase, {
     kind: "shopping",
     payload: { budget, language },
@@ -150,10 +157,12 @@ export async function GET(request: Request) {
     }
   }
 
-  const result = (job.result as { advice?: string; count?: number } | null) ?? null;
+  const result =
+    (job.result as { advice?: string; count?: number; capped?: boolean } | null) ?? null;
   return NextResponse.json({
     status,
     advice: result?.advice ?? null,
     count: result?.count ?? null,
+    capped: result?.capped === true,
   });
 }

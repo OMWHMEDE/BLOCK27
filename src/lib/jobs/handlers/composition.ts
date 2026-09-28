@@ -164,7 +164,7 @@ export async function handleComposition(
           latest_gap_at: new Date().toISOString(),
         })
         .eq("id", userId);
-      return { result: { count: 0, gap: line, gapPoints: [line] } };
+      return { result: { capped: true, count: 0, gap: line, gapPoints: [line] } };
     }
     throw e;
   }

@@ -6,6 +6,7 @@ import { searchUrl } from "@/lib/shopping/searchUrl";
 import { toLanguage, type Language } from "@/lib/lang";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import { parseCapError } from "@/lib/limits";
+import { shoppingUsed } from "@/lib/uiStrings";
 import { paymentsOpen } from "@/lib/payments";
 
 // Run a shopping consultation in the background. The reasoning call happens
@@ -107,10 +108,8 @@ export async function handleShopping(
           p_period_start: job.reserved_period,
         });
       }
-      const note = `You've used all ${cap.cap} consultations this cycle.${
-        paymentsOpen() ? " Upgrade for more." : ""
-      }`;
-      return { result: { count: 0, solid: false, advice: note } };
+      const note = shoppingUsed(language, cap.cap, paymentsOpen());
+      return { result: { capped: true, count: 0, solid: false, advice: note } };
     }
     throw new Error(`store failed: ${sessErr.message}`);
   }
