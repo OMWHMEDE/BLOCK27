@@ -66,8 +66,6 @@ export default function PricingPage() {
           </div>
 
           <TrustRow />
-          <HowTryOnsWork />
-          <Faqs />
         </main>
       </div>
       <SiteFooter />
@@ -174,111 +172,6 @@ function TrustRow() {
         </div>
       ))}
     </div>
-  );
-}
-
-function HowTryOnsWork() {
-  return (
-    <div className="mt-24 flex flex-col gap-8 border-t border-iron pt-10 sm:flex-row sm:items-start sm:gap-12">
-      <PhoneFigure />
-      <div className="max-w-md">
-        <h2 className="text-2xl font-black uppercase tracking-[-0.03em] text-paper">
-          How try-ons work
-        </h2>
-        <p className="mt-4 leading-relaxed text-ash">
-          A try-on renders the chosen outfit onto your own base photo, at full
-          quality — so everything rides on that base photo. Shoot it full-body,
-          plain wall, good light; we show you exactly how. It rarely goes wrong,
-          but a finished try-on counts toward your allowance, so start from a base
-          you&rsquo;re happy with.
-        </p>
-        <Link
-          href="/wardrobe"
-          className="mt-6 inline-block text-xs uppercase tracking-[0.08em] text-bone underline underline-offset-4 hover:text-paper"
-        >
-          Try it now →
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-const FAQ = [
-  {
-    q: "Can I cancel anytime?",
-    a: `Yes — your plan is billed through Whop, so cancel any time through Whop or by emailing ${SUPPORT_EMAIL}. Billing stops and your access runs to the end of the period you have already paid for. Cancelling does not refund that period: a refund is only possible if you haven't used a try-on yet.`,
-  },
-  {
-    q: "Can I get a refund?",
-    a: "Only if you haven't used a try-on. The stylist is free to try first, so you can see BLOCK27 work before you pay. Once you've rendered an outfit on a paid plan, that's a real cost on our side and the charge isn't refundable. Full details are in the Refund policy.",
-  },
-  {
-    q: "What if a try-on comes out wrong?",
-    a: "It rarely happens, and we're sorry when it does. A try-on is built on your base photo, so a weak base is almost always the cause — shoot it full-body, plain wall, good light (we show you exactly how). A finished try-on counts toward your allowance, so start from a base you're happy with. If something genuinely breaks on our side, it's retried automatically.",
-  },
-  {
-    q: "How do outfit generations work?",
-    a: "The stylist reads your wardrobe as text and composes outfits up to your plan's monthly allowance. The try-on is the separate, paid step that renders one onto your body.",
-  },
-];
-
-function Faqs() {
-  return (
-    <div className="mt-24">
-      <h2 className="text-2xl font-black uppercase tracking-[-0.03em] text-paper">
-        FAQs
-      </h2>
-      <div className="mt-8">
-        {FAQ.map((f) => (
-          <details
-            key={f.q}
-            className="group border-t border-iron last:border-b"
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 [&::-webkit-details-marker]:hidden">
-              <span className="text-bone">{f.q}</span>
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4 shrink-0 text-ash transition-transform duration-200 group-open:rotate-180"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-            </summary>
-            <p className="max-w-2xl pb-6 pr-8 text-sm leading-relaxed text-ash">
-              {f.a}
-            </p>
-          </details>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// A small monochrome phone with a standing figure — a physical object, so a
-// little corner rounding is allowed (the one place the brand permits it).
-function PhoneFigure() {
-  return (
-    <svg
-      viewBox="0 0 96 132"
-      className="h-32 w-auto shrink-0 text-iron"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      aria-hidden="true"
-    >
-      <rect x="8" y="4" width="80" height="124" rx="10" />
-      <line x1="40" y1="14" x2="56" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <g className="text-ash" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="48" cy="42" r="8" />
-        <path d="M34 92c0-12 4-24 14-24s14 12 14 24" />
-        <path d="M40 92v22M56 92v22" />
-      </g>
-    </svg>
   );
 }
 
