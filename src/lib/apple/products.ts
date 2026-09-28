@@ -1,39 +1,43 @@
-import { PAID_TIERS, type PaidTier } from "@/lib/whop/plans";
+import { PAID_TIERS, type PaidTier, type BillingPeriod } from "@/lib/whop/plans";
 import type { EntitlementAction } from "@/lib/apple/types";
 
-// iOS prices, set higher than web to absorb Apple's commission. Reference/display
+// iOS price, set higher than web to absorb Apple's commission. Reference/display
 // only — StoreKit shows the real localized price and entitlement never trusts a
 // price sent from a client. The tier is what grants access; this is the number a
-// pricing screen would echo. (Web prices live in @/lib/whop/plans TIERS.priceUsd.)
+// pricing screen would echo. (Web prices live in @/lib/whop/plans TIERS.)
 export const APPLE_PRICES_USD: Record<PaidTier, number> = {
-  premium: 16.99,
-  pro: 27.99,
-  boss: 54.99,
+  block27: 12.99,
 };
 
 // Apple product ids are configured in App Store Connect and ship inside the app,
 // so they are not secret — but they differ per environment, so they come from env
-// (APPLE_PRODUCT_PREMIUM / _PRO / _BOSS), mirroring the Whop plan-id envs. Unset
-// means that tier isn't purchasable on iOS yet.
-function productEnv(tier: PaidTier): string | undefined {
-  const raw = process.env[`APPLE_PRODUCT_${tier.toUpperCase()}`];
+// (APPLE_PRODUCT_BLOCK27 monthly, APPLE_PRODUCT_BLOCK27_YEARLY yearly), mirroring
+// the Whop plan-id envs. Unset means that option isn't purchasable on iOS yet.
+function productEnv(tier: PaidTier, period: BillingPeriod): string | undefined {
+  const suffix = period === "yearly" ? "_YEARLY" : "";
+  const raw = process.env[`APPLE_PRODUCT_${tier.toUpperCase()}${suffix}`];
   const trimmed = raw?.trim();
   return trimmed ? trimmed : undefined;
 }
 
-export function appleProductId(tier: PaidTier): string | null {
-  return productEnv(tier) ?? null;
+export function appleProductId(
+  tier: PaidTier,
+  period: BillingPeriod = "monthly",
+): string | null {
+  return productEnv(tier, period) ?? null;
 }
 
-// Reverse map used by ingestion: which tier does this Apple product grant? null
-// when it matches no configured product — fail closed, grant nothing rather than
-// guess a tier.
+// Reverse map used by ingestion: which tier does this Apple product grant? Checks
+// both billing periods, since monthly and yearly are the same tier. null when it
+// matches no configured product — fail closed, grant nothing rather than guess.
 export function tierForAppleProduct(
   productId: string | null | undefined,
 ): PaidTier | null {
   if (!productId) return null;
   for (const tier of PAID_TIERS) {
-    if (productEnv(tier) === productId) return tier;
+    for (const period of ["monthly", "yearly"] as BillingPeriod[]) {
+      if (productEnv(tier, period) === productId) return tier;
+    }
   }
   return null;
 }

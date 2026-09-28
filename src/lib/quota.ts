@@ -2,9 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getPlan } from "@/lib/plan";
 import { TIERS, type Tier } from "@/lib/whop/plans";
 
-// Read-only usage for the settings screen. The try-on allowance is monthly and
-// per-tier (Premium 5, Pro 10, Boss 20, Free 0) — there is no daily cap. The
-// piece cap is plan-aware and lives in @/lib/plan.
+// Read-only usage for the settings screen. Try-on is off for launch, so
+// tryOnsPerMonth is 0 for every tier right now (the field is kept so the screen
+// still compiles for when the hand returns). The piece cap is plan-aware and
+// lives in @/lib/plan.
 
 export type Quota = {
   tier: Tier;

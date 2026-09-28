@@ -11,11 +11,11 @@ export const metadata = {
   title: "BLOCK27 — Membership",
 };
 
-// The membership page. Four levels side by side on the faint 27 field: Free is a
-// full card, Pro is reversed out of a paper block (the house device) to mark it
-// recommended without a badge or a second colour. Every number reads from TIERS,
-// so pricing here can never drift from the quota gate or the webhook. CTAs hand
-// off to the Whop checkout at /upgrade; when payments are closed each paid CTA
+// The membership page. Two levels side by side on the faint 27 field: Free is a
+// full card, BLOCK27 is reversed out of a paper block (the house device) to mark
+// it recommended without a badge or a second colour. Every number reads from
+// TIERS, so pricing here can never drift from the quota gate or the webhook. CTAs
+// hand off to the Whop checkout at /upgrade; when payments are closed each paid CTA
 // becomes the calm "coming soon" instead. Structure is hairlines and space, mono
 // numerals, border-radius 0 — no gradients, no glow.
 
@@ -27,9 +27,8 @@ function features(t: Tier): string[] {
   const c = TIERS[t];
   return [
     `${c.pieces} pieces`,
-    `${c.compositionsPerMonth} outfit generations`,
-    c.tryOnsPerMonth === 0 ? "No try-ons" : `${c.tryOnsPerMonth} try-ons / mo`,
-    `${c.shoppingPerMonth} shop recs / mo`,
+    `${c.compositionsPerMonth} outfit generations / mo`,
+    `${c.shoppingPerMonth} shopping consultations / mo`,
   ];
 }
 
@@ -50,17 +49,17 @@ export default function PricingPage() {
             Choose your level.
           </h1>
           <p className="mt-6 max-w-lg leading-snug text-ash">
-            Your wardrobe and stylist are free to start. Pay for more wardrobe
-            capacity, more outfit generations, and the try-on — seeing the outfit
-            on your own body.
+            Your wardrobe and stylist are free to start. Upgrade for far more
+            wardrobe capacity, more outfit generations, and more shopping
+            consultations each month.
           </p>
           <p className="mt-6 font-mono text-xs uppercase tracking-[0.12em] text-ash">
-            Billed monthly <span className="text-iron">·</span> Cancel anytime{" "}
+            Monthly or yearly <span className="text-iron">·</span> Cancel anytime{" "}
             <span className="text-iron">·</span> Secure checkout
           </p>
 
-          {/* The four levels. One column on mobile, two on small, four on wide. */}
-          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* The two levels. One column on mobile, two side by side above. */}
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-3xl">
             {TIER_ORDER.map((t) => (
               <TierCard key={t} tier={t} open={open} />
             ))}
@@ -79,15 +78,15 @@ export default function PricingPage() {
 function TierCard({ tier, open }: { tier: Tier; open: boolean }) {
   const c = TIERS[tier];
   const isFree = tier === "free";
-  const isPro = tier === "pro";
+  const isPaid = tier === "block27";
 
   return (
     <section
-      className={`flex flex-col bg-void ${isPro ? "border border-paper" : "border border-iron"}`}
+      className={`flex flex-col bg-void ${isPaid ? "border border-paper" : "border border-iron"}`}
     >
-      {/* Header. Pro reverses out of a solid paper block — recommended, stated
-          in the house device, not a coloured pill. */}
-      {isPro ? (
+      {/* Header. The paid tier reverses out of a solid paper block — recommended,
+          stated in the house device, not a coloured pill. */}
+      {isPaid ? (
         <div className="bg-paper px-6 pt-4 pb-5">
           <p className="font-mono text-[0.6rem] uppercase tracking-[0.24em] text-void/70">
             Recommended
@@ -109,6 +108,11 @@ function TierCard({ tier, open }: { tier: Tier; open: boolean }) {
           {price(c.priceUsd)}
           <span className="text-sm text-ash">/mo</span>
         </p>
+        {c.priceYearlyUsd > 0 ? (
+          <p className="mt-1 font-mono text-xs tabular-nums text-ash">
+            or {price(c.priceYearlyUsd)}/yr
+          </p>
+        ) : null}
 
         <ul className="mt-6 flex flex-col gap-2 border-t border-iron pt-6 text-sm leading-snug text-bone">
           {features(tier).map((f) => (
@@ -128,8 +132,8 @@ function TierCard({ tier, open }: { tier: Tier; open: boolean }) {
             </>
           ) : open ? (
             <Link
-              href={`/upgrade?tier=${tier}`}
-              className={`${isPro ? btnPrimary : btnSecondary} w-full`}
+              href="/upgrade"
+              className={`${isPaid ? btnPrimary : btnSecondary} w-full`}
             >
               Choose {c.label}
             </Link>

@@ -3,11 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 
 // The plan line. The paid tier a user is on drives every usage limit: how many
-// pieces their wardrobe holds and how many try-ons they get per month. The four
-// tiers and their numbers live in @/lib/whop/plans (the same source /pricing
-// reads); this file resolves a user to their tier and surfaces those limits.
+// pieces their wardrobe holds and how many outfit generations / shopping consults
+// they get per month. The tiers and their numbers live in @/lib/whop/plans (the
+// same source /pricing reads); this file resolves a user to their tier and
+// surfaces those limits.
 //
-//   Free 15 pieces / 0 try-ons · Premium 30/5 · Pro 60/10 · Boss 100/20
+//   Free    10 pieces · 5 generations · 3 shopping consults / mo
+//   BLOCK27 150 pieces · 45 generations · 15 shopping consults / mo
+//
+// Try-on is switched off for launch, so tryOnsPerMonth is 0 here and not read from
+// the tier config; restore it when the hand returns.
 //
 // The tier comes from users.plan_tier, written by the Whop webhook on payment.
 // PAID_OVERRIDE_UIDS is a SCOPED testing allowlist: a comma-separated list of
@@ -138,14 +143,15 @@ export async function getPlan(userId: string): Promise<Plan> {
 
   const exempt = isOverriddenUid(userId);
 
-  // Effective tier: test accounts get Boss limits (everything, with caps off);
-  // otherwise the stored plan_tier. When plan_tier is absent (pre-migration), a
-  // paid status still grants paid access — default it to Pro so such an account
-  // isn't stranded on free piece limits.
+  // Effective tier: test accounts get the paid tier (everything, with caps off);
+  // otherwise the stored plan_tier (legacy premium/pro/boss collapse to the paid
+  // tier via toTier). When plan_tier is absent (pre-migration), a paid status
+  // still grants paid access — default it to the paid tier so such an account
+  // isn't stranded on free limits.
   let tier: Tier;
-  if (exempt) tier = "boss";
+  if (exempt) tier = "block27";
   else if (tierRaw) tier = toTier(tierRaw);
-  else tier = isPaidStatus(status) ? "pro" : "free";
+  else tier = isPaidStatus(status) ? "block27" : "free";
 
   const limits = TIERS[tier];
   const paid = exempt || tier !== "free" || isPaidStatus(status);
@@ -155,7 +161,8 @@ export async function getPlan(userId: string): Promise<Plan> {
     paid,
     status,
     pieceLimit: limits.pieces,
-    tryOnsPerMonth: limits.tryOnsPerMonth,
+    // Try-on is off for launch and no longer part of the tier config; 0 for all.
+    tryOnsPerMonth: 0,
     compositionsPerMonth: limits.compositionsPerMonth,
     shoppingPerMonth: limits.shoppingPerMonth,
     windowStart: usageWindowStart(anchor ?? createdAt ?? new Date()),

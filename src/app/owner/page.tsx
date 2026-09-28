@@ -50,9 +50,7 @@ async function load(admin: SupabaseClient) {
     usersToday,
     usersWeek,
     usersMonth,
-    premium,
-    pro,
-    boss,
+    paid,
     garmentsTotal,
     garments24,
     outfitsTotal,
@@ -69,9 +67,7 @@ async function load(admin: SupabaseClient) {
     n(pub("users").select("id", headCount).gte("created_at", iso(startOfTodayUTC))),
     n(pub("users").select("id", headCount).gte("created_at", iso(last7))),
     n(pub("users").select("id", headCount).gte("created_at", iso(last30))),
-    n(pub("users").select("id", headCount).eq("plan_tier", "premium")),
-    n(pub("users").select("id", headCount).eq("plan_tier", "pro")),
-    n(pub("users").select("id", headCount).eq("plan_tier", "boss")),
+    n(pub("users").select("id", headCount).neq("plan_tier", "free")),
     n(pub("garments").select("id", headCount)),
     n(pub("garments").select("id", headCount).gte("created_at", iso(last24h))),
     n(pub("outfits").select("id", headCount)),
@@ -107,11 +103,10 @@ async function load(admin: SupabaseClient) {
     }),
   );
 
-  const mrr =
-    premium * TIERS.premium.priceUsd +
-    pro * TIERS.pro.priceUsd +
-    boss * TIERS.boss.priceUsd;
-  const payingTotal = premium + pro + boss;
+  // Monthly proxy: paying accounts × the monthly price. Yearly plans are billed up
+  // front, so this understates true MRR for yearly subscribers — a rough figure.
+  const mrr = paid * TIERS.block27.priceUsd;
+  const payingTotal = paid;
 
   return {
     now,
@@ -119,9 +114,7 @@ async function load(admin: SupabaseClient) {
     usersToday,
     usersWeek,
     usersMonth,
-    premium,
-    pro,
-    boss,
+    paid,
     payingTotal,
     mrr,
     garmentsTotal,
@@ -204,15 +197,8 @@ export default async function OwnerPage() {
         {/* REVENUE */}
         <Section label="Monthly recurring revenue">
           <Big value={`$${money(d.mrr)}`} />
-          <Trio
-            items={[
-              ["Premium", fmt(d.premium)],
-              ["Pro", fmt(d.pro)],
-              ["Boss", fmt(d.boss)],
-            ]}
-          />
           <p className="mt-3 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-ash">
-            {fmt(d.payingTotal)} paying
+            {fmt(d.payingTotal)} paying <span className="text-iron">·</span> BLOCK27
           </p>
         </Section>
 

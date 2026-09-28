@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { authenticateRequest } from "@/lib/supabase/server";
 import { whopServer } from "@/lib/whop/server";
-import { whopPlanId, PAID_TIERS, type PaidTier } from "@/lib/whop/plans";
+import {
+  whopPlanId,
+  PAID_TIERS,
+  type PaidTier,
+  type BillingPeriod,
+} from "@/lib/whop/plans";
 import { paymentsOpen } from "@/lib/payments";
 import { ERR_RETRY } from "@/lib/support";
 
@@ -13,6 +18,10 @@ export const runtime = "nodejs";
 
 function isPaidTier(v: unknown): v is PaidTier {
   return typeof v === "string" && (PAID_TIERS as string[]).includes(v);
+}
+
+function isPeriod(v: unknown): v is BillingPeriod {
+  return v === "monthly" || v === "yearly";
 }
 
 export async function POST(request: Request) {
@@ -29,12 +38,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "unavailable" }, { status: 503 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { tier?: unknown };
+  const body = (await request.json().catch(() => ({}))) as {
+    tier?: unknown;
+    period?: unknown;
+  };
   if (!isPaidTier(body.tier)) {
     return NextResponse.json({ ok: false, error: "invalid tier" }, { status: 400 });
   }
+  const period: BillingPeriod = isPeriod(body.period) ? body.period : "monthly";
 
-  const planId = whopPlanId(body.tier);
+  const planId = whopPlanId(body.tier, period);
   const whop = whopServer();
   if (!planId || !whop) {
     // Plan ids / API key not configured yet — checkout isn't live.

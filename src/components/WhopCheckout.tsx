@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import type { PaidTier } from "@/lib/whop/plans";
+import type { PaidTier, BillingPeriod } from "@/lib/whop/plans";
 import { ERR_RETRY } from "@/lib/support";
 
 // The Whop embed is a browser-only iframe widget — load it client-side only so
@@ -17,7 +17,13 @@ const WhopCheckoutEmbed = dynamic(
 // session (which stamps the buyer's user id as metadata), then renders Whop's
 // embedded checkout for that session. A failure shows the house cold line — no
 // provider detail. Styled to the brand: paper accent on a void ground, no radius.
-export function WhopCheckout({ tier }: { tier: PaidTier }) {
+export function WhopCheckout({
+  tier,
+  period = "monthly",
+}: {
+  tier: PaidTier;
+  period?: BillingPeriod;
+}) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +35,7 @@ export function WhopCheckout({ tier }: { tier: PaidTier }) {
         const res = await fetch("/api/whop/checkout-session", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ tier }),
+          body: JSON.stringify({ tier, period }),
         });
         const body = (await res.json().catch(() => ({}))) as {
           ok?: boolean;
@@ -49,7 +55,7 @@ export function WhopCheckout({ tier }: { tier: PaidTier }) {
     return () => {
       alive = false;
     };
-  }, [tier]);
+  }, [tier, period]);
 
   if (error) {
     return (
