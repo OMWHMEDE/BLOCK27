@@ -44,6 +44,18 @@ const GENERATIONS_USED: Record<Language, string> = {
   ko: "이번 주기의 생성 {n}회를 모두 사용했습니다.",
 };
 
+// "You've used all {n} consultations this cycle." — {n} substituted at call time.
+const SHOPPING_USED: Record<Language, string> = {
+  en: "You've used all {n} consultations this cycle.",
+  fr: "Tu as utilisé tes {n} consultations de ce cycle.",
+  es: "Has usado tus {n} consultas de este ciclo.",
+  pt: "Você usou as suas {n} consultas deste ciclo.",
+  de: "Du hast alle {n} Beratungen dieses Zyklus verbraucht.",
+  ar: "لقد استخدمت كل الـ{n} استشارات في هذه الدورة.",
+  ja: "今サイクルの{n}回の相談をすべて使いました。",
+  ko: "이번 주기의 상담 {n}회를 모두 사용했습니다.",
+};
+
 // " Upgrade for more." — appended (with a leading space) when checkout is open.
 const UPGRADE_FOR_MORE: Record<Language, string> = {
   en: " Upgrade for more.",
@@ -66,5 +78,10 @@ export function nothingCoheresGap(lang: Language): string {
 
 export function generationsUsed(lang: Language, n: number, upgrade: boolean): string {
   const base = (GENERATIONS_USED[lang] ?? GENERATIONS_USED.en).replace("{n}", String(n));
+  return upgrade ? base + (UPGRADE_FOR_MORE[lang] ?? UPGRADE_FOR_MORE.en) : base;
+}
+
+export function shoppingUsed(lang: Language, n: number, upgrade: boolean): string {
+  const base = (SHOPPING_USED[lang] ?? SHOPPING_USED.en).replace("{n}", String(n));
   return upgrade ? base + (UPGRADE_FOR_MORE[lang] ?? UPGRADE_FOR_MORE.en) : base;
 }

@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const { over, cap } = await atOrOverCap(supabase, user.id, "composition", periodStart);
     if (over) {
       const line = generationsUsed(language, cap, paymentsOpen());
-      return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
+      return NextResponse.json({ ok: true, capped: true, count: 0, gap: line, gapPoints: [line] });
     }
 
     const { data: reserved, error: reserveErr } = await supabase.rpc("reserve_usage", {
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     }
     if (!reserved) {
       const line = generationsUsed(language, plan.compositionsPerMonth, paymentsOpen());
-      return NextResponse.json({ ok: true, count: 0, gap: line, gapPoints: [line] });
+      return NextResponse.json({ ok: true, capped: true, count: 0, gap: line, gapPoints: [line] });
     }
   }
 
