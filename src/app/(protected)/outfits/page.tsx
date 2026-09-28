@@ -10,6 +10,7 @@ import { DownloadRender } from "@/components/DownloadRender";
 import { LockField } from "@/components/LockField";
 import { AppHeader } from "@/components/AppHeader";
 import { paymentsOpen } from "@/lib/payments";
+import { tryOnOpen } from "@/lib/tryon";
 import { isRenderable } from "@/lib/render/categories";
 
 export default async function OutfitsPage() {
@@ -39,6 +40,9 @@ export default async function OutfitsPage() {
   const outfits = await listOutfits(supabase, user.id);
   const paid = (await getPlan(user.id)).paid;
   const soon = !paymentsOpen();
+  // Try-on switched off for launch (TRYON_OPEN): no render button, no upgrade
+  // lock — a single neutral "opens soon" for everyone.
+  const tryon = tryOnOpen();
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
@@ -64,7 +68,7 @@ export default async function OutfitsPage() {
       ) : (
         <ul className="flex flex-col gap-12">
           {outfits.map((o) => (
-            <OutfitCard key={o.id} outfit={o} paid={paid} soon={soon} />
+            <OutfitCard key={o.id} outfit={o} paid={paid} soon={soon} tryon={tryon} />
           ))}
         </ul>
       )}
@@ -76,11 +80,18 @@ function OutfitCard({
   outfit,
   paid,
   soon,
+  tryon,
 }: {
   outfit: OutfitView;
   paid: boolean;
   soon: boolean;
+  tryon: boolean;
 }) {
+  const tryOnSoon = (
+    <span className="text-xs uppercase tracking-[0.08em] text-ash">
+      Try-on opens soon.
+    </span>
+  );
   // Pieces the hand can't place on the body (shoes, accessories). Named
   // honestly on the render so their own shoes are never mistaken for the pick.
   const unplaced = outfit.items.filter((it) => !isRenderable(it.category));
@@ -130,7 +141,9 @@ function OutfitCard({
         <div className="mt-8 flex justify-center">{pieces}</div>
 
         <div className="mt-10 flex flex-col items-center gap-4">
-          {paid ? (
+          {!tryon ? (
+            tryOnSoon
+          ) : paid ? (
             <RenderOutfit outfitId={outfit.id} hasRender center />
           ) : soon ? (
             <span className="text-xs uppercase tracking-[0.08em] text-ash">
@@ -160,7 +173,9 @@ function OutfitCard({
         <p className="text-xs uppercase tracking-[0.08em] text-ash">The pieces</p>
         {pieces}
       </div>
-      {paid ? (
+      {!tryon ? (
+        tryOnSoon
+      ) : paid ? (
         <RenderOutfit outfitId={outfit.id} hasRender={false} />
       ) : (
         <LockField

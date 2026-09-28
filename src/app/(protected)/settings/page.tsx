@@ -6,6 +6,7 @@ import { getPlan } from "@/lib/plan";
 import { AppHeader } from "@/components/AppHeader";
 import { LockField } from "@/components/LockField";
 import { paymentsOpen } from "@/lib/payments";
+import { tryOnOpen } from "@/lib/tryon";
 import { logout } from "@/app/logout/actions";
 import { btnNav, btnSecondary } from "@/lib/ui";
 import { EditProfile } from "./EditProfile";
@@ -28,6 +29,7 @@ export default async function SettingsPage() {
     : [null, null, null, null];
   const paid = plan?.paid ?? false;
   const open = paymentsOpen();
+  const tryon = tryOnOpen();
 
   return (
     <main className="flex flex-1 flex-col px-8 py-16 max-w-2xl w-full mx-auto">
@@ -45,7 +47,11 @@ export default async function SettingsPage() {
       </Section>
 
       <Section label="Base photo">
-        {!paid ? (
+        {!tryon ? (
+          <p className="text-xs uppercase tracking-[0.08em] text-ash">
+            Try-on opens soon.
+          </p>
+        ) : !paid ? (
           <LockField
             className="w-24 aspect-[3/4]"
             message="Paid feature."
@@ -88,12 +94,14 @@ export default async function SettingsPage() {
               </p>
             ) : null}
             <dl className="flex flex-col gap-3 font-mono text-sm">
-              <QuotaRow
-                label="Try-ons this month"
-                used={quota.rendersMonth}
-                limit={quota.tryOnsPerMonth}
-                exempt={quota.exempt}
-              />
+              {tryon ? (
+                <QuotaRow
+                  label="Try-ons this month"
+                  used={quota.rendersMonth}
+                  limit={quota.tryOnsPerMonth}
+                  exempt={quota.exempt}
+                />
+              ) : null}
               <QuotaRow
                 label="Pieces"
                 used={quota.pieces}

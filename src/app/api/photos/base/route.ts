@@ -6,6 +6,7 @@ import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
 import { getPlan } from "@/lib/plan";
 import { paymentsOpen } from "@/lib/payments";
+import { tryOnOpen } from "@/lib/tryon";
 import {
   CONSENT_VERSION,
   hasBiometricConsent,
@@ -24,6 +25,13 @@ export async function POST(request: Request) {
   const { supabase, user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Try-on is switched off for launch (TRYON_OPEN). No base photo is captured or
+  // stored while it's closed. DELETE stays open below — a user can always destroy
+  // their biometric data.
+  if (!tryOnOpen()) {
+    return NextResponse.json({ ok: false, unavailable: true, reason: "Base photos open soon." });
   }
 
   // Base capture is paid-only. Free never uploads a base — the slot is locked

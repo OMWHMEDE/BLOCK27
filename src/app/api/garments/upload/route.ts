@@ -9,6 +9,7 @@ import { makeThumbnail } from "@/lib/images";
 import { gate } from "@/lib/moderation/gate";
 import { logModeration } from "@/lib/moderation/log";
 import { getPlan } from "@/lib/plan";
+import { parseCapError } from "@/lib/limits";
 import { paymentsOpen } from "@/lib/payments";
 import { touchLastActive } from "@/lib/biometric";
 
@@ -110,6 +111,22 @@ export async function POST(request: Request) {
   if (insErr) {
     const toRemove = thumbPath ? [path, thumbPath] : [path];
     await supabase.storage.from(USER_PHOTOS_BUCKET).remove(toRemove);
+    // The database piece-cap trigger (migration 0026) is the authoritative gate —
+    // it also catches the concurrency edge the pre-count check above can miss.
+    // Translate its refusal into the same friendly "full" message, never a raw
+    // database error.
+    const cap = parseCapError(insErr);
+    if (cap) {
+      return NextResponse.json({
+        ok: false,
+        full: true,
+        reason: plan.paid
+          ? `You're at the ${cap.cap}-piece cap.`
+          : paymentsOpen()
+            ? `${cap.cap} is the free limit. Upgrade for more.`
+            : `${cap.cap} is the free limit for now.`,
+      });
+    }
     return NextResponse.json({
       ok: false,
       reason: "Didn't save. Check your connection.",
