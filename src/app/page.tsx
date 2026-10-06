@@ -10,9 +10,9 @@ const IMG = {
   problem: "/landing/04-editorial-concrete-v4.jpg",
   wardrobe: "/landing/03-wardrobe-selection-v4.jpg",
   // App screenshot for the "It builds the outfit" section — uploaded separately.
-  buildsOutfit: "/landing/builds-the-outfit.jpg",
-  // Real try-on render for the "See it on you" section — uploaded separately.
-  result: "/landing/try-on-render.jpg",
+  buildsOutfit: "/landing/builds-the-outfit-v2.jpg",
+  // App screenshot for the "what your wardrobe can't do" gap section.
+  gap: "/landing/gap-section.jpg",
   closing: "/landing/02-story-rooftop-v4.jpg",
 };
 
@@ -96,7 +96,8 @@ export default function LandingPage() {
             You wear them wrong.
           </h1>
           <p className="landing-subline">
-            Photograph your wardrobe. It builds the outfits. See them on you.
+            Photograph your wardrobe. It builds the outfits. It tells you
+            what&rsquo;s missing.
           </p>
           <LandingCta appOpen={appOpen} />
         </div>
@@ -143,16 +144,31 @@ export default function LandingPage() {
         <LandingCta appOpen={appOpen} />
       </div>
 
-      <section className="landing-result" aria-labelledby="result-title">
+      <section className="landing-section landing-section--gap" aria-labelledby="gap-title">
         <EditorialImage
-          src={IMG.result}
-          alt="A BLOCK27 try-on render — the chosen outfit on the user's own body."
-          className="landing-image--result"
-          sizes="100vw"
+          src={IMG.gap}
+          alt="The BLOCK27 app naming the gaps in a wardrobe, ranked by what each one costs."
+          className="landing-image--gap"
         />
-        <div className="landing-result__copy landing-copy-block">
-          <p className="landing-kicker">The result</p>
-          <h2 id="result-title">See it on you.</h2>
+        <div className="landing-section__copy landing-copy-block">
+          <p className="landing-kicker">The gap</p>
+          <h2 id="gap-title">It tells you what your wardrobe can&rsquo;t do.</h2>
+          <p>
+            It names the specific things your clothes can&rsquo;t make &mdash; and
+            ranks them by what each gap costs you.
+          </p>
+        </div>
+      </section>
+
+      <section className="landing-note" aria-labelledby="shop-title">
+        <div className="landing-copy-block">
+          <p className="landing-kicker">The plan</p>
+          <h2 id="shop-title">Then exactly what to buy.</h2>
+          <p>
+            It finds the pieces that close the biggest gaps first &mdash; what to
+            look for, and why it works with what you already own. Not a shop. A
+            plan.
+          </p>
         </div>
       </section>
 

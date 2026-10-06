@@ -399,6 +399,19 @@ body {
 .landing-image--wardrobe { grid-column: 2; width: min(82vw, 34rem); justify-self: start; }
 .landing-image--problem { justify-self: end; }
 .landing-image--reflection { justify-self: center; width: min(86vw, 34rem); }
+.landing-image--gap { grid-column: 2; width: min(82vw, 34rem); justify-self: start; }
+
+/* Gap section — image left, copy right (mirrors the wardrobe beat). */
+.landing-section--gap .landing-section__copy { grid-column: 3; }
+
+/* Shopping-assistant note — a short, centred statement, no image. */
+.landing-note {
+  display: grid;
+  place-items: center;
+  padding: clamp(5rem, 12vw, 9rem) 1.5rem;
+  text-align: center;
+}
+.landing-note .landing-copy-block { max-width: 40rem; }
 
 .landing-world-grid {
   grid-column: 1 / 3;
