@@ -6,7 +6,10 @@ const SITE = "https://www.block27.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
-  const paths = ["/", "/pricing", "/terms", "/privacy", "/refund"];
+  // Shopfront: only the landing and the legal pages are publicly reachable. The
+  // app pages and /pricing are gated behind the web-app switch, so they are not
+  // advertised to crawlers.
+  const paths = ["/", "/terms", "/privacy", "/refund"];
   return paths.map((path) => ({
     url: `${SITE}${path}`,
     lastModified,

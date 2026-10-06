@@ -41,3 +41,37 @@ export async function joinWaitlist(formData: FormData) {
 
   redirect("/waitlist?joined=1");
 }
+
+// Inline launch-notification capture for the landing page's CTA. Same waitlist
+// table and same duplicate-is-success handling as joinWaitlist, but it returns a
+// result instead of redirecting, so the landing shows an inline confirmation
+// without leaving the page. Swap this CTA for the App Store link once the app is
+// live.
+export type NotifyResult =
+  | { status: "idle" }
+  | { status: "ok" }
+  | { status: "error"; message: string };
+
+export async function notifyLaunch(email: string): Promise<NotifyResult> {
+  const clean = (email ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(clean)) {
+    return { status: "error", message: "That's not an email." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("waitlist").insert({ email: clean });
+
+  // 23505 = unique_violation: already on the list. That's a success — they're in.
+  if (error && error.code !== "23505") {
+    console.error(
+      "[waitlist] notify insert failed:",
+      error.code,
+      error.message,
+      error.details,
+      error.hint,
+    );
+    return { status: "error", message: "That didn't send. Try again." };
+  }
+
+  return { status: "ok" };
+}

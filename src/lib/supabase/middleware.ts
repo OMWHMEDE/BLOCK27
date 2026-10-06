@@ -5,6 +5,20 @@ import {
   GUEST_COOKIE_MAX_AGE,
   isGuestId,
 } from "@/lib/guest/identity";
+import { webAppOpen } from "@/lib/site";
+
+// Shopfront mode (WEB_APP_OPEN off): the only browser pages that resolve are the
+// landing, the legal pages (Apple/Google require them public), and the waitlist.
+// Everything else in the browser — the web app, web auth, pricing checkout —
+// redirects to the landing. The API under /api/* is always allowed: the iOS app
+// uses it, and each handler does its own auth.
+function isShopfrontAllowed(path: string): boolean {
+  if (path === "/") return true;
+  if (path.startsWith("/api/")) return true;
+  return ["/privacy", "/terms", "/refund", "/waitlist"].some(
+    (p) => path === p || path.startsWith(`${p}/`),
+  );
+}
 
 // Routes that require a session. An unauthenticated hit is redirected to /login.
 //
@@ -30,6 +44,19 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const path = request.nextUrl.pathname;
+
+  // Shopfront mode: the website is a landing page; the product lives in the iOS
+  // app. Serve only the landing, legal pages and waitlist in the browser; send
+  // every other browser route to the landing. No session work — and crucially no
+  // redirect for /api/*, which the iOS app depends on.
+  if (!webAppOpen()) {
+    if (isShopfrontAllowed(path)) return supabaseResponse;
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((p) => path.startsWith(p));
   const isAuthRoute = AUTH_PREFIXES.some((p) => path.startsWith(p));
 

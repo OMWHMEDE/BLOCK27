@@ -478,6 +478,13 @@ a password — never share or paste it anywhere but this settings page.
 | `ANTHROPIC_API_KEY` | **SECRET.** Pays for the "brain" | Uploading clothes, generating outfits, shopping all fail |
 | `CRON_SECRET` | **SECRET.** Password that lets the nightly crons run | The three nightly tasks (Section 4e) stop; stuck jobs never get cleaned/refunded |
 
+### Site mode (website vs. full web app)
+
+| Variable | What it's for | What breaks without it |
+|---|---|---|
+| `WEB_APP_OPEN` | Master switch for the website. **Leave it unset (or anything other than `true`) and the site is the shopfront**: landing page, legal pages, and the launch-email capture only. Set it to exactly `true` to bring back the full web app (sign in/up, wardrobe, generation, shopping, pricing checkout). | Unset = shopfront, which is the intended launch state. The iOS app is unaffected either way — it talks to `/api/*`, which always stays on. |
+| `TRYON_OPEN` | Master on/off for virtual try-on (the hand). `true` turns it on. | If not exactly `true`, try-on is off everywhere (intentional while it's not launched). |
+
 ### Needed for the paid try-on (the hand)
 
 | Variable | What it's for | What breaks without it |
