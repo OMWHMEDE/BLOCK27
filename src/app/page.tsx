@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
+import { NotifyLaunch } from "@/components/NotifyLaunch";
+import { webAppOpen } from "@/lib/site";
 
 const CTA_HREF = "/wardrobe";
 const IMG = {
@@ -19,6 +21,23 @@ function TryItNow({ className = "" }: { className?: string }) {
     <Link href={CTA_HREF} className={`landing-cta ${className}`}>
       TRY IT NOW
     </Link>
+  );
+}
+
+// The CTA. While the product is iOS-only (web app off), it captures a launch
+// email; when the web app is switched back on, it returns to "TRY IT NOW" →
+// the wardrobe. Swap NotifyLaunch for the App Store link once the app ships.
+function LandingCta({
+  appOpen,
+  className = "",
+}: {
+  appOpen: boolean;
+  className?: string;
+}) {
+  return appOpen ? (
+    <TryItNow className={className} />
+  ) : (
+    <NotifyLaunch className={className} />
   );
 }
 
@@ -52,6 +71,7 @@ function EditorialImage({
 }
 
 export default function LandingPage() {
+  const appOpen = webAppOpen();
   return (
     <>
     <main className="landing-page">
@@ -78,7 +98,7 @@ export default function LandingPage() {
           <p className="landing-subline">
             Photograph your wardrobe. It builds the outfits. See them on you.
           </p>
-          <TryItNow />
+          <LandingCta appOpen={appOpen} />
         </div>
       </section>
 
@@ -120,7 +140,7 @@ export default function LandingPage() {
       </section>
 
       <div className="landing-cta-block">
-        <TryItNow />
+        <LandingCta appOpen={appOpen} />
       </div>
 
       <section className="landing-result" aria-labelledby="result-title">
@@ -149,7 +169,7 @@ export default function LandingPage() {
         <div className="landing-close__copy landing-copy-block">
           <p className="landing-mark" aria-hidden="true">27</p>
           <h2 id="close-title">Stop guessing.</h2>
-          <TryItNow />
+          <LandingCta appOpen={appOpen} />
         </div>
       </section>
     </main>

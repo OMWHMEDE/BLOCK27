@@ -8,6 +8,7 @@ import {
   type BillingPeriod,
 } from "@/lib/whop/plans";
 import { paymentsOpen } from "@/lib/payments";
+import { webAppOpen } from "@/lib/site";
 import { ERR_RETRY } from "@/lib/support";
 
 // Create a Whop checkout session for the signed-in user and return its id. The
@@ -33,8 +34,9 @@ export async function POST(request: Request) {
   // The server backstop for the payments switch. Even if a stale client or a
   // direct POST reaches this route while checkout is closed, no session is
   // created — the paid path is shut in exactly one place that can't be bypassed
-  // from the browser.
-  if (!paymentsOpen()) {
+  // from the browser. Whop checkout is web-only, so it is also shut whenever the
+  // web app is off (shopfront mode); the code stays, ready to switch back on.
+  if (!paymentsOpen() || !webAppOpen()) {
     return NextResponse.json({ ok: false, error: "unavailable" }, { status: 503 });
   }
 
