@@ -16,8 +16,17 @@ import { touchLastActive } from "@/lib/biometric";
 // Garment upload — moderated before storage, exactly like the base photo. Bytes
 // checked in memory; only a passing image is written and its row recorded. A
 // rejected image is never persisted. Identity from the session, keys server-side.
+//
+// Idempotent: the client sends its own id (clientId) with the upload. If the app
+// is killed in the seconds between the server accepting the photo and the app
+// hearing back, it retries on relaunch with the SAME id — and a repeat of an id
+// already stored is a no-op success, never a second piece. Older clients that
+// send no id fall back to a server-generated one (no idempotency, as before).
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
   const { supabase, user } = await authenticateRequest(request);
@@ -25,6 +34,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   await touchLastActive(supabase, user.id);
+
+  // Read the multipart body once; the client id travels with it.
+  const form = await request.formData().catch(() => null);
+  const rawId = form?.get("clientId") ?? form?.get("garmentId");
+  const clientId =
+    typeof rawId === "string" && UUID_RE.test(rawId) ? rawId.toLowerCase() : null;
+
+  // Idempotency — before the cap check or any moderation/vision cost: a repeat of
+  // an id already stored for this user returns success and does nothing else, so
+  // a relaunch retry can never create a duplicate or get blocked by the cap.
+  if (clientId) {
+    const { data: existing } = await supabase
+      .from("garments")
+      .select("id")
+      .eq("id", clientId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json({ ok: true, id: clientId, duplicate: true });
+    }
+  }
 
   // Piece cap — enforced here, not just in the UI. Free = 15. Checked before the
   // moderation call so we don't spend a vision call on a piece we won't keep.
@@ -49,7 +79,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const form = await request.formData().catch(() => null);
   const result = await gate(form?.get("file"), "garment");
 
   if (result.status === "retry") {
@@ -66,14 +95,17 @@ export async function POST(request: Request) {
   }
 
   // Passed — store the image, then record the row. Undo the object if the row
-  // insert fails, so storage never drifts from the table.
-  const garmentId = crypto.randomUUID();
+  // insert fails, so storage never drifts from the table. Use the client's id
+  // when it sent one, so a retry writes to the same path and the same row.
+  const garmentId = clientId ?? crypto.randomUUID();
   const path = garmentPhotoPath(user.id, garmentId);
 
   const { error: upErr } = await supabase.storage
     .from(USER_PHOTOS_BUCKET)
     .upload(path, result.bytes, {
-      upsert: false,
+      // A retry re-sends the same photo to the same path; allow the overwrite so
+      // a partial prior attempt can't block it. A fresh server id can't collide.
+      upsert: clientId !== null,
       contentType: result.mediaType,
       cacheControl: "3600",
     });
@@ -93,7 +125,7 @@ export async function POST(request: Request) {
     const { error: thumbErr } = await supabase.storage
       .from(USER_PHOTOS_BUCKET)
       .upload(tp, thumbBytes, {
-        upsert: false,
+        upsert: clientId !== null,
         contentType: "image/jpeg",
         cacheControl: "3600",
       });
@@ -109,6 +141,23 @@ export async function POST(request: Request) {
     status: "pending",
   });
   if (insErr) {
+    // Idempotency race backstop: two concurrent retries with the same client id
+    // can both pass the up-front existence check and race to insert; the loser
+    // hits the primary-key unique violation (23505). If that id is in fact this
+    // user's own row, it's the duplicate we meant to absorb — succeed, and keep
+    // the (identical, upserted) image. Otherwise fall through to the error paths.
+    if (insErr.code === "23505" && clientId) {
+      const { data: owned } = await supabase
+        .from("garments")
+        .select("id")
+        .eq("id", clientId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (owned) {
+        return NextResponse.json({ ok: true, id: clientId, duplicate: true });
+      }
+    }
+
     const toRemove = thumbPath ? [path, thumbPath] : [path];
     await supabase.storage.from(USER_PHOTOS_BUCKET).remove(toRemove);
     // The database piece-cap trigger (migration 0026) is the authoritative gate —
@@ -134,5 +183,5 @@ export async function POST(request: Request) {
   }
 
   await logModeration({ userId: user.id, kind: "garment", decision: "pass" });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, id: garmentId });
 }

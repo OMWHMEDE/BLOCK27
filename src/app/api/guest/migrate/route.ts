@@ -9,8 +9,13 @@ import { migrateGuestToUser } from "@/lib/guest/migrate";
 // after signup it calls this endpoint with its Bearer token (the new user) and
 // its X-Guest-Id header (its local guest id), and we run the same migration.
 //
-// Idempotent and safe to skip: migrateGuestToUser never throws, and with no
-// guest id there is simply nothing to move.
+// Migration is best-effort and runs more than once: the native app keeps its own
+// guest id locally (the server can't clear it), so it re-calls this on later
+// launches. Every outcome that is not a genuine auth failure is a SUCCESS —
+// already migrated, nothing to migrate, or an unexpected hiccup — so the app
+// confirms once and never shows a retry dialog on relaunch. `migrated` is the
+// count of pieces moved this call (0 when there was nothing to move). The app
+// should treat any 200 / `ok: true` as done, regardless of that count.
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
@@ -20,12 +25,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Header (native app) or cookie (browser). Nothing to do without one.
-  const guestId = await readGuestId(request);
-  if (!guestId) {
-    return NextResponse.json({ ok: true, migrated: false });
+  try {
+    // Header (native app) or cookie (browser). No id → nothing to move, success.
+    const guestId = await readGuestId(request);
+    const migrated = guestId ? await migrateGuestToUser(user.id, guestId) : 0;
+    return NextResponse.json({ ok: true, migrated });
+  } catch (err) {
+    // Never trap the app in a retry loop over a best-effort migration. Log it and
+    // report success — the worst case is the visitor re-adds a few pieces.
+    console.error(
+      "[guest] migrate route error (reporting success):",
+      err instanceof Error ? err.message : err,
+    );
+    return NextResponse.json({ ok: true, migrated: 0 });
   }
-
-  await migrateGuestToUser(user.id, guestId);
-  return NextResponse.json({ ok: true, migrated: true });
 }
