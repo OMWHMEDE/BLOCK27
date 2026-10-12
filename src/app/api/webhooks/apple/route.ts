@@ -8,6 +8,7 @@ import {
 import type { AppleNotification, AppleTransaction } from "@/lib/apple/types";
 import { setEntitlement, clearEntitlement } from "@/lib/entitlement";
 import { paymentsOpen } from "@/lib/payments";
+import { captureServerError } from "@/lib/sentry/report";
 
 // App Store Server Notifications V2. Apple POSTs { signedPayload: <JWS> }. We
 // verify the outer notification JWS and the inner signedTransactionInfo JWS
@@ -123,6 +124,11 @@ export async function POST(request: Request) {
   } catch (err) {
     // Transient failure — return 500 so Apple retries the notification.
     console.error("[apple] handler error for", note.notificationType, err);
+    captureServerError(err, {
+      area: "webhooks.apple",
+      userId,
+      tags: { notification: note.notificationType ?? "unknown" },
+    });
     return NextResponse.json({ ok: false, error: "handler error" }, { status: 500 });
   }
 

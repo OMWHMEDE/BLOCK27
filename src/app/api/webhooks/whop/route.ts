@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { setEntitlement, clearEntitlement } from "@/lib/entitlement";
 import { tierForWhopPlan } from "@/lib/whop/plans";
+import { captureServerError } from "@/lib/sentry/report";
 
 // Whop payment webhook. Verified per Whop's own "Verify without an SDK" docs,
 // which are a deliberate deviation from vanilla Standard Webhooks:
@@ -225,6 +226,7 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     console.error("[whop] handler error for", kind, err);
+    captureServerError(err, { area: "webhooks.whop", tags: { event: kind } });
     return NextResponse.json({ ok: false, error: "handler error" }, { status: 500 });
   }
 
