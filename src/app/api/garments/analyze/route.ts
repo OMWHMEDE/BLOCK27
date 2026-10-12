@@ -4,6 +4,7 @@ import { USER_PHOTOS_BUCKET } from "@/lib/photos";
 import { analyzeGarmentImage } from "@/lib/brain/analyzeGarment";
 import { downscaleForVision } from "@/lib/images";
 import { getUserLanguage } from "@/lib/lang";
+import { captureServerError } from "@/lib/sentry/report";
 import { ERR_GENERIC } from "@/lib/support";
 
 // Node runtime (the Anthropic SDK + Buffer need it), and a duration long enough
@@ -121,6 +122,11 @@ export async function POST(request: Request) {
     // Release the claim so it can be retried; never leave it stuck analyzing.
     const message = err instanceof Error ? err.message : "Analysis failed";
     console.error("[analyze] failed for garment", garmentId, message);
+    captureServerError(err, {
+      area: "garments.analyze",
+      userId: user.id,
+      extra: { garmentId },
+    });
     await supabase
       .from("garments")
       .update({ status: "pending" })

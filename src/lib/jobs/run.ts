@@ -4,6 +4,7 @@ import { claimJob, completeJob, failJob, type Job } from "@/lib/jobs";
 import { handleComposition } from "@/lib/jobs/handlers/composition";
 import { handleShopping } from "@/lib/jobs/handlers/shopping";
 import { atOrOverCap, type MeteredOp } from "@/lib/limits";
+import { captureServerError } from "@/lib/sentry/report";
 
 // One place that turns a queued job into work. Claim (atomic, leased), dispatch
 // by kind, then complete or fail. Idempotent: a job already done, or held under a
@@ -62,6 +63,14 @@ export async function runJob(
   } catch (e) {
     const msg = e instanceof Error ? e.message : "job failed";
     console.error(`[jobs] ${job.kind} job ${jobId} failed`, msg);
+    // Surface it — these background failures are invisible today. Non-PII context
+    // only: the user id, the job kind and id.
+    captureServerError(e, {
+      area: "jobs.worker",
+      userId: job.user_id,
+      tags: { job_kind: job.kind },
+      extra: { jobId, attempts: job.attempts },
+    });
     // Requeue while attempts remain; fail_job turns the last attempt into a
     // terminal failure that refunds the reserved quota slot.
     const status = await failJob(admin, jobId, msg, true);

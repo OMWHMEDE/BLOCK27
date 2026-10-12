@@ -17,6 +17,7 @@ import {
 } from "@/lib/biometric";
 import { enqueueJob } from "@/lib/jobs";
 import { runRenderStep } from "@/lib/jobs/handlers/render";
+import { captureServerError } from "@/lib/sentry/report";
 import { ERR_RETRY } from "@/lib/support";
 import type { GarmentAnalysis } from "@/lib/brain/types";
 import type { RenderCategory } from "@/lib/hand";
@@ -165,7 +166,15 @@ export async function POST(
     .maybeSingle();
   if (active?.id) {
     const activeId = active.id as string;
-    after(() => runRenderStep(createAdminClient(), activeId));
+    after(() =>
+      runRenderStep(createAdminClient(), activeId).catch((e) =>
+        captureServerError(e, {
+          area: "jobs.render",
+          userId: user.id,
+          extra: { jobId: activeId },
+        }),
+      ),
+    );
     return NextResponse.json({ ok: true, jobId: activeId, already: true });
   }
 
@@ -214,7 +223,11 @@ export async function POST(
     return NextResponse.json({ ok: false, error: ERR_RETRY }, { status: 500 });
   }
 
-  after(() => runRenderStep(createAdminClient(), jobId));
+  after(() =>
+    runRenderStep(createAdminClient(), jobId).catch((e) =>
+      captureServerError(e, { area: "jobs.render", userId: user.id, extra: { jobId } }),
+    ),
+  );
   return NextResponse.json({ ok: true, jobId });
 }
 
@@ -262,7 +275,15 @@ export async function GET(
     const stalled = status === "queued" || leaseUntil < Date.now();
     if (stalled) {
       const jobId = job.id as string;
-      after(() => runRenderStep(createAdminClient(), jobId));
+      after(() =>
+        runRenderStep(createAdminClient(), jobId).catch((e) =>
+          captureServerError(e, {
+            area: "jobs.render",
+            userId: user.id,
+            extra: { jobId },
+          }),
+        ),
+      );
     }
   }
 
