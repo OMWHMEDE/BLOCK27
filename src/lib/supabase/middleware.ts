@@ -15,7 +15,9 @@ import { webAppOpen } from "@/lib/site";
 function isShopfrontAllowed(path: string): boolean {
   if (path === "/") return true;
   if (path.startsWith("/api/")) return true;
-  return ["/privacy", "/terms", "/refund", "/waitlist"].some(
+  // /reset-password stays reachable: the mobile app's Supabase reset emails point
+  // there, and it must work while the rest of the site is just a landing page.
+  return ["/privacy", "/terms", "/refund", "/waitlist", "/reset-password"].some(
     (p) => path === p || path.startsWith(`${p}/`),
   );
 }
