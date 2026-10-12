@@ -11,16 +11,18 @@ import { FREE_PIECE_LIMIT } from "@/lib/plan";
 //
 // It NEVER throws. Migration is a nicety, not a guarantee: if anything fails,
 // the account is still fine and the visitor re-pulls at most three pieces. A
-// failed conversion must never break signup.
+// failed conversion must never break signup. Returns the number of pieces
+// actually moved (0 when there was nothing to migrate or it had already run).
 export async function migrateGuestToUser(
   userId: string,
   guestId?: string,
-): Promise<void> {
+): Promise<number> {
+  let moved = 0;
   try {
     // The native app passes its guest id explicitly (from the header); the web
     // signup path omits it and we read the httpOnly cookie.
     const gid = guestId ?? (await readGuestId());
-    if (!gid) return;
+    if (!gid) return 0;
 
     const admin = createAdminClient();
     const { data: rows } = await admin
@@ -50,13 +52,14 @@ export async function migrateGuestToUser(
 
       // Analysis already ran as a guest — land it analyzed so it counts and can
       // be styled immediately, no second vision call.
-      await admin.from("garments").insert({
+      const { error: insErr } = await admin.from("garments").insert({
         id: garmentId,
         user_id: userId,
         photo_path: dest,
         status: "analyzed",
         analysis: r.analysis,
       });
+      if (!insErr) moved += 1;
     }
 
     // Tidy up the anonymous data now that it has moved.
@@ -73,4 +76,5 @@ export async function migrateGuestToUser(
       e instanceof Error ? e.message : "",
     );
   }
+  return moved;
 }
