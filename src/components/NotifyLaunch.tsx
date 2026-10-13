@@ -2,11 +2,15 @@
 
 import { useId, useState, useTransition } from "react";
 import { notifyLaunch, type NotifyResult } from "@/app/waitlist/actions";
+import { sourceFromSearch } from "@/lib/waitlist";
 
 // The landing CTA while the product is iOS-only: capture an email for launch
 // notification into the waitlist table, confirm inline without leaving the page.
 // Swapped for the App Store link once the app is live. Brand voice: cold, brief,
 // no exclamation marks. border-radius 0, paper on void.
+//
+// The marketing source is read from the URL client-side (so the landing stays
+// static) and passed to the server action; it is re-normalized server-side.
 export function NotifyLaunch({ className = "" }: { className?: string }) {
   const id = useId();
   const [email, setEmail] = useState("");
@@ -16,7 +20,7 @@ export function NotifyLaunch({ className = "" }: { className?: string }) {
   if (result.status === "ok") {
     return (
       <p className={`landing-notify landing-notify--done ${className}`}>
-        You&rsquo;re on the list. We&rsquo;ll email you when it lands.
+        You&rsquo;re on the list. We email you once, when it launches.
       </p>
     );
   }
@@ -27,8 +31,11 @@ export function NotifyLaunch({ className = "" }: { className?: string }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (pending) return;
+        // Read the marketing source from the URL at submit time (the landing
+        // stays static); it is re-normalized server-side regardless.
+        const source = sourceFromSearch(window.location.search);
         startTransition(async () => {
-          setResult(await notifyLaunch(email));
+          setResult(await notifyLaunch(email, source));
         });
       }}
     >
@@ -60,7 +67,11 @@ export function NotifyLaunch({ className = "" }: { className?: string }) {
         <p className="landing-notify__error" role="alert">
           {result.message}
         </p>
-      ) : null}
+      ) : (
+        <p className="landing-notify__consent">
+          Signing up means one email from us, at launch. Unsubscribe any time.
+        </p>
+      )}
     </form>
   );
 }

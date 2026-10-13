@@ -360,6 +360,15 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.04em;
 }
+.landing-notify__consent {
+  margin: 0;
+  color: #8a8783;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  line-height: 1.5;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 .landing-notify--done {
   margin-top: 2rem;
   max-width: 24rem;
