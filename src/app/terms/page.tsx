@@ -37,11 +37,11 @@ export default function TermsPage() {
 
       <Clause label="What BLOCK27 does">
         <p>
-          BLOCK27 is an AI styling tool. You upload photos of yourself and your
-          clothes; the Service analyses them, suggests outfits, and (on paid
-          plans) generates virtual try-on images. AI outputs are suggestions and
-          generated images — they may not be perfect or accurate, and are
-          provided &ldquo;as is&rdquo; for your personal, non-commercial use.
+          BLOCK27 is an AI styling tool. You upload photos of your clothes; the
+          Service analyses them, suggests outfits, tells you what your wardrobe is
+          missing, and recommends what to buy. AI outputs are suggestions — they
+          may not be perfect or accurate, and are provided &ldquo;as is&rdquo; for
+          your personal, non-commercial use.
         </p>
       </Clause>
 
@@ -51,8 +51,8 @@ export default function TermsPage() {
             You keep ownership of the photos you upload.
           </strong>{" "}
           By uploading, you grant BLOCK27 a limited licence to store, process, and
-          share your photos with our third-party AI processors (as described in
-          the{" "}
+          share your garment photos with our third-party AI processor (as
+          described in the{" "}
           <a
             href="/privacy"
             className="text-paper underline underline-offset-4 hover:text-bone"
@@ -93,70 +93,75 @@ export default function TermsPage() {
         <p>We may suspend or terminate accounts that violate these Terms.</p>
       </Clause>
 
-      <Clause label="Paid plans, billing, and cancellation">
-        <p>Some features require a paid subscription. Current plans:</p>
+      <Clause label="Plans, billing, and cancellation">
+        <p>Higher limits require a paid subscription. Current plans:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <strong className="text-paper">Free</strong> — includes wardrobe
-            analysis, outfit generation, and shopping suggestions; 0 try-ons.
+            <strong className="text-paper">Free</strong> — wardrobe analysis,
+            outfit generation, and shopping suggestions, at the free monthly
+            limits (10 pieces, 5 outfit generations, 3 shopping consultations).
           </li>
           <li>
-            <strong className="text-paper">Premium</strong> — $14.99/month.
-          </li>
-          <li>
-            <strong className="text-paper">Pro</strong> — $24.99/month.
-          </li>
-          <li>
-            <strong className="text-paper">Boss</strong> — $49.99/month.
+            <strong className="text-paper">BLOCK27</strong> —{" "}
+            <strong className="text-paper">$9.99/month</strong> or{" "}
+            <strong className="text-paper">$79.99/year</strong>. Raises the limits
+            to 150 pieces, 45 outfit generations, and 15 shopping consultations a
+            month.
           </li>
         </ul>
         <p>
-          Plan limits are shown in the app. Paid plans are billed through our
-          payment processor (Whop) on a recurring monthly basis until cancelled.
+          In the iOS app, subscriptions are sold and billed by{" "}
+          <strong className="text-paper">Apple</strong> through in-app purchase.
+          The charge appears on your Apple account.
         </p>
         <p>
           <strong className="text-paper">Renewal.</strong> Subscriptions renew
-          automatically each month unless cancelled before the renewal date.
+          automatically at the end of each period (monthly or yearly) unless you
+          turn off auto-renew at least 24 hours before the period ends, as
+          required by Apple.
         </p>
         <p>
-          <strong className="text-paper">Cancellation.</strong> You can cancel at
-          any time; cancellation stops future billing and does not retroactively
-          refund the current period unless required by law or under our refund
-          policy below.
+          <strong className="text-paper">Cancellation.</strong> Manage or cancel
+          your subscription any time in your Apple account settings (App Store →
+          your name → Subscriptions, or iOS Settings → your name → Subscriptions).
+          Cancelling stops future renewals; your access continues until the end of
+          the period you have already paid for.
         </p>
       </Clause>
 
-      <Clause label="Refund policy">
+      <Clause label="Refunds">
         <p>
-          You may request a refund within 3 days of a purchase, provided you have
-          not used paid try-on features during that period. Once paid try-ons have
-          been used, that purchase is non-refundable except where required by law.
-          Refunds are processed through Whop. To request one, email{" "}
-          {SUPPORT_EMAIL}. Full details are in our{" "}
+          Purchases made in the iOS app are processed by Apple, so refunds are
+          handled by Apple under its policy — request one at{" "}
+          <a
+            href="https://reportaproblem.apple.com"
+            className="text-paper underline underline-offset-4 hover:text-bone"
+          >
+            reportaproblem.apple.com
+          </a>
+          . We cannot directly refund an Apple purchase. Nothing here removes any
+          refund right you have under the consumer law that applies to you. See
+          our{" "}
           <a
             href="/refund"
             className="text-paper underline underline-offset-4 hover:text-bone"
           >
             Refund Policy
-          </a>
-          .
+          </a>{" "}
+          for details.
         </p>
       </Clause>
 
       <Clause label="AI outputs disclaimer">
         <p>
-          BLOCK27 uses AI to analyse clothes and generate images and suggestions.
-          These outputs:
+          BLOCK27 uses AI to analyse clothes and generate styling and shopping
+          suggestions. These outputs:
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>May be inaccurate, imperfect, or not to your taste.</li>
           <li>Are generated automatically for your personal styling use.</li>
           <li>Should not be relied on as professional advice.</li>
         </ul>
-        <p>
-          Virtual try-on images are AI-generated approximations and may not
-          accurately represent fit, appearance, or the actual garment.
-        </p>
       </Clause>
 
       <Clause label="Service availability">

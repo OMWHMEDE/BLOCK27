@@ -9,44 +9,49 @@ export default function RefundPage() {
   return (
     <LegalShell
       title="Refunds."
-      intro="What we refund, and when. Short version: the stylist is free to try, and there's a 3-day window on a paid charge if you haven't spent a try-on."
+      intro="What we refund, and how. Short version: the stylist is free to try, and paid subscriptions are billed and refunded by Apple."
       current="/refund"
     >
       <Clause label="Free first">
         <p>
-          Reading your wardrobe, composing outfits, and the shopping audit are
-          free. The paid feature is the try-on — rendering an outfit onto your own
-          photo. You can use the free stylist before you ever pay, so there is
-          nothing to refund on the free tier.
+          Reading your wardrobe, composing outfits, the gap analysis, and the
+          shopping plan are all available on the free tier up to its monthly
+          limits. You can use BLOCK27 before you ever pay, so there is nothing to
+          refund on the free tier.
         </p>
       </Clause>
 
-      <Clause label="3-day refund window">
+      <Clause label="Paid subscriptions are billed by Apple">
         <p>
-          If you subscribe to a paid plan (Premium, Pro, or Boss) and change your
-          mind, you can request a full refund within 3 days of a charge —
-          provided you have not used any try-ons during that window. Each try-on
-          is a real, non-recoverable cost on our side, so once you have rendered
-          an outfit on the paid plan, that charge is non-refundable.
-        </p>
-        <p>After 3 days, subscription charges are non-refundable.</p>
-      </Clause>
-
-      <Clause label="Cancelling">
-        <p>
-          You can cancel your subscription at any time through Whop, our payment
-          processor, or by emailing {SUPPORT_EMAIL}. Cancelling stops future
-          renewals; your access continues until the end of the period you have
-          already paid for. Cancelling on its own does not refund the current
-          period — use the 3-day window above if it applies.
+          The paid plan (BLOCK27 — $9.99/month or $79.99/year) is sold inside the
+          iOS app through Apple in-app purchase. Apple is the merchant of record:
+          the charge is on your Apple account, and Apple handles refunds under its
+          own policy.
         </p>
       </Clause>
 
       <Clause label="How to request a refund">
         <p>
-          Email {SUPPORT_EMAIL} from the address on your account and tell us which
-          charge you mean. Eligible refunds are issued through Whop, our payment
-          processor and merchant of record, back to your original payment method.
+          Refunds for an in-app purchase are requested from Apple, not from us, at{" "}
+          <a
+            href="https://reportaproblem.apple.com"
+            className="text-paper underline underline-offset-4 hover:text-bone"
+          >
+            reportaproblem.apple.com
+          </a>{" "}
+          (or App Store → your name → Purchase History). We cannot directly refund
+          an Apple purchase. If you are not sure how, email {SUPPORT_EMAIL} and we
+          will point you to the right place.
+        </p>
+      </Clause>
+
+      <Clause label="Cancelling">
+        <p>
+          Cancel any time in your Apple account settings (App Store → your name →
+          Subscriptions, or iOS Settings → your name → Subscriptions). Cancelling
+          stops future renewals; your access continues until the end of the period
+          you have already paid for. Cancelling on its own does not refund the
+          current period — request that from Apple, above.
         </p>
       </Clause>
 
@@ -54,8 +59,7 @@ export default function RefundPage() {
         <p>
           Nothing in this policy removes any refund or cancellation rights you
           have under the consumer law that applies to you. Where the law requires
-          a refund, Whop, as merchant of record, will honour it regardless of the
-          window above.
+          a refund, you keep that right regardless of anything above.
         </p>
       </Clause>
 

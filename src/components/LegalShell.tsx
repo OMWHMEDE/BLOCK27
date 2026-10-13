@@ -13,7 +13,7 @@ import { SocialLinks } from "@/components/SocialIcons";
 // counsel pass over it before scaling.
 
 // Bump when the substance of any legal page changes.
-export const LEGAL_UPDATED = "31 August 2026";
+export const LEGAL_UPDATED = "13 October 2026";
 
 const LEGAL_LINKS = [
   { href: "/terms", label: "Terms" },
