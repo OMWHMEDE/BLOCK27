@@ -8,18 +8,23 @@ import {
 import { webAppOpen } from "@/lib/site";
 
 // Shopfront mode (WEB_APP_OPEN off): the only browser pages that resolve are the
-// landing, the legal pages (Apple/Google require them public), and the waitlist.
-// Everything else in the browser — the web app, web auth, pricing checkout —
-// redirects to the landing. The API under /api/* is always allowed: the iOS app
-// uses it, and each handler does its own auth.
+// landing, the legal pages (Apple/Google require them public), the support and
+// account-deletion pages (App Store / Google Play require public URLs), the
+// password-reset page, and the waitlist. Everything else in the browser — the web
+// app, web auth, pricing checkout — redirects to the landing. The API under
+// /api/* is always allowed: the iOS app uses it, and each handler does its own auth.
 function isShopfrontAllowed(path: string): boolean {
   if (path === "/") return true;
   if (path.startsWith("/api/")) return true;
-  // /reset-password stays reachable: the mobile app's Supabase reset emails point
-  // there, and it must work while the rest of the site is just a landing page.
-  return ["/privacy", "/terms", "/refund", "/waitlist", "/reset-password"].some(
-    (p) => path === p || path.startsWith(`${p}/`),
-  );
+  return [
+    "/privacy",
+    "/terms",
+    "/refund",
+    "/support",
+    "/delete-account",
+    "/waitlist",
+    "/reset-password",
+  ].some((p) => path === p || path.startsWith(`${p}/`));
 }
 
 // Routes that require a session. An unauthenticated hit is redirected to /login.

@@ -9,7 +9,7 @@ export default function PrivacyPage() {
   return (
     <LegalShell
       title="Privacy."
-      intro="You send us photographs of your body. We treat them as the most sensitive thing we hold. This is what we collect, who processes it, how long we keep it, and your rights."
+      intro="You photograph your wardrobe. We treat your photos as sensitive data. This is what we collect, who processes it, how long we keep it, and your rights."
       current="/privacy"
     >
       <Clause label="Who we are">
@@ -37,10 +37,9 @@ export default function PrivacyPage() {
         </p>
         <p>
           <strong className="text-paper">Photos you upload.</strong> Photos of
-          yourself (&ldquo;base photos&rdquo;) and photos of your clothing
-          (&ldquo;garment photos&rdquo;). These are the core of the Service —
-          used to analyse your wardrobe, generate outfit suggestions, and (for
-          paid features) produce virtual try-on images.
+          your clothing (&ldquo;garment photos&rdquo;). These are the core of the
+          Service — used to analyse your wardrobe and generate outfit and shopping
+          suggestions.
         </p>
         <p>
           <strong className="text-paper">Usage information.</strong> Basic
@@ -49,9 +48,9 @@ export default function PrivacyPage() {
         </p>
         <p>
           <strong className="text-paper">Payment information.</strong> If you
-          purchase a paid plan, payments are processed by our third-party
-          processor (Whop). We do not store your full card or payment details;
-          those are handled by the processor.
+          purchase a subscription in the iOS app, payment is processed by Apple
+          through in-app purchase. We do not receive or store your card or payment
+          details; Apple handles them.
         </p>
       </Clause>
 
@@ -59,12 +58,12 @@ export default function PrivacyPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>
             Provide the Service — analyse your clothes, generate outfits, and
-            (for paid users) create try-on images.
+            produce shopping suggestions.
           </li>
           <li>
             Operate your account, enforce plan limits, and provide support.
           </li>
-          <li>Process payments (via our processor) for paid plans.</li>
+          <li>Process subscription payments (through Apple) for paid plans.</li>
           <li>Maintain the security and integrity of the Service.</li>
         </ul>
         <p>
@@ -87,16 +86,20 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong className="text-paper">Anthropic</strong> — AI analysis of
-            your uploaded garment and base photos.
+            your uploaded garment photos.
           </li>
           <li>
-            <strong className="text-paper">FASHN</strong> — AI virtual try-on
-            image generation for paid &ldquo;see it on you&rdquo; features
-            (processes your base and garment images).
+            <strong className="text-paper">Apple</strong> — payment processing for
+            subscriptions purchased in the iOS app (in-app purchase). Apple is the
+            merchant of record for these purchases.
           </li>
           <li>
-            <strong className="text-paper">Whop</strong> — payment processing for
-            paid plans.
+            <strong className="text-paper">Sentry</strong> — application error
+            monitoring. When the app hits an error, Sentry receives diagnostic
+            data about that error. We configure it to exclude personal data — no
+            photos, no request contents, no email addresses — but it does receive
+            your account&rsquo;s user id attached to error reports, so we can trace
+            a fault to the affected account.
           </li>
           <li>
             <strong className="text-paper">Vercel</strong> — application
@@ -108,9 +111,9 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          We share only what is necessary for each to perform its function.
-          Photos you upload are sent to Anthropic and FASHN for AI processing as
-          described above.
+          We share only what is necessary for each to perform its function. The
+          garment photos you upload are sent to Anthropic for AI analysis as
+          described above; they are not sent to any other processor.
         </p>
       </Clause>
 
@@ -125,56 +128,13 @@ export default function PrivacyPage() {
         </p>
       </Clause>
 
-      <Clause label="Biometric data — retention and destruction (DRAFT — pending legal review)">
+      <Clause label="Photos are never training data">
         <p>
-          <strong>
-            DRAFT. This section has not yet been reviewed by counsel and is not
-            legal advice. Do not rely on it until it has been reviewed and
-            approved.
-          </strong>
-        </p>
-        <p>
-          <strong>What we collect and why.</strong> To provide the virtual
-          try-on, we collect a full-body photograph of you (your &ldquo;base
-          photo&rdquo;) and generate images of you wearing garments from your
-          wardrobe (&ldquo;renders&rdquo;). Your base photo and the renders made
-          from it are biometric information. We collect and process them only to
-          generate and show you these try-on images, and for no other purpose.
-        </p>
-        <p>
-          <strong>Consent and age.</strong> We do not collect a base photo or
-          generate any render until you have given explicit consent to this
-          processing and confirmed that you are 18 years of age or older. If we
-          change what you are consenting to, we ask for your consent again before
-          continuing. You can withdraw consent at any time by removing your base
-          photo or deleting your account.
-        </p>
-        <p>
-          <strong>Who processes the images.</strong> To generate a render, your
-          base photo and the relevant garment image are sent to our rendering
-          provider, FASHN, which performs the image generation on our behalf as a
-          processor. Your images are <strong>never sold</strong> and are{" "}
-          <strong>never used to train AI models</strong> — ours or anyone
-          else&rsquo;s. FASHN states that it does not use customer content to
-          train or fine-tune AI models, and that generated API outputs are
-          scheduled for deletion on its systems within a short retention window
-          (currently three days for delivered outputs). We link to FASHN&rsquo;s
-          data-retention policy and keep this description current.
-        </p>
-        <p>
-          <strong>How long we keep them, and when they are destroyed.</strong> We
-          keep your base photo and renders only while you have an active base
-          photo. We destroy them — the base photo and every render derived from
-          it — in each of these cases:
-        </p>
-        <p>
-          (a) immediately when you remove your base photo; (b) immediately when
-          you delete your account, along with the rest of your data; and (c)
-          automatically after 12 months of inactivity, even if you take no action.
-          Destruction means the image files are deleted from our storage, not
-          merely hidden. Records that prove you consented (the consent version,
-          timestamp, and related metadata — never the images) may be retained as
-          required to evidence compliance.
+          The garment photos you upload are used only to run the Service for you —
+          analysing your wardrobe and producing outfit and shopping suggestions.
+          They are <strong>never sold</strong> and are{" "}
+          <strong>never used to train AI models</strong>, ours or anyone
+          else&rsquo;s.
         </p>
       </Clause>
 
@@ -187,8 +147,15 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong className="text-paper">Delete</strong> individual
-            photos/garments, or delete your entire account, which removes your
-            associated data and files from our storage.
+            photos/garments in the app, or delete your entire account — which
+            removes your associated data and files from our storage. See{" "}
+            <a
+              href="/delete-account"
+              className="text-paper underline underline-offset-4 hover:text-bone"
+            >
+              how to delete your account
+            </a>
+            .
           </li>
           <li>
             <strong className="text-paper">Request information</strong> about your
@@ -230,8 +197,8 @@ export default function PrivacyPage() {
       <Clause label="International transfers">
         <p>
           We and our providers may process your data in countries other than
-          where you live, including the United States. Where required, we rely on
-          appropriate safeguards for such transfers.
+          where you live, including the United States and the European Union.
+          Where required, we rely on appropriate safeguards for such transfers.
         </p>
       </Clause>
 

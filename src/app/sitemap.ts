@@ -9,7 +9,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Shopfront: only the landing and the legal pages are publicly reachable. The
   // app pages and /pricing are gated behind the web-app switch, so they are not
   // advertised to crawlers.
-  const paths = ["/", "/terms", "/privacy", "/refund"];
+  const paths = [
+    "/",
+    "/terms",
+    "/privacy",
+    "/refund",
+    "/support",
+    "/delete-account",
+  ];
   return paths.map((path) => ({
     url: `${SITE}${path}`,
     lastModified,
