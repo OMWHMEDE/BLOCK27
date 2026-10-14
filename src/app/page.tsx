@@ -1,195 +1,34 @@
-import Image from "next/image";
 import Link from "next/link";
-import { SiteFooter } from "@/components/SiteFooter";
 import { NotifyLaunch } from "@/components/NotifyLaunch";
-import { webAppOpen } from "@/lib/site";
+import { WhatLink } from "@/components/WhatLink";
 
-const CTA_HREF = "/wardrobe";
-const IMG = {
-  hero: "/landing/01-hero-walk-v4.jpg",
-  problem: "/landing/04-editorial-concrete-v4.jpg",
-  wardrobe: "/landing/03-wardrobe-selection-v4.jpg",
-  // App screenshot for the "It builds the outfit" section — uploaded separately.
-  buildsOutfit: "/landing/builds-the-outfit-v2.jpg",
-  // App screenshot for the "what your wardrobe can't do" gap section.
-  gap: "/landing/gap-section.jpg",
-  closing: "/landing/02-story-rooftop-v4.jpg",
-};
-
-function TryItNow({ className = "" }: { className?: string }) {
-  return (
-    <Link href={CTA_HREF} className={`landing-cta ${className}`}>
-      TRY IT NOW
-    </Link>
-  );
-}
-
-// The CTA. While the product is iOS-only (web app off), it captures a launch
-// email; when the web app is switched back on, it returns to "TRY IT NOW" →
-// the wardrobe. Swap NotifyLaunch for the App Store link once the app ships.
-function LandingCta({
-  appOpen,
-  className = "",
-}: {
-  appOpen: boolean;
-  className?: string;
-}) {
-  return appOpen ? (
-    <TryItNow className={className} />
-  ) : (
-    <NotifyLaunch className={className} />
-  );
-}
-
-function EditorialImage({
-  src,
-  alt,
-  priority = false,
-  sizes = "(max-width: 768px) 100vw, 58vw",
-  className = "",
-}: {
-  src: string;
-  alt: string;
-  priority?: boolean;
-  sizes?: string;
-  className?: string;
-}) {
-  return (
-    <div className={`landing-image ${className}`}>
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        priority={priority}
-        sizes={sizes}
-        unoptimized
-        quality={100}
-        className="landing-image__frame"
-      />
-    </div>
-  );
-}
-
+// The landing: one screen, no scroll on a phone. The 27 mark, one line, the
+// launch-email capture (same waitlist action — source attribution and the
+// confirmation email keep working), a quiet way through to /what, and a minimal
+// footer whose legal + support links must stay reachable for the app stores.
+//
+// It does not explain the product. The restraint is the point — type scale,
+// space, and emptiness carry it. Static: nothing here reads a dynamic server
+// API, and the source parameter is read client-side in NotifyLaunch/WhatLink.
 export default function LandingPage() {
-  const appOpen = webAppOpen();
   return (
-    <>
-    <main className="landing-page">
-      <div aria-hidden className="grain-layer grain-layer--animated" />
+    <main className="lp">
+      <div aria-hidden className="grain-layer" />
 
-      <section className="landing-hero" aria-labelledby="hero-title">
-        <Image
-          src={IMG.hero}
-          alt="Subject 27 walking through a stark concrete passage in a tailored black-and-white look."
-          fill
-          priority
-          sizes="100vw"
-          unoptimized
-          quality={100}
-          className="landing-hero__image"
-        />
-        <div className="landing-hero__copy landing-copy-block">
-          <p className="landing-kicker">BLOCK27</p>
-          <h1 id="hero-title">
-            You own good clothes.
-            <br />
-            You wear them wrong.
-          </h1>
-          <p className="landing-subline">
-            Photograph your wardrobe. It builds the outfits. It tells you
-            what&rsquo;s missing.
-          </p>
-          <LandingCta appOpen={appOpen} />
-        </div>
-      </section>
-
-      <section className="landing-section landing-section--problem" aria-labelledby="problem-title">
-        <div className="landing-section__copy landing-copy-block">
-          <p className="landing-kicker">The problem</p>
-          <h2 id="problem-title">Same clothes.</h2>
-          <p>Different decisions.</p>
-        </div>
-        <EditorialImage
-          src={IMG.problem}
-          alt="Subject 27 posed against raw concrete like a black-and-white fashion editorial."
-          className="landing-image--problem"
-        />
-      </section>
-
-      <section className="landing-section landing-section--wardrobe" aria-labelledby="wardrobe-title">
-        <EditorialImage
-          src={IMG.wardrobe}
-          alt="Subject 27 studying wardrobe pieces in a quiet monochrome room."
-          className="landing-image--wardrobe"
-        />
-        <div className="landing-section__copy landing-copy-block">
-          <p className="landing-kicker">The wardrobe</p>
-          <h2 id="wardrobe-title">Shoot your clothes once.</h2>
-        </div>
-      </section>
-
-      <section className="landing-section landing-section--reflection" aria-labelledby="reflection-title">
-        <div className="landing-section__copy landing-copy-block">
-          <p className="landing-kicker">The reflection</p>
-          <h2 id="reflection-title">It builds the outfit.</h2>
-        </div>
-        <EditorialImage
-          src={IMG.buildsOutfit}
-          alt="The BLOCK27 app building an outfit from the user's own wardrobe."
-          className="landing-image--reflection"
-        />
-      </section>
-
-      <div className="landing-cta-block">
-        <LandingCta appOpen={appOpen} />
+      <div className="lp__inner">
+        <p className="lp__mark" aria-hidden="true">
+          27
+        </p>
+        <h1 className="lp__headline">Same six pieces every week.</h1>
+        <NotifyLaunch hideLabel />
+        <WhatLink className="lp__what">What is BLOCK27?</WhatLink>
       </div>
 
-      <section className="landing-section landing-section--gap" aria-labelledby="gap-title">
-        <EditorialImage
-          src={IMG.gap}
-          alt="The BLOCK27 app naming the gaps in a wardrobe, ranked by what each one costs."
-          className="landing-image--gap"
-        />
-        <div className="landing-section__copy landing-copy-block">
-          <p className="landing-kicker">The gap</p>
-          <h2 id="gap-title">It tells you what your wardrobe can&rsquo;t do.</h2>
-          <p>
-            It names the specific things your clothes can&rsquo;t make &mdash; and
-            ranks them by what each gap costs you.
-          </p>
-        </div>
-      </section>
-
-      <section className="landing-note" aria-labelledby="shop-title">
-        <div className="landing-copy-block">
-          <p className="landing-kicker">The plan</p>
-          <h2 id="shop-title">Then exactly what to buy.</h2>
-          <p>
-            It finds the pieces that close the biggest gaps first &mdash; what to
-            look for, and why it works with what you already own. Not a shop. A
-            plan.
-          </p>
-        </div>
-      </section>
-
-      <section className="landing-close" aria-labelledby="close-title">
-        <Image
-          src={IMG.closing}
-          alt="Subject 27 on a rooftop in the final quiet frame of the story."
-          fill
-          sizes="100vw"
-          unoptimized
-          quality={100}
-          className="landing-close__image"
-        />
-        <div className="landing-close__copy landing-copy-block">
-          <p className="landing-mark" aria-hidden="true">27</p>
-          <h2 id="close-title">Stop guessing.</h2>
-          <LandingCta appOpen={appOpen} />
-        </div>
-      </section>
+      <footer className="lp__footer">
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/terms">Terms</Link>
+        <Link href="/support">Support</Link>
+      </footer>
     </main>
-    <SiteFooter />
-    </>
   );
 }

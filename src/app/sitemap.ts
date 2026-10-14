@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // advertised to crawlers.
   const paths = [
     "/",
+    "/what",
     "/terms",
     "/privacy",
     "/refund",
