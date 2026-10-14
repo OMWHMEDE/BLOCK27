@@ -17,6 +17,7 @@ function isShopfrontAllowed(path: string): boolean {
   if (path === "/") return true;
   if (path.startsWith("/api/")) return true;
   return [
+    "/what",
     "/privacy",
     "/terms",
     "/refund",

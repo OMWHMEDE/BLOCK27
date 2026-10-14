@@ -165,137 +165,14 @@ body {
   }
 }
 
-/* Landing v2: black-and-white fashion film from still frames. */
-.landing-page {
-  --landing-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  background: #000;
-  color: #fff;
-  min-height: 100vh;
-  overflow: clip;
-}
+/* ============================================================
+   Landing — single-screen waitlist, and /what — the explainer.
+   The old editorial-film landing was removed; what stays below are the
+   two primitives NotifyLaunch still depends on (.landing-cta, .landing-notify*)
+   plus the new .lp (landing) and .what (explainer) systems.
+   ============================================================ */
 
-.grain-layer--animated {
-  z-index: 50;
-  opacity: 0.055;
-  mix-blend-mode: screen;
-  animation: landing-grain 1.8s steps(2, end) infinite;
-}
-
-@keyframes landing-grain {
-  0% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(-1.5%, 1%, 0); }
-  100% { transform: translate3d(1%, -1.5%, 0); }
-}
-
-.landing-hero,
-.landing-close,
-.landing-result {
-  position: relative;
-  min-height: 100svh;
-  isolation: isolate;
-  overflow: hidden;
-}
-
-.landing-hero__image,
-.landing-close__image,
-.landing-image__frame {
-  object-fit: cover;
-  transform: scale(1.015);
-  animation: landing-image-drift linear both;
-  animation-timeline: view();
-  animation-range: entry -10% exit 110%;
-}
-
-.landing-hero__image { object-position: 52% center; }
-.landing-close__image { object-position: 50% center; opacity: 0.86; }
-
-.landing-hero::after,
-.landing-close::after,
-.landing-result::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: rgba(0, 0, 0, 0.22);
-}
-
-.landing-hero__copy,
-.landing-close__copy,
-.landing-result__copy {
-  position: relative;
-  z-index: 2;
-}
-
-.landing-hero__copy {
-  width: min(28rem, calc(100% - 3rem));
-  margin-left: max(1.5rem, 7vw);
-  padding-top: 61svh;
-}
-
-.landing-copy-block {
-  animation: landing-copy-in both;
-  animation-timeline: view();
-  animation-range: entry 18% cover 38%;
-}
-
-.landing-copy-block h1,
-.landing-copy-block h2 {
-  margin: 0;
-  max-width: 11ch;
-  color: #fff;
-  font-weight: 850;
-  letter-spacing: -0.055em;
-  line-height: 0.9;
-  text-transform: uppercase;
-}
-
-.landing-copy-block h1 { font-size: clamp(2.85rem, 11vw, 8.5rem); }
-.landing-copy-block h2 { font-size: clamp(2.4rem, 8vw, 6.75rem); }
-.landing-copy-block p:not(.landing-kicker):not(.landing-mark):not(.landing-subline) {
-  margin: 0.6rem 0 0;
-  max-width: 17ch;
-  color: #f2f0ec;
-  font-size: clamp(2.4rem, 8vw, 6.75rem);
-  font-weight: 850;
-  letter-spacing: -0.055em;
-  line-height: 0.9;
-  text-transform: uppercase;
-}
-
-/* Hero subline — quiet body face beneath the display headline, not the giant
-   display-paragraph treatment above. */
-.landing-subline {
-  margin: 1.1rem 0 0;
-  max-width: 30ch;
-  color: #c9c4bc;
-  font-family: var(--font-sans);
-  font-size: clamp(0.95rem, 1.7vw, 1.15rem);
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.35;
-  text-transform: none;
-}
-
-/* Standalone TRY IT NOW between sections — same button, centred with room. */
-.landing-cta-block {
-  display: flex;
-  justify-content: center;
-  padding: clamp(3rem, 9vw, 7rem) 1.5rem;
-}
-.landing-cta-block .landing-cta {
-  margin-top: 0;
-}
-
-.landing-kicker {
-  margin: 0 0 1.25rem;
-  color: #8a8783;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-}
-
+/* The capture button — paper hairline on void, mono, square. */
 .landing-cta {
   display: inline-flex;
   margin-top: 2rem;
@@ -314,15 +191,13 @@ body {
 .landing-cta:disabled { opacity: 0.5; cursor: default; }
 .landing-cta:disabled:hover { background: transparent; color: #fff; }
 
-/* Launch-email capture — the CTA while the product is iOS-only. Mono, hairline,
-   paper on void, border-radius 0; matches the landing-cta it sits beside. */
+/* Launch-email capture — mono, hairline, paper on void, square. */
 .landing-notify {
   margin-top: 2rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
-.landing-cta-block .landing-notify { margin-top: 0; align-items: center; }
 .landing-notify__label {
   color: #8a8783;
   font-family: var(--font-mono);
@@ -347,7 +222,6 @@ body {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   letter-spacing: 0.04em;
-  border-radius: 0;
   transition: border-color 300ms var(--landing-ease);
 }
 .landing-notify__input::placeholder { color: #8a8783; }
@@ -378,134 +252,192 @@ body {
   line-height: 1.5;
   letter-spacing: 0.04em;
 }
-.landing-cta-block .landing-notify--done { margin-top: 0; text-align: center; }
 
-.landing-section {
+/* ---- Landing: one screen, no scroll on a phone ---- */
+.lp {
+  --landing-ease: cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
-  display: grid;
+  z-index: 1;
   min-height: 100svh;
-  grid-template-columns: minmax(1.5rem, 1fr) minmax(0, 42rem) minmax(0, 42rem) minmax(1.5rem, 1fr);
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+}
+.lp__inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: clamp(2rem, 5vw, 6rem);
-  padding: clamp(5rem, 12vw, 10rem) 0;
-}
-
-.landing-section__copy { grid-column: 2; }
-.landing-section--wardrobe .landing-section__copy,
-.landing-section--world .landing-section__copy { grid-column: 3; }
-
-.landing-image {
-  position: relative;
-  grid-column: 3;
-  width: min(100%, 38rem);
-  aspect-ratio: 1023 / 1537;
-  overflow: hidden;
-  background: #2a2825;
-  animation: landing-image-in both;
-  animation-timeline: view();
-  animation-range: entry 25% cover 52%;
-}
-.landing-image--wardrobe { grid-column: 2; width: min(82vw, 34rem); justify-self: start; }
-.landing-image--problem { justify-self: end; }
-.landing-image--reflection { justify-self: center; width: min(86vw, 34rem); }
-.landing-image--gap { grid-column: 2; width: min(82vw, 34rem); justify-self: start; }
-
-/* Gap section — image left, copy right (mirrors the wardrobe beat). */
-.landing-section--gap .landing-section__copy { grid-column: 3; }
-
-/* Shopping-assistant note — a short, centred statement, no image. */
-.landing-note {
-  display: grid;
-  place-items: center;
-  padding: clamp(5rem, 12vw, 9rem) 1.5rem;
+  justify-content: center;
   text-align: center;
+  gap: clamp(1.75rem, 5vw, 2.75rem);
 }
-.landing-note .landing-copy-block { max-width: 40rem; }
-
-.landing-world-grid {
-  grid-column: 1 / 3;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(7rem, 0.46fr);
-  align-items: end;
-  gap: clamp(0.8rem, 2vw, 1.5rem);
-}
-.landing-world-grid .landing-image { grid-column: auto; width: 100%; }
-.landing-image--stairs { transform: translateY(13%); }
-
-.landing-result {
-  display: grid;
-  place-items: end start;
-  padding: max(1.5rem, 6vw);
-}
-.landing-image--result {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  aspect-ratio: auto;
-}
-.landing-image--result .landing-image__frame { object-position: 50% center; }
-.landing-result__copy { margin-bottom: 8svh; }
-
-.landing-close {
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-  text-align: center;
-}
-.landing-close__copy { display: grid; justify-items: center; }
-.landing-mark {
-  margin: 0 0 2rem;
-  color: #fff;
+.lp__mark {
+  margin: 0;
   font-family: var(--font-mono);
-  font-size: clamp(1.25rem, 3vw, 2rem);
-  letter-spacing: 0.2em;
+  font-size: 0.78rem;
+  letter-spacing: 0.42em;
+  color: #8a8783;
 }
+.lp__headline {
+  margin: 0;
+  max-width: 13ch;
+  font-size: clamp(2.1rem, 9vw, 4rem);
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  color: #f2f0ec;
+  text-wrap: balance;
+}
+.lp__inner .landing-notify {
+  margin-top: 0;
+  align-items: center;
+  width: min(100%, 24rem);
+}
+.lp__inner .landing-notify__row { justify-content: center; }
+.lp__what {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8a8783;
+  text-decoration: none;
+  border-bottom: 1px solid #2a2825;
+  padding-bottom: 0.3rem;
+  transition: color 300ms var(--landing-ease), border-color 300ms var(--landing-ease);
+}
+.lp__what:hover { color: #c9c4bc; border-color: #c9c4bc; }
+.lp__what:focus-visible { outline: 2px solid #f2f0ec; outline-offset: 6px; }
+.lp__footer {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(1.25rem, 6vw, 2.5rem);
+  padding-top: 2rem;
+}
+.lp__footer a {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a8783;
+  text-decoration: none;
+  transition: color 300ms var(--landing-ease);
+}
+.lp__footer a:hover { color: #f2f0ec; }
+.lp__footer a:focus-visible { outline: 2px solid #f2f0ec; outline-offset: 4px; }
 
-@keyframes landing-copy-in {
-  from { opacity: 0; transform: translateY(28px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ---- /what: the product explainer ---- */
+.what {
+  --landing-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 1;
 }
-@keyframes landing-image-in {
-  from { opacity: 0; transform: translateY(18px) scale(1.01); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+.what__head {
+  max-width: 54rem;
+  margin: 0 auto;
+  padding: clamp(4rem, 14vw, 9rem) clamp(1.5rem, 6vw, 3rem) clamp(3rem, 9vw, 5.5rem);
 }
-@keyframes landing-image-drift {
-  from { transform: translateY(-1.5%) scale(1.03); }
-  to { transform: translateY(1.5%) scale(1.01); }
+.what__wordmark {
+  display: inline-block;
+  margin-bottom: clamp(3rem, 9vw, 6rem);
+  color: #f2f0ec;
+  text-decoration: none;
 }
-
-@media (max-width: 760px) {
-  .landing-hero__image { object-position: 56% center; }
-  .landing-hero__copy { padding-top: 57svh; margin-left: 1.25rem; width: min(22rem, calc(100% - 2.5rem)); }
-  .landing-section {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: 2.25rem;
-    min-height: auto;
-    padding: 6rem 1.25rem;
-  }
-  .landing-section--wardrobe { padding-top: 7rem; }
-  .landing-section--wardrobe .landing-section__copy { order: -1; align-self: flex-end; }
-  .landing-section__copy { align-self: flex-start; }
-  .landing-image, .landing-image--wardrobe, .landing-image--reflection { width: min(100%, 25rem); }
-  .landing-image--problem, .landing-image--reflection { align-self: flex-end; }
-  .landing-world-grid { width: 100%; grid-template-columns: 1fr 0.5fr; }
-  .landing-section--world .landing-section__copy { align-self: flex-start; }
-  .landing-image--stairs { transform: translateY(18%); }
-  .landing-image--result .landing-image__frame { object-position: 50% center; }
-  .landing-result__copy { margin-bottom: 10svh; }
+.what__title {
+  margin: 0;
+  max-width: 15ch;
+  font-size: clamp(2.4rem, 9vw, 5rem);
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: #f2f0ec;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .grain-layer--animated,
-  .landing-copy-block,
-  .landing-image,
-  .landing-hero__image,
-  .landing-close__image,
-  .landing-image__frame {
-    animation: none;
-    transform: none;
-  }
+.what__lede {
+  margin: clamp(1.25rem, 4vw, 2rem) 0 0;
+  max-width: 36ch;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.45;
+  color: #c9c4bc;
 }
+.what__beat {
+  display: grid;
+  gap: clamp(1.75rem, 5vw, 3.5rem);
+  align-items: center;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 11vw, 7rem) clamp(1.5rem, 6vw, 3rem);
+  border-top: 1px solid #2a2825;
+}
+.what__step {
+  margin: 0 0 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #8a8783;
+}
+.what__copy h2 {
+  margin: 0;
+  max-width: 13ch;
+  font-size: clamp(1.9rem, 5.5vw, 3rem);
+  font-weight: 850;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #f2f0ec;
+}
+.what__copy p {
+  margin: 1.1rem 0 0;
+  max-width: 40ch;
+  font-size: clamp(0.98rem, 1.8vw, 1.1rem);
+  line-height: 1.5;
+  color: #c9c4bc;
+}
+.what__figure { margin: 0; }
+.what__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* The tall phone screenshot would dominate at full column width; cap the FIGURE
+   so the image keeps width:100%/height:auto (which reserves its aspect box and
+   loads reliably) but never grows past a sane height. */
+.what__figure--tall {
+  width: 100%;
+  max-width: 20rem;
+  margin: 0 auto;
+}
+@media (min-width: 820px) {
+  .what__beat { grid-template-columns: 1fr 1fr; }
+  .what__beat--flip .what__figure { order: 2; }
+}
+.what__close {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+  padding: clamp(4rem, 13vw, 8rem) clamp(1.5rem, 6vw, 3rem) clamp(5rem, 14vw, 9rem);
+  border-top: 1px solid #2a2825;
+}
+.what__close .lp__mark { margin-bottom: 0.5rem; }
+.what__close-title {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(2rem, 7vw, 3.5rem);
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  color: #f2f0ec;
+  text-wrap: balance;
+}
+.what__close .landing-notify {
+  margin-top: 0.5rem;
+  align-items: center;
+  width: min(100%, 24rem);
+}
+.what__close .landing-notify__row { justify-content: center; }

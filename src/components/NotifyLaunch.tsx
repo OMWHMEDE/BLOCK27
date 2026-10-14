@@ -11,7 +11,17 @@ import { sourceFromSearch } from "@/lib/waitlist";
 //
 // The marketing source is read from the URL client-side (so the landing stays
 // static) and passed to the server action; it is re-normalized server-side.
-export function NotifyLaunch({ className = "" }: { className?: string }) {
+//
+// hideLabel drops the visible "Get notified at launch" heading (kept for screen
+// readers) where the surrounding copy already says what the field is — e.g. the
+// single-screen landing.
+export function NotifyLaunch({
+  className = "",
+  hideLabel = false,
+}: {
+  className?: string;
+  hideLabel?: boolean;
+}) {
   const id = useId();
   const [email, setEmail] = useState("");
   const [result, setResult] = useState<NotifyResult>({ status: "idle" });
@@ -39,7 +49,10 @@ export function NotifyLaunch({ className = "" }: { className?: string }) {
         });
       }}
     >
-      <label htmlFor={id} className="landing-notify__label">
+      <label
+        htmlFor={id}
+        className={hideLabel ? "sr-only" : "landing-notify__label"}
+      >
         Get notified at launch
       </label>
       <div className="landing-notify__row">
@@ -68,9 +81,7 @@ export function NotifyLaunch({ className = "" }: { className?: string }) {
           {result.message}
         </p>
       ) : (
-        <p className="landing-notify__consent">
-          Signing up means one email from us, at launch. Unsubscribe any time.
-        </p>
+        <p className="landing-notify__consent">One email, when it launches.</p>
       )}
     </form>
   );
