@@ -253,25 +253,7 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* ---- Landing: one screen, no scroll on a phone ---- */
-.lp {
-  --landing-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  z-index: 1;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(1.5rem, 5vw, 2.5rem);
-}
-.lp__inner {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: clamp(1.75rem, 5vw, 2.75rem);
-}
+/* The small "27" mark — still used in the /what closing section. */
 .lp__mark {
   margin: 0;
   font-family: var(--font-mono);
@@ -279,54 +261,6 @@ body {
   letter-spacing: 0.42em;
   color: #8a8783;
 }
-.lp__headline {
-  margin: 0;
-  max-width: 13ch;
-  font-size: clamp(2.1rem, 9vw, 4rem);
-  font-weight: 850;
-  letter-spacing: -0.05em;
-  line-height: 0.92;
-  text-transform: uppercase;
-  color: #f2f0ec;
-  text-wrap: balance;
-}
-.lp__inner .landing-notify {
-  margin-top: 0;
-  align-items: center;
-  width: min(100%, 24rem);
-}
-.lp__inner .landing-notify__row { justify-content: center; }
-.lp__what {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #8a8783;
-  text-decoration: none;
-  border-bottom: 1px solid #2a2825;
-  padding-bottom: 0.3rem;
-  transition: color 300ms var(--landing-ease), border-color 300ms var(--landing-ease);
-}
-.lp__what:hover { color: #c9c4bc; border-color: #c9c4bc; }
-.lp__what:focus-visible { outline: 2px solid #f2f0ec; outline-offset: 6px; }
-.lp__footer {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: clamp(1.25rem, 6vw, 2.5rem);
-  padding-top: 2rem;
-}
-.lp__footer a {
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #8a8783;
-  text-decoration: none;
-  transition: color 300ms var(--landing-ease);
-}
-.lp__footer a:hover { color: #f2f0ec; }
-.lp__footer a:focus-visible { outline: 2px solid #f2f0ec; outline-offset: 4px; }
 
 /* ---- /what: the product explainer ---- */
 .what {
