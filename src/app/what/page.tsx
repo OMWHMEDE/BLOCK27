@@ -59,10 +59,10 @@ export default function WhatPage() {
       <section className="what__beat what__beat--flip" aria-labelledby="beat-build">
         <figure className="what__figure">
           <Image
-            src="/landing/read-2-v2.jpg"
+            src="/landing/read-2-v3.jpg"
             alt="The app composing an outfit from owned pieces, with its reasoning and the pieces it used."
             width={827}
-            height={741}
+            height={590}
             sizes="(max-width: 820px) 100vw, 35rem"
             unoptimized
             quality={100}
