@@ -1,120 +1,109 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
 import { NotifyLaunch } from "@/components/NotifyLaunch";
-import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "BLOCK27 — What it does",
   description:
-    "BLOCK27 reads the clothes you already own, builds the outfits, and names the gap. Here is how it works.",
+    "An AI stylist for the clothes you already own. It dresses you out of your own wardrobe, then names the Gap — exactly what's missing and what it would unlock.",
 };
 
-// /what — the product explainer, for people who click through from the landing.
-// Real product visuals (garment capture, the composed outfit, the gap screen),
-// brand spacing and type, ending in the same email capture so someone convinced
-// here can sign up without going back. On the shopfront allowlist.
+// /what — the explainer, typography only. No images: the argument is carried by
+// scale, hierarchy, line length and the space between paragraphs. Three beats
+// (the opening line, "That's the Gap.", and "Better wardrobe, better style.")
+// hold the visual weight; everything else is body. A single reading column,
+// left-aligned, tuned for phone width first. Static page.
+const beat =
+  "text-[clamp(1.7rem,6.5vw,2.75rem)] font-[850] tracking-[-0.03em] leading-[1.05] text-paper";
+const body = "text-[1.0625rem] leading-[1.6] text-bone";
+
 export default function WhatPage() {
   return (
-    <main className="what">
+    <main className="relative">
       <div aria-hidden className="grain-layer" />
 
-      <header className="what__head">
-        <Link href="/" className="what__wordmark" aria-label="BLOCK27 home">
+      <div className="relative z-[1] mx-auto w-full max-w-xl px-6 py-16 sm:py-24">
+        <Link
+          href="/"
+          aria-label="BLOCK27 home"
+          className="inline-block text-paper"
+        >
           <Wordmark />
         </Link>
-        <h1 className="what__title">Clothes you own. Worn right.</h1>
-        <p className="what__lede">
-          BLOCK27 reads what is already in your closet, builds the outfits, and
-          tells you what your wardrobe can&rsquo;t do. Menswear. No shopping
-          spree required.
+
+        <p className={`mt-16 ${beat}`}>
+          BLOCK27 is an AI stylist for the clothes you already own.
         </p>
-      </header>
 
-      <section className="what__beat" aria-labelledby="beat-read">
-        <figure className="what__figure">
-          <Image
-            src="/landing/read-1-v2.jpg"
-            alt="A single garment photographed to be read into the wardrobe."
-            width={736}
-            height={920}
-            sizes="(max-width: 820px) 100vw, 35rem"
-            unoptimized
-            quality={100}
-            className="what__img"
-          />
-        </figure>
-        <div className="what__copy">
-          <p className="what__step">The wardrobe</p>
-          <h2 id="beat-read">It reads what you own.</h2>
-          <p>
-            Shoot each piece once. It records the cut, the fabric, the colour,
-            how formal it is, and what it works with — a dense read of every
-            garment, not a photo in a folder.
-          </p>
-        </div>
-      </section>
-
-      <section className="what__beat what__beat--flip" aria-labelledby="beat-build">
-        <figure className="what__figure">
-          <Image
-            src="/landing/read-2-v2.jpg"
-            alt="The app composing an outfit from owned pieces, with its reasoning and the pieces it used."
-            width={827}
-            height={741}
-            sizes="(max-width: 820px) 100vw, 35rem"
-            unoptimized
-            quality={100}
-            className="what__img"
-          />
-        </figure>
-        <div className="what__copy">
-          <p className="what__step">The outfit</p>
-          <h2 id="beat-build">It builds the outfit.</h2>
-          <p>
-            Tell it the occasion. It composes a look from the pieces you already
-            own — one thing loud, the rest quiet — and says why it works, in
-            plain words.
-          </p>
-        </div>
-      </section>
-
-      <section className="what__beat" aria-labelledby="beat-gap">
-        <figure className="what__figure what__figure--tall">
-          <Image
-            src="/landing/gap-section.jpg"
-            alt="The app naming a gap in the wardrobe and how many outfits closing it would unlock."
-            width={828}
-            height={1658}
-            sizes="(max-width: 820px) 100vw, 20rem"
-            unoptimized
-            quality={100}
-            className="what__img"
-          />
-        </figure>
-        <div className="what__copy">
-          <p className="what__step">The gap</p>
-          <h2 id="beat-gap">It names the gap.</h2>
-          <p>
-            It finds what your clothes can&rsquo;t make — the outfit you keep
-            reaching for and don&rsquo;t have — and ranks each gap by how many
-            looks closing it would unlock.
-          </p>
-        </div>
-      </section>
-
-      <section className="what__close" aria-labelledby="what-close">
-        <p className="lp__mark" aria-hidden="true">
-          27
+        <p className={`mt-10 ${body}`}>
+          Not a shop. Not a feed of other people&rsquo;s outfits on other
+          people&rsquo;s bodies. You photograph your wardrobe, and it reads every
+          piece &mdash; fabric, cut, colour, how formal it is, what it sits next
+          to.
         </p>
-        <h2 id="what-close" className="what__close-title">
-          Same six pieces every week.
-        </h2>
-        <NotifyLaunch />
-      </section>
+        <p className={`mt-6 ${body}`}>
+          Then it dresses you out of what&rsquo;s already in there. Combinations
+          you own but never put together, with the reasoning behind each one, so
+          you&rsquo;re not copying a look &mdash; you&rsquo;re learning what works
+          on you.
+        </p>
+        <p className={`mt-6 ${body}`}>
+          And once it knows your wardrobe, it knows what your wardrobe can&rsquo;t
+          do.
+        </p>
 
-      <SiteFooter />
+        <p className={`mt-16 ${beat}`}>That&rsquo;s the Gap.</p>
+
+        <p className={`mt-10 ${body}`}>
+          One page of exactly what&rsquo;s missing, and what each missing piece
+          would unlock. One pair of shoes means every outfit ends the same way.
+          Nothing to layer with means winter is three fits on repeat. The Gap
+          names it, counts the outfits you&rsquo;d gain, and leaves the choice to
+          you.
+        </p>
+        <p className={`mt-6 ${body}`}>
+          So the next thing you buy isn&rsquo;t a guess. It&rsquo;s the one piece
+          that changes the most.
+        </p>
+
+        <p className={`mt-16 ${beat}`}>
+          Better wardrobe, better style. In that order.
+        </p>
+
+        <p className="mt-10 text-[1.0625rem] leading-[1.6] text-paper">
+          Free to start. $9.99 a month, or $79.99 a year.
+        </p>
+        <p className={`mt-6 ${body}`}>
+          On the App Store this month. Leave your email and you hear from us once
+          &mdash; the day it&rsquo;s live.
+        </p>
+
+        <div className="mt-10 max-w-sm">
+          <NotifyLaunch hideLabel />
+        </div>
+
+        <footer className="mt-16 flex flex-wrap gap-x-8 gap-y-3 border-t border-iron pt-8">
+          <Link
+            href="/privacy"
+            className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ash hover:text-paper"
+          >
+            Privacy
+          </Link>
+          <Link
+            href="/terms"
+            className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ash hover:text-paper"
+          >
+            Terms
+          </Link>
+          <Link
+            href="/support"
+            className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-ash hover:text-paper"
+          >
+            Support
+          </Link>
+        </footer>
+      </div>
     </main>
   );
 }
