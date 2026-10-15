@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { joinWaitlist } from "./actions";
-import { sourceFromParams } from "@/lib/waitlist";
 import styles from "./waitlist.module.css";
 
 export const metadata: Metadata = {
@@ -11,12 +10,9 @@ export const metadata: Metadata = {
 export default async function WaitlistPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<{ joined?: string; error?: string }>;
 }) {
-  const params = await searchParams;
-  const joined = params.joined;
-  const error = typeof params.error === "string" ? params.error : undefined;
-  const source = sourceFromParams(params);
+  const { joined, error } = await searchParams;
 
   return (
     <div className={styles.stage}>
@@ -44,7 +40,7 @@ export default async function WaitlistPage({
               You&rsquo;re on the list.
             </h2>
             <p className={`${styles.reveal} ${styles.d3} text-ash max-w-sm`}>
-              We email you once, when it launches. Watch for it.
+              We email invites as we open. Watch for it.
             </p>
           </>
         ) : (
@@ -71,8 +67,6 @@ export default async function WaitlistPage({
                 </p>
               ) : null}
 
-              <input type="hidden" name="source" value={source} />
-
               <input
                 type="email"
                 name="email"
@@ -87,10 +81,6 @@ export default async function WaitlistPage({
               >
                 Request invite
               </button>
-              <p className="text-ash font-mono text-[0.62rem] uppercase tracking-[0.18em] leading-relaxed">
-                Signing up means one email from us, at launch. Unsubscribe any
-                time.
-              </p>
             </form>
           </>
         )}
