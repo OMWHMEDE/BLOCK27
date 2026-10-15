@@ -77,9 +77,34 @@ export async function POST(request: Request) {
     )
     .map((o) => ({ item_ids: o.item_ids, reasoning: o.reasoning }));
 
-  // Consume the single shot regardless of outcome — one compose per guest. If
-  // the pieces don't hold together, the gap is the honest answer, and they can
-  // still sign up. A losing race (row already exists) just returns the winner's.
+  const gap =
+    plan.gap ||
+    (outfits.length === 0
+      ? "These don't hold together yet. Add pieces that pair, then try again."
+      : "");
+
+  // Nothing usable composed. Do NOT consume the single shot — the guest can add
+  // better pieces and retry (no row saved means the next call re-composes). Log
+  // the raw plan against the ids we actually have, so an item_ids mismatch (the
+  // brain echoed ids we don't own) is visible and distinct from a genuinely
+  // incoherent wardrobe (the brain returned no outfits at all).
+  if (outfits.length === 0) {
+    console.warn(
+      "[guest] no usable outfits — not saved (retryable)",
+      "| rawOutfitCount:",
+      plan.outfits.length,
+      "| rawOutfitItemIds:",
+      JSON.stringify(plan.outfits.map((o) => o.item_ids)),
+      "| validIds:",
+      JSON.stringify([...validIds]),
+      "| gap:",
+      plan.gap,
+    );
+    return NextResponse.json({ ok: true, outfits: [], gap });
+  }
+
+  // A real result consumes the single shot — one preview compose per guest. A
+  // losing race (row already exists) just returns the winner's saved outfits.
   const saved = await saveGeneration({ guestId, ip, outfits, occasion });
   if (!saved) {
     const now = await getGeneration(guestId);
@@ -90,10 +115,5 @@ export async function POST(request: Request) {
     });
   }
 
-  const gap =
-    plan.gap ||
-    (outfits.length === 0
-      ? "These don't hold together yet. Sign up and add pieces that pair."
-      : "");
   return NextResponse.json({ ok: true, outfits, gap });
 }
