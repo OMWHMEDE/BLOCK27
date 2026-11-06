@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { capBonus } from "@/lib/cap-bonus";
 import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 
 // The plan line. The paid tier a user is on drives every usage limit: how many
@@ -9,7 +10,10 @@ import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 // surfaces those limits.
 //
 //   Free    10 pieces · 5 generations · 3 shopping consults / mo
-//   BLOCK27 150 pieces · 45 generations · 15 shopping consults / mo
+//   BLOCK27  90 pieces · 35 generations · 15 shopping consults / mo
+//
+// On top of the tier, the founder can grant one account extra room
+// (cap_grants, migration 0031) — folded into the limits below.
 //
 // Try-on is switched off for launch, so tryOnsPerMonth is 0 here and not read from
 // the tier config; restore it when the hand returns.
@@ -156,15 +160,24 @@ export async function getPlan(userId: string): Promise<Plan> {
   const limits = TIERS[tier];
   const paid = exempt || tier !== "free" || isPaidStatus(status);
 
+  // Founder grants on top of the tier (0 when there are none).
+  const [extraPieces, extraCompositions, extraShopping] = exempt
+    ? [0, 0, 0]
+    : await Promise.all([
+        capBonus(supabase, userId, "pieces"),
+        capBonus(supabase, userId, "composition"),
+        capBonus(supabase, userId, "shopping"),
+      ]);
+
   return {
     tier,
     paid,
     status,
-    pieceLimit: limits.pieces,
+    pieceLimit: limits.pieces + extraPieces,
     // Try-on is off for launch and no longer part of the tier config; 0 for all.
     tryOnsPerMonth: 0,
-    compositionsPerMonth: limits.compositionsPerMonth,
-    shoppingPerMonth: limits.shoppingPerMonth,
+    compositionsPerMonth: limits.compositionsPerMonth + extraCompositions,
+    shoppingPerMonth: limits.shoppingPerMonth + extraShopping,
     windowStart: usageWindowStart(anchor ?? createdAt ?? new Date()),
     exempt,
   };

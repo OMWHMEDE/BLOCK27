@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { capBonus } from "@/lib/cap-bonus";
 import { TIERS, toTier, type Tier } from "@/lib/whop/plans";
 
 // A HARD, independent cap check — the backstop for when reserve_usage doesn't
@@ -93,7 +94,9 @@ export async function atOrOverCap(
   opts?: { excludeJobId?: string },
 ): Promise<CapState> {
   const tier = await tierOf(supabase, userId);
-  const cap = CAP[op](tier);
+  // Plus any founder grant for this kind this cycle (render has none).
+  const bonus = op === "render" ? 0 : await capBonus(supabase, userId, op);
+  const cap = CAP[op](tier) + bonus;
   const used = await usedThisCycle(supabase, userId, op, windowStartIso, opts?.excludeJobId);
   return { over: used >= cap, cap, used, tier };
 }
