@@ -23,7 +23,8 @@ export default function RefundPage() {
 
       <Clause label="Paid subscriptions are billed by Apple">
         <p>
-          The paid plan (BLOCK27 — $9.99/month or $79.99/year) is sold inside the
+          The paid plan (BLOCK27 — $10, $15 or $20 a month, your choice; all three
+          unlock the same plan) is sold inside the
           iOS app through Apple in-app purchase. Apple is the merchant of record:
           the charge is on your Apple account, and Apple handles refunds under its
           own policy.

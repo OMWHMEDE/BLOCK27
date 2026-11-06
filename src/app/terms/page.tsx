@@ -103,8 +103,8 @@ export default function TermsPage() {
           </li>
           <li>
             <strong className="text-paper">BLOCK27</strong> —{" "}
-            <strong className="text-paper">$9.99/month</strong> or{" "}
-            <strong className="text-paper">$79.99/year</strong>. Raises the limits
+            <strong className="text-paper">$10, $15 or $20 a month</strong>,
+            your choice. All three unlock exactly the same plan. Raises the limits
             to 90 pieces, 35 outfit generations, and 15 shopping consultations a
             month.
           </li>
