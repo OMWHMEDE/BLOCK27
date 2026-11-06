@@ -47,8 +47,8 @@ export const TIERS: Record<Tier, TierLimits> = {
     label: "BLOCK27",
     priceUsd: 9.99,
     priceYearlyUsd: 79.99,
-    pieces: 150,
-    compositionsPerMonth: 45,
+    pieces: 90,
+    compositionsPerMonth: 35,
     shoppingPerMonth: 15,
   },
 };
