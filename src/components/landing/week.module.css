@@ -1,0 +1,272 @@
+/* The landing story. Void, paper, one hairline; the paintings carry the colour. */
+
+.page {
+  position: relative;
+  background: #000000;
+  color: #f2f0ec;
+  isolation: isolate;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ── Nav ─────────────────────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(242, 240, 236, 0.08);
+}
+.wordmark {
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
+}
+.navCta {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid #f2f0ec;
+  padding: 9px 14px;
+  transition: background 0.2s, color 0.2s;
+}
+.navCta:hover {
+  background: #f2f0ec;
+  color: #000000;
+}
+
+/* ── Scenes ──────────────────────────────────────────────────────────── */
+.scene {
+  position: relative;
+  height: 220vh;
+}
+.sceneLong {
+  height: 380vh;
+}
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 76px 20px 28px;
+}
+
+.painting {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+}
+.frame {
+  position: relative;
+  overflow: hidden;
+  height: min(58dvh, 120vw);
+  aspect-ratio: 2 / 3;
+  outline: 1px solid rgba(242, 240, 236, 0.22);
+  outline-offset: 8px;
+}
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s linear;
+  will-change: transform;
+}
+.fit {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 0.9s ease, transform 1.4s ease;
+}
+.fitOn {
+  opacity: 1;
+  transform: scale(1);
+}
+.plate {
+  margin-top: 8px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #8a8783;
+}
+
+.copy {
+  max-width: 34rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.line {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #c9c4bc;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lineBig {
+  font-size: clamp(1.4rem, 5.6vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  color: #f2f0ec;
+}
+.lineOn {
+  opacity: 1;
+  transform: none;
+}
+.brand {
+  font-size: clamp(2.6rem, 12vw, 5.5rem);
+  letter-spacing: -0.05em;
+}
+
+.hint {
+  position: absolute;
+  bottom: 18px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #8a8783;
+  transition: opacity 0.4s;
+  animation: hint 2.4s ease-in-out infinite;
+}
+.hintOff {
+  opacity: 0;
+}
+@keyframes hint {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+/* ── End ─────────────────────────────────────────────────────────────── */
+.end {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 96px 20px 32px;
+  gap: 18px;
+}
+.endLead {
+  margin: 0;
+  max-width: 24rem;
+  color: #c9c4bc;
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+.endBig {
+  margin: 0;
+  font-size: clamp(2.4rem, 11vw, 5rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+}
+.endCta {
+  margin-top: 18px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.cta {
+  display: inline-flex;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40px;
+  background: #f2f0ec;
+  color: #000000;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.cta:hover {
+  background: #c9c4bc;
+}
+.footer {
+  margin-top: auto;
+  padding-top: 64px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 32px;
+}
+.footerLink {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a8783;
+}
+.footerLink:hover {
+  color: #f2f0ec;
+}
+
+/* ── Desktop: painting left, words right ─────────────────────────────── */
+@media (min-width: 900px) {
+  .stage {
+    flex-direction: row;
+    gap: 7vw;
+    padding: 90px 7vw 40px;
+  }
+  .frame {
+    height: min(78dvh, 52vw);
+  }
+  .copy {
+    text-align: left;
+    max-width: 30rem;
+    gap: 16px;
+  }
+  .line {
+    font-size: 1.15rem;
+  }
+  .lineBig {
+    font-size: clamp(2.4rem, 3.6vw, 3.6rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .line,
+  .fit,
+  .canvas {
+    transition: none;
+  }
+  .line {
+    opacity: 1;
+    transform: none;
+  }
+  .hint {
+    animation: none;
+  }
+}
