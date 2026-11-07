@@ -84,6 +84,11 @@
   transition: filter 0.35s linear, transform 0.35s linear;
   will-change: filter, transform;
 }
+@media (orientation: landscape) {
+  .backdropImg {
+    object-position: center 40%;
+  }
+}
 .tint {
   position: absolute;
   inset: 0;
@@ -243,6 +248,26 @@
   .stage {
     padding: 90px 7vw 12vh;
   }
+}
+/* Wide screens: the man stands left of centre in every wide painting, so
+   the words take the right side, over the garden. */
+@media (min-width: 900px) and (orientation: landscape) {
+  .stage {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 90px 6vw 40px;
+  }
+  .copy {
+    width: min(40vw, 36rem);
+    text-align: left;
+  }
+  .plate {
+    left: auto;
+    right: 6vw;
+    transform: none;
+  }
+}
+@media (min-width: 900px) {
   .line {
     font-size: 1.25rem;
   }

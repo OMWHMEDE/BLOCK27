@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { getImageProps } from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WaitlistInvite } from "@/components/WaitlistInvite";
@@ -74,18 +74,33 @@ function Backdrop({
   priority?: boolean;
   visible?: boolean;
 }) {
+  // Art direction: the tall painting on phones, the wide one (same name +
+  // "-wide") on landscape screens.
+  const wideSrc = src.replace(/\.webp$/, "-wide.webp");
+  const common = { alt: "", fill: true, sizes: "100vw", quality: 82, priority };
+  const {
+    props: { srcSet: wideSet },
+  } = getImageProps({ ...common, src: wideSrc });
+  const {
+    props: { srcSet: tallSet, style: fillStyle, ...img },
+  } = getImageProps({ ...common, src });
   return (
     <div className={`${styles.backdrop} ${visible ? styles.backdropOn : ""}`} aria-hidden>
-      <Image
-        src={src}
-        alt=""
-        fill
-        priority={priority}
-        sizes="100vw"
-        className={styles.backdropImg}
-        style={{ filter: `blur(${(blur * 14).toFixed(1)}px)`, transform: `scale(${1.04 + blur * 0.04})` }}
-      />
-      <div className={styles.tint} style={{ opacity: 0.15 + blur * 0.45 }} />
+      <picture>
+        <source media="(orientation: landscape)" srcSet={wideSet} />
+        {/* eslint-disable-next-line jsx-a11y/alt-text -- alt comes from getImageProps */}
+        <img
+          {...img}
+          srcSet={tallSet}
+          className={styles.backdropImg}
+          style={{
+            ...fillStyle,
+            filter: `blur(${(blur * 14).toFixed(1)}px)`,
+            transform: `scale(${1.04 + blur * 0.04})`,
+          }}
+        />
+      </picture>
+      <div className={styles.tint} style={{ opacity: 0.22 + blur * 0.4 }} />
     </div>
   );
 }
