@@ -72,7 +72,7 @@ export default function WhatPage() {
         </p>
 
         <p className="mt-10 text-[1.0625rem] leading-[1.6] text-paper">
-          Free to start. Then $10, $15 or $20 a month. Pay what you feel. Same plan.
+          Free to start.
         </p>
         <p className={`mt-6 ${body}`}>
           On the App Store this month. Leave your email and you hear from us once
