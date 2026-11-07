@@ -295,47 +295,37 @@
   width: auto;
   max-width: none;
   transform: translateX(-50%);
-  mix-blend-mode: multiply;
 }
-/* The words sit across him, on black bands like the story's lines. */
+/* The words sit across him: heavy black type, with a hairline of the page
+   colour around each letter so it still reads over his dark jacket. */
 .heroCopy {
   position: absolute;
   z-index: 3;
   left: 0;
   right: 0;
-  top: 40%;
+  top: 42%;
   transform: translateY(-50%);
   text-align: center;
   padding: 0 14px;
   pointer-events: none;
+  color: #000000;
+  -webkit-text-stroke: 3px #e0d5ce;
+  paint-order: stroke fill;
 }
-.heroLead,
+.heroLead {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  -webkit-text-stroke: 4px #e0d5ce;
+}
 .heroBig {
   margin: 0;
-}
-.heroLead > span,
-.heroBig > span {
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  background: #000000;
-  color: #f2f0ec;
-}
-.heroLead > span {
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.9;
-  padding: 4px 10px;
-}
-.heroBig {
-  margin-top: 10px;
-}
-.heroBig > span {
-  font-size: clamp(2.8rem, 14vw, 9rem);
+  font-size: clamp(3.4rem, 17vw, 12rem);
   font-weight: 900;
-  line-height: 1.12;
-  letter-spacing: -0.05em;
+  line-height: 0.84;
+  letter-spacing: -0.06em;
   text-transform: uppercase;
-  padding: 0 14px;
+  -webkit-text-stroke: 6px #e0d5ce;
 }
 .heroCta {
   position: absolute;

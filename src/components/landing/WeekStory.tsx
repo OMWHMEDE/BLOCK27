@@ -21,8 +21,8 @@ import styles from "./week.module.css";
 // light ground with tiny planes and parachuting Subject 27s drifting around
 // it. No prices on this page.
 
-// Subject 27 on the opening page. Swap for the transparent cut-out.
-const SUBJECT_SRC = "/landing/week/cta.webp";
+// Subject 27 on the opening page: the transparent cut-out.
+const SUBJECT_SRC = "/landing/week/subject.webp";
 
 const FITS = [
   { src: "/landing/week/fit-workwear.webp", plate: "Workwear" },
@@ -185,7 +185,6 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
 
       <header className={styles.nav}>
         <span className={styles.wordmark}>BLOCK27</span>
-        <GetButton appStoreUrl={appStoreUrl} small />
       </header>
 
       {/* 0 — The opening: the CTA, with life around him. */}
@@ -201,14 +200,10 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
           <Chute className={`${styles.chute} ${styles.c5}`} />
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element -- one static cut-out */}
-        <img src={SUBJECT_SRC} alt="Subject 27" className={styles.heroSubject} width={1122} height={1402} />
+        <img src={SUBJECT_SRC} alt="Subject 27" className={styles.heroSubject} width={484} height={939} />
         <div className={styles.heroCopy}>
-          <p className={styles.heroLead}>
-            <span>An AI stylist for the clothes you already own.</span>
-          </p>
-          <h1 className={styles.heroBig}>
-            <span>Time to level up.</span>
-          </h1>
+          <p className={styles.heroLead}>An AI stylist for the clothes you already own.</p>
+          <h1 className={styles.heroBig}>Time to level up.</h1>
         </div>
         <div className={styles.heroCta}>
           <GetButton appStoreUrl={appStoreUrl} />
