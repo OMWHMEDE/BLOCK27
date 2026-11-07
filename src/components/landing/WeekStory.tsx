@@ -13,7 +13,8 @@ import styles from "./week.module.css";
 //   4. What it is, and the button.
 // Each scene is a tall section with a sticky stage; how far you've scrolled
 // through it drives which lines are showing (and which fit, in scene 3).
-// The paintings are images in public/landing/week. No prices on this page.
+// The paintings fill the screen (public/landing/week) and blur when the
+// words get serious. No prices on this page.
 
 const FITS = [
   { src: "/landing/week/fit-workwear.webp", plate: "Workwear" },
@@ -60,37 +61,37 @@ function Line({ show, big, children }: { show: boolean; big?: boolean; children:
   );
 }
 
-function Painting({
+// The painting fills the screen. `blur` (0–1) softens it once the words
+// arrive, so they read over it; a flat tint goes with the blur.
+function Backdrop({
   src,
-  plate,
-  progress,
+  blur,
   priority,
+  visible = true,
 }: {
   src: string;
-  plate: string;
-  progress: number;
+  blur: number;
   priority?: boolean;
+  visible?: boolean;
 }) {
-  // A slow push-in as you scroll the scene.
-  const scale = 1.06 - progress * 0.06;
   return (
-    <figure className={styles.painting}>
-      <div className={styles.frame}>
-        <Image
-          src={src}
-          alt=""
-          width={1024}
-          height={1536}
-          priority={priority}
-          sizes="(min-width: 900px) 40vw, 82vw"
-          className={styles.canvas}
-          style={{ transform: `scale(${scale})` }}
-        />
-      </div>
-      <figcaption className={styles.plate}>{plate}</figcaption>
-    </figure>
+    <div className={`${styles.backdrop} ${visible ? styles.backdropOn : ""}`} aria-hidden>
+      <Image
+        src={src}
+        alt=""
+        fill
+        priority={priority}
+        sizes="100vw"
+        className={styles.backdropImg}
+        style={{ filter: `blur(${(blur * 14).toFixed(1)}px)`, transform: `scale(${1.04 + blur * 0.04})` }}
+      />
+      <div className={styles.tint} style={{ opacity: 0.15 + blur * 0.45 }} />
+    </div>
   );
 }
+
+// Blur ramps in over a short stretch after `from`.
+const ramp = (p: number, from: number, span = 0.18) => Math.min(Math.max((p - from) / span, 0), 1);
 
 function GetButton({ appStoreUrl }: { appStoreUrl: string | null }) {
   if (appStoreUrl) {
@@ -125,12 +126,12 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
       {/* 1 — 1600 */}
       <section ref={thenRef} className={styles.scene}>
         <div className={styles.stage}>
-          <Painting src="/landing/week/then.webp" plate="c. 1600" progress={thenP} priority />
+          <Backdrop src="/landing/week/then.webp" blur={ramp(thenP, 0.3)} priority />
           <div className={styles.copy}>
-            <Line show big>
+            <Line show={thenP > 0.08} big>
               In 1600, he owned one outfit.
             </Line>
-            <Line show={thenP > 0.35}>He never had to think about what to wear tomorrow.</Line>
+            <Line show={thenP > 0.4}>He never had to think about what to wear tomorrow.</Line>
           </div>
           <span className={`${styles.hint} ${thenP > 0.05 ? styles.hintOff : ""}`}>Scroll</span>
         </div>
@@ -139,7 +140,7 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
       {/* 2 — Today */}
       <section ref={todayRef} className={styles.scene}>
         <div className={styles.stage}>
-          <Painting src="/landing/week/today.webp" plate="Today" progress={todayP} />
+          <Backdrop src="/landing/week/today.webp" blur={ramp(todayP, 0.1)} />
           <div className={styles.copy}>
             <Line show={todayP > 0.08} big>
               Today, the poorest of us own more clothes than he ever did.
@@ -154,22 +155,10 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
       {/* 3 — The latest update */}
       <section ref={updateRef} className={`${styles.scene} ${styles.sceneLong}`}>
         <div className={styles.stage}>
-          <figure className={styles.painting}>
-            <div className={styles.frame}>
-              {FITS.map((fit, i) => (
-                <Image
-                  key={fit.src}
-                  src={fit.src}
-                  alt=""
-                  width={1024}
-                  height={1536}
-                  sizes="(min-width: 900px) 40vw, 82vw"
-                  className={`${styles.canvas} ${styles.fit} ${i === fitIndex ? styles.fitOn : ""}`}
-                />
-              ))}
-            </div>
-            <figcaption className={styles.plate}>{FITS[fitIndex].plate}</figcaption>
-          </figure>
+          {FITS.map((fit, i) => (
+            <Backdrop key={fit.src} src={fit.src} blur={0} visible={i === fitIndex} />
+          ))}
+          <span className={styles.plate}>{FITS[fitIndex].plate}</span>
           <div className={styles.copy}>
             <Line show={updateP > 0.02}>The latest update:</Line>
             <Line show={updateP > 0.06} big>
@@ -182,6 +171,7 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
 
       {/* 4 — What it is, and the way in */}
       <section id="get" className={styles.end}>
+        <Backdrop src={FITS[FITS.length - 1].src} blur={1} />
         <p className={styles.endLead}>An AI stylist for the clothes you already own.</p>
         <p className={styles.endBig}>Time to level up.</p>
         <div className={styles.endCta}>
