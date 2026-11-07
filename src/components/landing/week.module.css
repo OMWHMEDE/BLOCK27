@@ -1,5 +1,4 @@
-/* The landing story. Paintings full screen, words on black bands, a light
-   CTA page at the end. */
+/* The landing: one light screen, Subject 27, the words, the button. */
 
 .page {
   position: relative;
@@ -99,128 +98,6 @@
   background: #000000;
   padding: 26px 22px 20px;
   width: min(100%, 26rem);
-}
-
-/* ── Scenes ──────────────────────────────────────────────────────────── */
-.scene {
-  position: relative;
-  height: 220vh;
-}
-.sceneLong {
-  height: 380vh;
-}
-.stage {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 76px 16px 12vh;
-}
-
-.backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  visibility: hidden;
-}
-.backdropOn {
-  visibility: visible;
-}
-.backdropImg {
-  object-fit: cover;
-  object-position: center 30%;
-}
-@media (orientation: landscape) {
-  .backdropImg {
-    object-position: center 40%;
-  }
-}
-
-.plate {
-  position: absolute;
-  z-index: 1;
-  top: 76px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.66rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: #f2f0ec;
-  background: #000000;
-  padding: 7px 12px;
-}
-
-/* The words: each line its own black band, sliding up into place. */
-.copy {
-  position: relative;
-  z-index: 1;
-  max-width: 34rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-}
-.line {
-  margin: 0;
-  overflow: hidden;
-}
-.line > span {
-  display: inline;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  background: #000000;
-  color: #f2f0ec;
-  padding: 4px 10px;
-  font-size: 1rem;
-  line-height: 1.75;
-}
-.lineBig > span {
-  font-size: clamp(1.5rem, 6.6vw, 3.4rem);
-  font-weight: 900;
-  line-height: 1.28;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-}
-.line {
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-.lineOn {
-  opacity: 1;
-  transform: none;
-}
-.brand {
-  font-size: clamp(2.6rem, 13vw, 7rem) !important;
-  letter-spacing: -0.05em !important;
-}
-
-.hint {
-  position: absolute;
-  z-index: 1;
-  bottom: 18px;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.6rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: #f2f0ec;
-  background: #000000;
-  padding: 6px 10px;
-  transition: opacity 0.3s;
-  animation: hint 2.4s ease-in-out infinite;
-}
-.hintOff {
-  opacity: 0;
-}
-@keyframes hint {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(5px); }
 }
 
 /* ── The opening: light ground, Subject 27 huge, words across him ───── */
@@ -334,81 +211,36 @@
   justify-content: center;
   padding: 0 16px;
 }
-.why {
+/* Legal links, small, along the bottom edge. */
+.heroFooter {
   position: absolute;
   z-index: 4;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.68rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #000000;
-  background: #e0d5ce;
-  padding: 6px 10px;
-  white-space: nowrap;
-}
-.why span {
-  display: inline-block;
-  animation: hint 2.4s ease-in-out infinite;
-}
-
-/* ── The close: the button again ─────────────────────────────────────── */
-.close {
-  position: relative;
-  min-height: 70dvh;
-  background: #e0d5ce;
-  color: #000000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 26px;
-  padding: 80px 20px 24px;
-  text-align: center;
-}
-.closeBig {
-  margin: 0;
-  font-size: clamp(2.6rem, 12vw, 6.4rem);
-  font-weight: 900;
-  line-height: 0.88;
-  letter-spacing: -0.055em;
-  text-transform: uppercase;
-}
-.footer {
-  margin-top: auto;
-  padding-top: 32px;
+  left: 0;
+  right: 0;
+  bottom: 18px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px 32px;
+  gap: 8px 26px;
 }
 .footerLink {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #000000;
-  opacity: 0.6;
+  background: #e0d5ce;
+  padding: 3px 6px;
 }
 .footerLink:hover {
-  opacity: 1;
+  background: #000000;
+  color: #e0d5ce;
 }
 
 /* ── Desktop ─────────────────────────────────────────────────────────── */
 @media (min-width: 900px) {
   .nav {
     padding: 20px 28px;
-  }
-  .stage {
-    padding: 90px 7vw 12vh;
-  }
-  .line > span {
-    font-size: 1.2rem;
-  }
-  .lineBig > span {
-    font-size: clamp(2.4rem, 3.8vw, 4rem);
   }
   .heroSubject {
     height: 96%;
@@ -417,40 +249,11 @@
     top: 44%;
   }
 }
-/* Wide screens: the man stands left of centre in every wide painting, so
-   the words take the right side, over the garden. */
-@media (min-width: 900px) and (orientation: landscape) {
-  .stage {
-    align-items: flex-end;
-    justify-content: center;
-    padding: 90px 6vw 40px;
-  }
-  .copy {
-    width: min(42vw, 38rem);
-    align-items: flex-start;
-    text-align: left;
-  }
-  .plate {
-    left: auto;
-    right: 6vw;
-    top: 90px;
-    transform: none;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
-  .line {
-    transition: none;
-    opacity: 1;
-    transform: none;
-  }
-  .hint,
   .plane,
   .chute {
     animation: none;
-  }
-  .plane,
-  .chute {
     display: none;
   }
 }
