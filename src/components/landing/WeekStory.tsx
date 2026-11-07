@@ -6,11 +6,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { WaitlistInvite } from "@/components/WaitlistInvite";
 import styles from "./week.module.css";
 
-// The landing story, told in four scrolls:
+// The landing opens on the CTA: Subject 27 huge on light ground, "Time to
+// level up" written across him, tiny planes and parachutes drifting around,
+// and the button. A quiet "Why BLOCK27?" at the bottom leads into the story:
 //   1. 1600 — he owned one outfit, and never had to think about tomorrow.
 //   2. Today — closets full, same outfit all week.
 //   3. The latest update: BLOCK27 — the same man, styled three ways.
-//   4. What it is, and the button.
+//   4. The button again, and the legal links.
 // Each scene is a tall section with a sticky stage; how far you've scrolled
 // through it drives which lines are showing (and which fit, in scene 3).
 // The paintings fill the screen (public/landing/week) and stay sharp; the
@@ -18,6 +20,9 @@ import styles from "./week.module.css";
 // clean. The last page breaks from the paintings on purpose: a real photo on
 // light ground with tiny planes and parachuting Subject 27s drifting around
 // it. No prices on this page.
+
+// Subject 27 on the opening page. Swap for the transparent cut-out.
+const SUBJECT_SRC = "/landing/week/cta.webp";
 
 const FITS = [
   { src: "/landing/week/fit-workwear.webp", plate: "Workwear" },
@@ -183,6 +188,37 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
         <GetButton appStoreUrl={appStoreUrl} small />
       </header>
 
+      {/* 0 — The opening: the CTA, with life around him. */}
+      <section id="get" className={styles.hero}>
+        <div className={styles.sky} aria-hidden>
+          <Plane className={`${styles.plane} ${styles.p1}`} />
+          <Plane className={`${styles.plane} ${styles.p2}`} />
+          <Plane className={`${styles.plane} ${styles.p3}`} />
+          <Chute className={`${styles.chute} ${styles.c1}`} />
+          <Chute className={`${styles.chute} ${styles.c2}`} />
+          <Chute className={`${styles.chute} ${styles.c3}`} />
+          <Chute className={`${styles.chute} ${styles.c4}`} />
+          <Chute className={`${styles.chute} ${styles.c5}`} />
+        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- one static cut-out */}
+        <img src={SUBJECT_SRC} alt="Subject 27" className={styles.heroSubject} width={1122} height={1402} />
+        <div className={styles.heroCopy}>
+          <p className={styles.heroLead}>
+            <span>An AI stylist for the clothes you already own.</span>
+          </p>
+          <h1 className={styles.heroBig}>
+            <span>Time to level up.</span>
+          </h1>
+        </div>
+        <div className={styles.heroCta}>
+          <GetButton appStoreUrl={appStoreUrl} />
+        </div>
+        <a href="#why" className={styles.why}>
+          Why BLOCK27? <span aria-hidden>↓</span>
+        </a>
+      </section>
+
+      <div id="why" />
       {/* 1 — 1600 */}
       <section ref={thenRef} className={styles.scene}>
         <div className={styles.stage}>
@@ -229,30 +265,10 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
         </div>
       </section>
 
-      {/* 4 — The CTA: a different world. Light ground, the real photo, life
-          drifting around him. */}
-      <section id="get" className={styles.end}>
-        <div className={styles.sky} aria-hidden>
-          <Plane className={`${styles.plane} ${styles.p1}`} />
-          <Plane className={`${styles.plane} ${styles.p2}`} />
-          <Plane className={`${styles.plane} ${styles.p3}`} />
-          <Chute className={`${styles.chute} ${styles.c1}`} />
-          <Chute className={`${styles.chute} ${styles.c2}`} />
-          <Chute className={`${styles.chute} ${styles.c3}`} />
-          <Chute className={`${styles.chute} ${styles.c4}`} />
-          <Chute className={`${styles.chute} ${styles.c5}`} />
-        </div>
-        <div className={styles.endInner}>
-          <div className={styles.endCopy}>
-            <p className={styles.endLead}>An AI stylist for the clothes you already own.</p>
-            <p className={styles.endBig}>Time to level up.</p>
-            <div className={styles.endCta}>
-              <GetButton appStoreUrl={appStoreUrl} />
-            </div>
-          </div>
-          {/* eslint-disable-next-line @next/next/no-img-element -- one static photo */}
-          <img src="/landing/week/cta.webp" alt="Subject 27" className={styles.endPhoto} width={1122} height={1402} />
-        </div>
+      {/* 4 — Back to the button. */}
+      <section className={styles.close}>
+        <p className={styles.closeBig}>Time to level up.</p>
+        <GetButton appStoreUrl={appStoreUrl} />
         <footer className={styles.footer}>
           {[
             { href: "/privacy", label: "Privacy" },

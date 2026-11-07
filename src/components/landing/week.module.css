@@ -223,21 +223,19 @@
   50% { transform: translateY(5px); }
 }
 
-/* ── The CTA page: light ground, the photo, tiny life ────────────────── */
-.end {
+/* ── The opening: light ground, Subject 27 huge, words across him ───── */
+.hero {
   position: relative;
   overflow: hidden;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 560px;
   background: #e0d5ce;
   color: #000000;
-  display: flex;
-  flex-direction: column;
-  padding: 80px 20px 24px;
 }
 .sky {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
 }
 .plane,
@@ -262,8 +260,8 @@
   animation: fly linear infinite;
 }
 .p1 { top: 9%; animation-duration: 26s; }
-.p2 { top: 23%; width: 76px; animation-duration: 34s; animation-delay: -12s; opacity: 0.7; }
-.p3 { top: 58%; width: 60px; animation-duration: 41s; animation-delay: -27s; opacity: 0.5; }
+.p2 { top: 21%; width: 76px; animation-duration: 34s; animation-delay: -12s; opacity: 0.7; }
+.p3 { top: 62%; width: 60px; animation-duration: 41s; animation-delay: -27s; opacity: 0.5; }
 @keyframes fly {
   from { transform: translateX(0) translateY(0); }
   50% { transform: translateX(60vw) translateY(-14px); }
@@ -274,11 +272,11 @@
   top: -70px;
   animation: drift linear infinite;
 }
-.c1 { left: 8%; animation-duration: 19s; }
-.c2 { left: 31%; width: 22px; animation-duration: 25s; animation-delay: -9s; opacity: 0.75; }
-.c3 { left: 67%; animation-duration: 21s; animation-delay: -15s; }
-.c4 { left: 86%; width: 20px; animation-duration: 28s; animation-delay: -4s; opacity: 0.6; }
-.c5 { left: 50%; width: 16px; animation-duration: 33s; animation-delay: -20s; opacity: 0.5; }
+.c1 { left: 7%; animation-duration: 19s; }
+.c2 { left: 24%; width: 22px; animation-duration: 25s; animation-delay: -9s; opacity: 0.75; }
+.c3 { left: 74%; animation-duration: 21s; animation-delay: -15s; }
+.c4 { left: 90%; width: 20px; animation-duration: 28s; animation-delay: -4s; opacity: 0.6; }
+.c5 { left: 52%; width: 16px; animation-duration: 33s; animation-delay: -20s; opacity: 0.5; }
 @keyframes drift {
   0% { transform: translate(0, 0) rotate(-6deg); }
   25% { transform: translate(18px, 28vh) rotate(5deg); }
@@ -287,31 +285,103 @@
   100% { transform: translate(0, 112vh) rotate(-3deg); }
 }
 
-.endInner {
-  position: relative;
+/* He is the background: huge, centred, standing on the bottom edge. */
+.heroSubject {
+  position: absolute;
   z-index: 1;
-  flex: 1;
+  left: 50%;
+  bottom: 0;
+  height: 92%;
+  width: auto;
+  max-width: none;
+  transform: translateX(-50%);
+  mix-blend-mode: multiply;
+}
+/* The words sit across him, on black bands like the story's lines. */
+.heroCopy {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: 40%;
+  transform: translateY(-50%);
+  text-align: center;
+  padding: 0 14px;
+  pointer-events: none;
+}
+.heroLead,
+.heroBig {
+  margin: 0;
+}
+.heroLead > span,
+.heroBig > span {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  background: #000000;
+  color: #f2f0ec;
+}
+.heroLead > span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.9;
+  padding: 4px 10px;
+}
+.heroBig {
+  margin-top: 10px;
+}
+.heroBig > span {
+  font-size: clamp(2.8rem, 14vw, 9rem);
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  padding: 0 14px;
+}
+.heroCta {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  right: 0;
+  bottom: 74px;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+}
+.why {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #000000;
+  background: #e0d5ce;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+.why span {
+  display: inline-block;
+  animation: hint 2.4s ease-in-out infinite;
+}
+
+/* ── The close: the button again ─────────────────────────────────────── */
+.close {
+  position: relative;
+  min-height: 70dvh;
+  background: #e0d5ce;
+  color: #000000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-}
-.endCopy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  gap: 26px;
+  padding: 80px 20px 24px;
   text-align: center;
-  gap: 14px;
 }
-.endLead {
-  margin: 0;
-  max-width: 22rem;
-  font-size: 1.05rem;
-  line-height: 1.4;
-  font-weight: 600;
-}
-.endBig {
+.closeBig {
   margin: 0;
   font-size: clamp(2.6rem, 12vw, 6.4rem);
   font-weight: 900;
@@ -319,23 +389,8 @@
   letter-spacing: -0.055em;
   text-transform: uppercase;
 }
-.endCta {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-.endPhoto {
-  height: min(40dvh, 420px);
-  width: auto;
-  mix-blend-mode: multiply;
-  /* Melt the photo's edges into the page so it has no box. */
-  -webkit-mask-image: radial-gradient(ellipse 70% 72% at 50% 50%, #000 62%, transparent 100%);
-  mask-image: radial-gradient(ellipse 70% 72% at 50% 50%, #000 62%, transparent 100%);
-}
 .footer {
-  position: relative;
-  z-index: 1;
+  margin-top: auto;
   padding-top: 32px;
   display: flex;
   flex-wrap: wrap;
@@ -368,20 +423,11 @@
   .lineBig > span {
     font-size: clamp(2.4rem, 3.8vw, 4rem);
   }
-  .endInner {
-    flex-direction: row;
-    gap: 6vw;
+  .heroSubject {
+    height: 96%;
   }
-  .endCopy {
-    align-items: flex-start;
-    text-align: left;
-    max-width: 36rem;
-  }
-  .endLead {
-    font-size: 1.25rem;
-  }
-  .endPhoto {
-    height: min(80dvh, 760px);
+  .heroCopy {
+    top: 44%;
   }
 }
 /* Wide screens: the man stands left of centre in every wide painting, so
