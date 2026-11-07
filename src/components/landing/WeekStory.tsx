@@ -167,7 +167,7 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
           <Chute className={`${styles.chute} ${styles.c5}`} />
         </div>
         {/* eslint-disable-next-line @next/next/no-img-element -- one static cut-out */}
-        <img src={SUBJECT_SRC} alt="Subject 27" className={styles.heroSubject} width={488} height={941} />
+        <img src={SUBJECT_SRC} alt="Subject 27" className={styles.heroSubject} width={1122} height={2160} />
         <div className={styles.heroCopy}>
           <p className={styles.heroLead}>An AI stylist for the clothes you already own.</p>
           <h1 className={styles.heroBig}>Time to level up.</h1>

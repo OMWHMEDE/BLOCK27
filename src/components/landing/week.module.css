@@ -168,7 +168,7 @@
   z-index: 1;
   left: 50%;
   bottom: 0;
-  height: 92%;
+  height: 66%;
   width: auto;
   max-width: none;
   transform: translateX(-50%);
@@ -180,7 +180,7 @@
   z-index: 3;
   left: 0;
   right: 0;
-  top: 42%;
+  top: 57%;
   transform: translateY(-50%);
   text-align: center;
   padding: 0 14px;
@@ -245,12 +245,14 @@ a.footerLink:hover {
 }
 
 /* ── The storm: a black cloud raining blood ──────────────────────────── */
+/* The cloud hangs right over his head and rains on him. */
 .storm {
+  --storm-w: min(74vw, 320px);
   position: absolute;
-  z-index: 0;
-  top: 7%;
-  left: 54%;
-  width: min(46vw, 420px);
+  z-index: 2;
+  top: 9%;
+  left: calc(50% - var(--storm-w) / 2);
+  width: var(--storm-w);
   height: 100%;
   pointer-events: none;
   animation: stormDrift 38s ease-in-out infinite alternate;
@@ -283,8 +285,8 @@ a.footerLink:hover {
   to { transform: translateY(100vh); opacity: 0.7; }
 }
 @keyframes stormDrift {
-  from { transform: translateX(-6vw); }
-  to { transform: translateX(8vw); }
+  from { transform: translateX(-2.5vw); }
+  to { transform: translateX(2.5vw); }
 }
 
 /* Tiny figures in free fall, tumbling. */
@@ -309,10 +311,14 @@ a.footerLink:hover {
     padding: 20px 28px;
   }
   .heroSubject {
-    height: 96%;
+    height: 70%;
+  }
+  .storm {
+    --storm-w: min(36vw, 460px);
+    top: 5%;
   }
   .heroCopy {
-    top: 44%;
+    top: 60%;
   }
 }
 
