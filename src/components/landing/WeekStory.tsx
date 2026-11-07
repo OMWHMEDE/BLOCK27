@@ -44,6 +44,63 @@ function Chute({ className }: { className?: string }) {
   );
 }
 
+// A tiny figure in free fall, no canopy.
+function Faller({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 30 30" className={className} aria-hidden>
+      <circle cx="15" cy="6" r="3.4" />
+      <path d="M13 10 h4 l1.2 8 h-1.6 l1.4 9 h-2.4 l-1.6 -7 l-1.6 7 h-2.4 l1.4 -9 h-1.6 z" />
+      <path d="M13.4 11 L5 4.5 L4 6 L12.6 13 Z M16.6 11 L25 4.5 L26 6 L17.4 13 Z" />
+    </svg>
+  );
+}
+
+// The black cloud, and the blood rain under it. Drop positions are fixed so
+// the server and the browser draw the same rain.
+const DROPS = Array.from({ length: 44 }, (_, i) => ({
+  left: (i * 37) % 100,
+  delay: -((i * 0.53) % 1.7),
+  duration: 0.9 + ((i * 7) % 6) / 10,
+  length: 10 + ((i * 5) % 9),
+}));
+function Storm() {
+  return (
+    <div className={styles.storm} aria-hidden>
+      <svg viewBox="0 0 340 150" className={styles.cloud}>
+        <defs>
+          <filter id="storm-soft" x="-20%" y="-30%" width="140%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="27" />
+            <feDisplacementMap in="SourceGraphic" scale="18" />
+            <feGaussianBlur stdDeviation="2.4" />
+          </filter>
+        </defs>
+        <g filter="url(#storm-soft)">
+          <ellipse cx="170" cy="96" rx="150" ry="30" />
+          <circle cx="92" cy="78" r="38" />
+          <circle cx="150" cy="58" r="50" />
+          <circle cx="212" cy="66" r="44" />
+          <circle cx="262" cy="84" r="32" />
+          <circle cx="60" cy="96" r="24" />
+        </g>
+      </svg>
+      <div className={styles.rain}>
+        {DROPS.map((d, i) => (
+          <span
+            key={i}
+            className={styles.drop}
+            style={{
+              left: `${d.left}%`,
+              height: `${d.length}px`,
+              animationDelay: `${d.delay}s`,
+              animationDuration: `${d.duration}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function GetButton({ appStoreUrl, small }: { appStoreUrl: string | null; small?: boolean }) {
   const [open, setOpen] = useState(false);
   const inner = (
@@ -95,7 +152,11 @@ export function WeekStory({ appStoreUrl }: { appStoreUrl: string | null }) {
 
       {/* 0 — The opening: the CTA, with life around him. */}
       <section id="get" className={styles.hero}>
+        <Storm />
         <div className={styles.sky} aria-hidden>
+          <Faller className={`${styles.faller} ${styles.f1}`} />
+          <Faller className={`${styles.faller} ${styles.f2}`} />
+          <Faller className={`${styles.faller} ${styles.f3}`} />
           <Plane className={`${styles.plane} ${styles.p1}`} />
           <Plane className={`${styles.plane} ${styles.p2}`} />
           <Plane className={`${styles.plane} ${styles.p3}`} />
