@@ -3,7 +3,12 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // The launch site (public/launch) is the front door: "/" serves it.
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: "/", destination: "/launch/index.html" }],
+    };
+  },
 };
 
 export default withSentryConfig(nextConfig, {

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLOCK27 — An AI stylist for the clothes you own</title>
+<meta name="description" content="An AI stylist for the clothes you own. Shoot your pieces once. It builds the outfits.">
+<meta property="og:title" content="BLOCK27">
+<meta property="og:description" content="An AI stylist for the clothes you own.">
+<meta property="og:image" content="/opengraph-image.png">
+<link rel="icon" href="/icon.png">
+<style>
+@font-face{font-family:"Arch";src:url("/launch/fonts/archivo.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:block}
+@font-face{font-family:"Ser";src:url("/launch/fonts/serif-italic.woff2") format("woff2");font-style:italic;font-weight:400;font-display:block}
+:root{
+  --cream:#F2EBE0; --red:#A8191E; --ink:#0A0A0A; --black:#000; --mute:rgba(0,0,0,.55);
+  --pad:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:var(--cream)}
+body{font-family:"Arch",system-ui,sans-serif;font-stretch:100%;color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+section{position:relative;overflow:hidden}
+.red{background:var(--red);color:var(--cream)}
+.cream{background:var(--cream);color:var(--ink)}
+.black{background:var(--black);color:var(--cream)}
+.ser{font-family:"Ser",Georgia,serif;font-style:italic;font-weight:400;letter-spacing:-.01em}
+.wide{font-stretch:125%;font-weight:900;letter-spacing:-.03em;line-height:.86}
+
+/* nav */
+nav{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:18px var(--pad);z-index:3;font-size:13px;font-weight:600}
+nav .mark{font-stretch:125%;font-weight:900;letter-spacing:-.02em;font-size:15px}
+nav .links{display:flex;gap:16px;opacity:.85}
+
+/* hero */
+#hero{min-height:100svh;padding:88px var(--pad) 28px;display:flex;flex-direction:column}
+#wordslot{width:100%}
+#hero .lede{margin-top:8px;display:grid;gap:18px}
+#portrait{position:relative;width:calc(100% + 2*var(--pad));margin:-34px calc(-1*var(--pad)) 0;aspect-ratio:900/1125;touch-action:pan-y}
+#portrait canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+@media (min-width:900px){#portrait{width:min(560px,60vw);margin:-60px auto 0}}
+#hero h2{font-size:clamp(26px,7.4vw,56px);font-weight:600;font-stretch:100%;letter-spacing:-.025em;line-height:1}
+#hero h2 .ser{display:block;font-size:1.12em;line-height:1}
+#hero p{font-size:14px;line-height:1.45;max-width:30em;opacity:.9}
+.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-block;background:var(--cream);color:var(--ink);font-weight:700;font-size:15px;padding:15px 22px;text-decoration:none;border:0;cursor:pointer}
+.btn.dark{background:var(--black);color:var(--cream)}
+.link{color:inherit;font-weight:600;font-size:15px;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+#hero .foot{display:flex;justify-content:space-between;font-size:12px;opacity:.75;margin-top:22px}
+
+/* marquee */
+#band{padding:26px 0}
+.mq{white-space:nowrap;font-size:clamp(48px,15vw,120px);will-change:transform}
+.mq span{display:inline-block;padding-right:.35em}
+.mq .o{color:transparent;-webkit-text-stroke:1.5px var(--cream)}
+.mq i{font-style:normal;color:var(--red);padding-right:.35em}
+
+/* statement */
+#said{padding:110px var(--pad) 120px}
+#said h3{font-size:clamp(40px,12.5vw,104px);font-weight:800;font-stretch:100%;letter-spacing:-.045em;line-height:.9}
+#said h3 .ser{color:var(--red);font-size:1.08em;letter-spacing:-.02em}
+#said .side{margin-top:44px;display:grid;grid-template-columns:1fr 1fr;gap:18px;font-size:13px;line-height:1.45;color:var(--mute)}
+#said .side b{display:block;color:var(--ink);font-size:14px;margin-bottom:6px}
+
+/* what */
+#what{padding:96px var(--pad) 88px}
+#what h3{font-size:clamp(44px,14vw,120px)}
+#what ul{list-style:none;margin-top:34px;border-top:1px solid rgba(242,235,224,.25)}
+#what li{display:flex;justify-content:space-between;padding:16px 0;border-bottom:1px solid rgba(242,235,224,.25);font-size:17px;font-weight:600}
+#what li span:last-child{font-weight:400;opacity:.6;font-size:13px}
+
+/* numbered */
+.num{padding:84px var(--pad) 96px;min-height:100svh;display:grid;grid-template-rows:auto 1fr}
+.num .head{display:flex;justify-content:space-between;align-items:flex-start}
+.num h4{font-size:clamp(46px,14vw,120px);font-weight:900;font-stretch:125%;letter-spacing:-.04em;line-height:.85}
+.num .copy{margin-top:16px;font-size:14px;line-height:1.45;max-width:22em;opacity:.85}
+.num .stage{position:relative;margin-top:30px;min-height:520px}
+.num .n{position:absolute;right:-.06em;bottom:-.12em;font-size:clamp(260px,78vw,620px);font-weight:900;font-stretch:125%;letter-spacing:-.06em;line-height:.8}
+.num .shot{position:absolute;left:0;top:10px;width:min(60vw,300px);aspect-ratio:414/896;background:#111;border:6px solid var(--black)}
+.num .shot img{width:100%;height:100%;display:block;object-fit:cover}
+.num.cream .n{color:var(--red)}
+.num.red .n{color:var(--black)}
+.num.black .n{color:var(--red)}
+.num.red .shot,.num.black .shot{border-color:var(--cream)}
+
+/* end */
+#end{padding:110px var(--pad) 40px;min-height:100svh;display:flex;flex-direction:column}
+#end h3{font-size:clamp(52px,16.4vw,200px)}
+#end .ser{font-size:clamp(30px,9vw,70px);margin-top:14px;display:block}
+#end .row{margin-top:36px}
+#end footer{margin-top:auto;display:flex;justify-content:space-between;font-size:12px;color:var(--mute);padding-top:60px}
+
+/* overlay */
+#ink{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:1}
+section>*{position:relative;z-index:2}
+section>nav{position:absolute;z-index:3}
+#needle{position:fixed;left:0;top:0;width:693px;height:43px;pointer-events:none;z-index:6;transform-origin:0 0;will-change:transform}
+@media (min-width:900px){
+  :root{--pad:40px}
+  #hero .lede{grid-template-columns:1.3fr 1fr;align-items:end}
+  #said .side{max-width:640px;margin-left:auto}
+  .num .stage{min-height:640px}
+  #what ul{max-width:640px;margin-left:auto}
+}
+@media (prefers-reduced-motion:reduce){ #needle{display:none} }
+</style>
+</head>
+<body>
+
+<section id="hero" class="cream" data-thread="#A8191E">
+  <nav><span class="mark">BLOCK27</span><span class="links"><a class="link" href="#what" style="font-size:13px">How it works</a><a class="link get" href="#end" style="font-size:13px">Get BLOCK27</a></span></nav>
+  <div id="wordslot"></div>
+  <div id="portrait"><canvas id="pc"></canvas></div>
+  <div class="lede">
+    <h2>Your closet is already full.<span class="ser">You just can't see it.</span></h2>
+    <div>
+      <p>An AI stylist for the clothes you own. Shoot your pieces once. It builds the outfits.</p>
+      <div class="row" style="margin-top:18px"><a class="btn dark get" href="#end">Get BLOCK27</a><a class="link" href="#what">How it works</a></div>
+    </div>
+  </div>
+  <div class="foot"><span>Free on iOS</span><span>2026</span></div>
+</section>
+
+<section id="band" class="black" data-thread="#A8191E">
+  <div class="mq wide" id="mq1"><span>Wardrobe</span><i>✦</i><span class="o">Outfits</span><i>✦</i><span>Gap</span><i>✦</i><span class="o">Wardrobe</span><i>✦</i><span>Outfits</span><i>✦</i><span class="o">Gap</span><i>✦</i><span>Wardrobe</span><i>✦</i><span class="o">Outfits</span><i>✦</i><span>Gap</span><i>✦</i></div>
+</section>
+
+<section id="said" class="cream" data-thread="#A8191E">
+  <h3>Most apps tell you what to buy. Ours <span class="ser">dress you in what you own.</span></h3>
+  <div class="side">
+    <div><b>No new clothes.</b>The outfit is already in your closet.</div>
+    <div><b>No guessing.</b>Every look comes with the reason it works.</div>
+  </div>
+</section>
+
+<section id="what" class="black" data-thread="#A8191E">
+  <h3 class="wide">What it<br>does</h3>
+  <ul>
+    <li><span>Reads your wardrobe</span><span>01</span></li>
+    <li><span>Builds your outfits</span><span>02</span></li>
+    <li><span>Fills your gaps</span><span>03</span></li>
+  </ul>
+</section>
+
+<section class="num cream" data-thread="#A8191E">
+  <div><div class="head"><h4>Wardrobe</h4></div><p class="copy">Shoot each piece once. It learns what you own: the fit, the colour, the weight.</p></div>
+  <div class="stage"><div class="n">01</div><div class="shot"><img src="/launch/s-wardrobe.webp" alt="BLOCK27 wardrobe screen"></div></div>
+</section>
+<section class="num red" data-thread="#000000">
+  <div><div class="head"><h4>Outfits</h4></div><p class="copy">Tap generate. Full outfits from your own pieces, each one with the reason it works.</p></div>
+  <div class="stage"><div class="n">02</div><div class="shot"><img src="/launch/s-outfits.webp" alt="BLOCK27 outfits screen"></div></div>
+</section>
+<section class="num black" data-thread="#A8191E">
+  <div><div class="head"><h4>Gap</h4></div><p class="copy">Missing one piece? It tells you exactly which one, and nothing else.</p></div>
+  <div class="stage"><div class="n">03</div><div class="shot"><img src="/launch/s-gap.webp" alt="BLOCK27 gap screen"></div></div>
+</section>
+
+<section id="end" class="cream" data-thread="#A8191E">
+  <h3 class="wide">Get<br>dressed.</h3>
+  <span class="ser">Free on the App Store.</span>
+  <div class="row"><a class="btn dark get" href="#">Get BLOCK27</a></div>
+  <footer><span>BLOCK27</span><span class="row" style="gap:16px"><a class="link" href="/terms" style="font-size:12px">Terms</a><a class="link" href="/privacy" style="font-size:12px">Privacy</a></span></footer>
+</section>
+
+<canvas id="ink"></canvas>
+<script>
+/* Launch day: put the App Store link here. Empty = the buttons stay on the page. */
+const APP_STORE_URL="";
+if(APP_STORE_URL)document.querySelectorAll('a.get').forEach(a=>{a.href=APP_STORE_URL;});
+</script>
+<img id="needle" src="/launch/needle.webp" alt="">
+
+<script>
+(()=>{
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cv=document.getElementById('ink'),ctx=cv.getContext('2d');
+const T=document.createElement('canvas'),tctx=T.getContext('2d');
+const needle=document.getElementById('needle');
+const NW=693,NH=43,EYE=[30,21],TIP=[693,22];       // sprite geometry (eye at left, tip at right)
+let W,H,DPR,secs=[],word={y:0,size:100,w:0};
+
+function layout(){
+  W=innerWidth;H=innerHeight;DPR=Math.min(2,devicePixelRatio||1);
+  for(const c of [cv,T]){c.width=W*DPR;c.height=H*DPR;}
+  ctx.setTransform(DPR,0,0,DPR,0,0);tctx.setTransform(DPR,0,0,DPR,0,0);
+  secs=[...document.querySelectorAll('section')].map(s=>({top:s.offsetTop,bot:s.offsetTop+s.offsetHeight,c:s.dataset.thread}));
+  // giant word fitted to the hero width
+  const pad=W>=900?40:20, avail=W-pad*2;
+  ctx.font='900 100px Arch';ctx.fontStretch='expanded';
+  const m=ctx.measureText('BLOCK27');
+  word.size=100*avail/m.width; word.x=pad;
+  const slot=document.getElementById('wordslot');slot.style.height=(word.size*.76)+'px';
+  word.y=slot.offsetTop+document.getElementById('hero').offsetTop;
+  secs=[...document.querySelectorAll('section')].map(s=>({top:s.offsetTop,bot:s.offsetTop+s.offsetHeight,c:s.dataset.thread}));
+}
+const colorAt=y=>{for(const s of secs)if(y>=s.top&&y<s.bot)return s.c;return '#A8191E';};
+
+/* input */
+let target=null,lastInput=-1e9;
+addEventListener('pointermove',e=>{if(e.pointerType==='mouse'){target=[e.clientX,e.clientY];lastInput=performance.now();}});
+addEventListener('touchstart',e=>{const t=e.touches[0];target=[t.clientX,t.clientY];lastInput=performance.now();},{passive:true});
+addEventListener('touchmove',e=>{const t=e.touches[0];target=[t.clientX,t.clientY];lastInput=performance.now();},{passive:true});
+
+/* needle state (screen space) */
+let tip=null,ang=Math.PI*.15,pts=[],last=performance.now(),born=performance.now();
+const MAXPTS=2600;
+
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;const t=(now-born)/1000;
+  const sc=scrollY;
+  const len=Math.min(190,W*.44), s=len/NW;
+  // where the needle wants to be
+  let goal;
+  if(now-lastInput<2200&&target) goal=target;
+  else goal=[W*.5+W*.33*Math.sin(t*.55)+W*.06*Math.sin(t*1.7),H*.46+H*.22*Math.sin(t*.41+1.1)];
+  if(!tip)tip=[goal[0],goal[1]];
+  const k=1-Math.exp(-dt*(now-lastInput<2200?9:3.2));
+  const nx=tip[0]+(goal[0]-tip[0])*k, ny=tip[1]+(goal[1]-tip[1])*k;
+  const vx=nx-tip[0], vy=ny-tip[1]; tip=[nx,ny];
+  if(Math.hypot(vx,vy)>.6){const a=Math.atan2(vy,vx);let d=a-ang;d=Math.atan2(Math.sin(d),Math.cos(d));ang+=d*Math.min(1,dt*7);}
+  const ex=tip[0]-Math.cos(ang)*len*(1-EYE[0]/NW), ey=tip[1]-Math.sin(ang)*len*(1-EYE[0]/NW);
+  // the thread leaves from the eye, recorded in page space
+  const py=ey+sc, lp=pts[pts.length-1];
+  if(!lp||Math.hypot(ex-lp[0],py-lp[1])>2.2){pts.push([ex,py]);if(pts.length>MAXPTS)pts.shift();}
+
+  // place needle sprite: rotate around the eye
+  needle.style.transform=`translate(${ex}px,${ey}px) rotate(${ang}rad) scale(${s}) translate(${-EYE[0]}px,${-EYE[1]}px)`;
+
+  // draw thread on T
+  tctx.clearRect(0,0,W,H);
+  const lw=Math.max(9,Math.min(16,W*.034));
+  let i=0;
+  while(i<pts.length-1){
+    const c=colorAt(pts[i][1]);let j=i;
+    tctx.beginPath();tctx.moveTo(pts[i][0],pts[i][1]-sc);
+    while(j<pts.length-1&&colorAt(pts[j+1][1])===c){
+      const a=pts[j],b=pts[j+1];tctx.quadraticCurveTo(a[0],a[1]-sc,(a[0]+b[0])/2,(a[1]+b[1])/2-sc);j++;}
+    if(j===i){j=i+1;tctx.lineTo(pts[j][0],pts[j][1]-sc);}
+    else tctx.lineTo(pts[j][0],pts[j][1]-sc);
+    tctx.lineCap='round';tctx.lineJoin='round';
+    tctx.strokeStyle=c;tctx.lineWidth=lw;tctx.setLineDash([]);tctx.stroke();
+    // twist of the rope
+    tctx.strokeStyle=c==='#000000'?'rgba(255,255,255,.10)':'rgba(0,0,0,.22)';
+    tctx.lineWidth=lw*.62;tctx.lineCap='butt';tctx.setLineDash([2.2,3.6]);tctx.stroke();tctx.setLineDash([]);
+    i=j;
+  }
+  // last stretch into the eye
+  if(pts.length){const p=pts[pts.length-1];tctx.beginPath();tctx.moveTo(p[0],p[1]-sc);tctx.lineTo(ex,ey);tctx.strokeStyle=colorAt(py);tctx.lineWidth=lw;tctx.lineCap='round';tctx.stroke();}
+
+  // compose: giant word, then the thread XOR'd over it (thread cuts through the letters)
+  ctx.clearRect(0,0,W,H);
+  const wy=word.y-sc;
+  if(wy>-word.size&&wy<H){
+    ctx.font=`900 ${word.size}px Arch`;ctx.fontStretch='expanded';ctx.textBaseline='top';ctx.fillStyle='#000';
+    ctx.fillText('BLOCK27',word.x-word.size*.03,wy-word.size*.06);
+  }
+  ctx.globalCompositeOperation='xor';ctx.drawImage(T,0,0,W,H);ctx.globalCompositeOperation='source-over';
+
+  // marquee follows scroll
+  const mq=document.getElementById('mq1');mq.style.transform=`translateX(${-((sc*.6)%(mq.scrollWidth/2))}px)`;
+  requestAnimationFrame(frame);
+}
+addEventListener('resize',layout);
+document.fonts.ready.then(()=>{layout();if(!RM)requestAnimationFrame(frame);else{layout();}});
+layout();
+})();
+</script>
+
+<script>
+(()=>{
+/* hero: the helmet burns off the face; a finger brings it back for a moment */
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const face=new Image(),helm=new Image();face.src='/launch/face.webp';helm.src='/launch/helmet.webp';
+const IW=900,IH=1125,MW=300,MH=375;
+const N=new Float32Array(MW*MH),T=new Float32Array(MW*MH),D=new Float32Array(MW*MH);
+function hash(x,y){let h=x*374761393+y*668265263;h=(h^(h>>>13))*1274126177;return((h^(h>>>16))>>>0)/4294967295;}
+function vn(x,y){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);const a=hash(xi,yi),b=hash(xi+1,yi),c=hash(xi,yi+1),d=hash(xi+1,yi+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
+(function(){let mn=9,mx=-9;const cx=MW*.5,cy=MH*.33;
+ for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){let f=0,am=.5,fr=.03;for(let o=0;o<5;o++){f+=am*vn(x*fr+o*13,y*fr+o*7);am*=.5;fr*=2.1;}
+  const r=Math.hypot((x-cx)/MW,(y-cy)/MH);const v=.55*f+.45*r*1.6;N[y*MW+x]=v;if(v<mn)mn=v;if(v>mx)mx=v;}
+ for(let i=0;i<N.length;i++)N[i]=(N[i]-mn)/(mx-mn);})();
+const cv=document.getElementById('pc'),ctx=cv.getContext('2d');
+const M=document.createElement('canvas');M.width=MW;M.height=MH;const mc=M.getContext('2d');const md=mc.createImageData(MW,MH);
+const E=document.createElement('canvas');E.width=MW;E.height=MH;const ec=E.getContext('2d');const ed=ec.createImageData(MW,MH);
+const G=document.createElement('canvas'),gc=G.getContext('2d');
+let W=0,H=0,haveD=false,start=0,dirty=true,lastT=0,last=performance.now();
+function size(){const r=cv.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=Math.round(r.width*d);H=Math.round(r.height*d);cv.width=W;cv.height=H;G.width=W;G.height=H;dirty=true;}
+function buildD(){const c=document.createElement('canvas');c.width=MW;c.height=MH;const x=c.getContext('2d',{willReadFrequently:true});
+ x.drawImage(face,0,0,MW,MH);const A=x.getImageData(0,0,MW,MH).data;x.clearRect(0,0,MW,MH);x.drawImage(helm,0,0,MW,MH);const B=x.getImageData(0,0,MW,MH).data;
+ const raw=new Float32Array(MW*MH);for(let i=0,j=0;i<raw.length;i++,j+=4){const d=Math.abs(A[j]-B[j])+Math.abs(A[j+1]-B[j+1])+Math.abs(A[j+2]-B[j+2])+Math.abs(A[j+3]-B[j+3]);raw[i]=d>60?1:0;}
+ const r=2;for(let y=0;y<MH;y++)for(let x2=0;x2<MW;x2++){let s=0,n=0;for(let dy=-r;dy<=r;dy++){const yy=y+dy;if(yy<0||yy>=MH)continue;for(let dx=-r;dx<=r;dx++){const xx=x2+dx;if(xx<0||xx>=MW)continue;s+=raw[yy*MW+xx];n++;}}D[y*MW+x2]=Math.min(1,s/n*2.5);}haveD=true;}
+function stamp(px,py){const r=cv.getBoundingClientRect();const mx=(px-r.left)/r.width*MW,my=(py-r.top)/r.height*MH;if(mx<-20||my<-20||mx>MW+20||my>MH+20)return;
+ const R=MW*.13;for(let y=Math.max(0,my-R|0);y<=Math.min(MH-1,my+R|0);y++)for(let x=Math.max(0,mx-R|0);x<=Math.min(MW-1,mx+R|0);x++){const d=Math.hypot(x-mx,y-my)/R;if(d<1){const v=(1-d*d)*1.2,i=y*MW+x;if(v>T[i])T[i]=v;}}lastT=performance.now();dirty=true;}
+const P=document.getElementById('portrait');
+P.addEventListener('pointermove',e=>stamp(e.clientX,e.clientY));
+P.addEventListener('touchmove',e=>{for(const t of e.touches)stamp(t.clientX,t.clientY);},{passive:true});
+P.addEventListener('touchstart',e=>{for(const t of e.touches)stamp(t.clientX,t.clientY);},{passive:true});
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+ if(!face.complete||!helm.complete||!W){requestAnimationFrame(frame);return;}
+ if(!haveD){try{buildD();}catch(_){D.fill(1);haveD=true;}}
+ if(!start)start=now+900;
+ const bt=RM?1:Math.min(1,Math.max(0,(now-start)/2600)),b=-.04+1.1*ease(bt),burning=bt>0&&bt<1;
+ let trail=false;const k=Math.exp(-dt/.6);if(now-lastT<4000){for(let i=0;i<T.length;i++){if(T[i]>.002){T[i]*=k;trail=true;}else T[i]=0;}}
+ if(burning||trail||dirty){const m=md.data,e=ed.data;
+  for(let i=0,j=0;i<N.length;i++,j+=4){const f=N[i],on=f>=b||T[i]>.3;m[j+3]=on?255:0;const d=b-f;
+   if(!on&&d<.032&&bt<1&&D[i]>0){const g=D[i];if(d<.011){e[j]=168;e[j+1]=25;e[j+2]=30;e[j+3]=235*g;}else{const a=1-(d-.011)/.021;e[j]=60;e[j+1]=52;e[j+2]=46;e[j+3]=a*a*170*g;}}
+   else e[j+3]=0;}
+  mc.putImageData(md,0,0);ec.putImageData(ed,0,0);
+  ctx.clearRect(0,0,W,H);ctx.drawImage(face,0,0,W,H);
+  gc.globalCompositeOperation='source-over';gc.clearRect(0,0,W,H);gc.drawImage(helm,0,0,W,H);
+  gc.globalCompositeOperation='destination-in';gc.drawImage(M,0,0,W,H);
+  ctx.drawImage(G,0,0);ctx.drawImage(E,0,0,W,H);dirty=false;}
+ requestAnimationFrame(frame);}
+addEventListener('resize',size);size();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
