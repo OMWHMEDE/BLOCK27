@@ -1,7 +1,9 @@
 "use server";
 
+import { createHash } from "node:crypto";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeSource } from "@/lib/waitlist";
 import { sendWaitlistConfirmation } from "@/lib/email/waitlist";
 
@@ -16,14 +18,39 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // `consent` is true because the form copy states plainly that signing up means
 // receiving a launch email — the opt-in is informed. `source` is the marketing
 // channel, normalized server-side regardless of what the query string held.
+// Signups go through here only: the table is closed to the public API, so a
+// bot can't fill it directly. Per visitor (a one-way hash of their IP) we
+// accept a few signups an hour; past that we quietly say yes and store nothing,
+// so a script learns nothing from the answer.
+const SIGNUPS_PER_HOUR = 5;
+
+async function visitorHash(): Promise<string | null> {
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip");
+  if (!ip) return null;
+  return createHash("sha256").update(`block27-waitlist:${ip}`).digest("hex").slice(0, 32);
+}
+
 async function addToWaitlist(
   email: string,
   source: string,
 ): Promise<"ok" | "exists" | "error"> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
+  const ipHash = await visitorHash();
+
+  if (ipHash) {
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("waitlist")
+      .select("id", { count: "exact", head: true })
+      .eq("ip_hash", ipHash)
+      .gte("created_at", since);
+    if ((count ?? 0) >= SIGNUPS_PER_HOUR) return "exists";
+  }
+
   const { error } = await supabase
     .from("waitlist")
-    .insert({ email, source: normalizeSource(source), consent: true });
+    .insert({ email, source: normalizeSource(source), consent: true, ip_hash: ipHash });
 
   if (error) {
     if (error.code === "23505") return "exists";
