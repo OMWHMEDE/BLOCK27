@@ -25,7 +25,15 @@ function isPeriod(v: unknown): v is BillingPeriod {
   return v === "monthly" || v === "yearly";
 }
 
+// Closed: payments at launch go through Apple in-app purchase only. The Whop
+// webhook stays (signature-checked) so any old membership still resolves, but
+// no new Whop checkout can be started from anywhere.
+const WHOP_CHECKOUT_RETIRED = true;
+
 export async function POST(request: Request) {
+  if (WHOP_CHECKOUT_RETIRED) {
+    return NextResponse.json({ ok: false, error: "unavailable" }, { status: 410 });
+  }
   const { user } = await authenticateRequest(request);
   if (!user) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
